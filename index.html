@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>철벽 헬스 동아리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+  :root {
+    --bg: #0a0e14;
+    --panel: #141a24;
+    --panel-light: #1c2533;
+    --accent: #ff4d2e;
+    --accent-glow: rgba(255, 77, 46, 0.4);
+    --gold: #ffc83d;
+    --silver: #c4ccd6;
+    --bronze: #e08953;
+    --text: #f2f5f9;
+    --text-dim: #8a96a8;
+    --line: #283447;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 배경 텍스처 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,77,46,0.08), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(255,200,61,0.05), transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 16px 40px; }
+
+  /* ───── 헤더 ───── */
+  header {
+    padding: 32px 0 24px;
+    text-align: center;
+    position: relative;
+  }
+  .logo {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 32px;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* ───── 탭 ───── */
+  .month-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .month-tabs::-webkit-scrollbar { display: none; }
+  .month-tab {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .month-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  /* ───── 정렬 토글 ───── */
+  .sort-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .sort-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sort-btn.active { background: var(--panel-light); color: var(--text); border-color: var(--accent); }
+
+  /* ───── 랭킹 카드 ───── */
+  .rank-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.2s;
+    animation: slideIn 0.4s backwards;
+  }
+  .rank-card:active { transform: scale(0.98); }
+  .rank-card.top1 { border-color: var(--gold); background: linear-gradient(100deg, rgba(255,200,61,0.12), var(--panel) 60%); }
+  .rank-card.top2 { border-color: var(--silver); }
+  .rank-card.top3 { border-color: var(--bronze); }
+
+  @keyframes slideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .rank-num {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 26px;
+    width: 42px;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--text-dim);
+  }
+  .top1 .rank-num { color: var(--gold); }
+  .top2 .rank-num { color: var(--silver); }
+  .top3 .rank-num { color: var(--bronze); }
+
+  .rank-info { flex: 1; min-width: 0; }
+  .rank-name { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+  .rank-detail { font-size: 12px; color: var(--text-dim); }
+  .rank-total {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .rank-total .num {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 24px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .rank-total .unit { font-size: 11px; color: var(--text-dim); }
+  .chevron { color: var(--text-dim); font-size: 20px; flex-shrink: 0; }
+
+  /* ───── 개인 상세 ───── */
+  .detail { display: none; animation: fadeIn 0.3s; }
+  .detail.show { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 10px 18px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  .back-btn:active { background: var(--panel-light); }
+
+  .profile-head {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .profile-name {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 30px;
+  }
+  .profile-rank {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 14px;
+    background: var(--accent);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .stat-box {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .stat-box .label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+  .stat-box .value {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px;
+    color: var(--text);
+  }
+  .stat-box .value small { font-size: 12px; color: var(--text-dim); }
+
+  .chart-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 16px 12px;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .chart-wrap { position: relative; height: 240px; }
+
+  .section-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin: 4px 0 14px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ───────── 랭킹 화면 ───────── -->
+  <div id="rankingView">
+    <header>
+      <div class="logo">철벽 헬스부</div>
+      <div class="logo-sub">3 LIFT RANKING</div>
+    </header>
+
+    <div class="month-tabs" id="monthTabs"></div>
+
+    <div class="sort-toggle">
+      <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계 순</button>
+      <button class="sort-btn" data-sort="score" onclick="setSort('score')">상대점수 순</button>
+    </div>
+
+    <div id="rankList"></div>
+  </div>
+
+  <!-- ───────── 개인 상세 화면 ───────── -->
+  <div id="detailView" class="detail">
+    <button class="back-btn" onclick="showRanking()">← 랭킹으로</button>
+    <div class="profile-head">
+      <div class="profile-name" id="pName"></div>
+      <div class="profile-rank" id="pRank"></div>
+    </div>
+
+    <div class="stat-row" id="pStats"></div>
+
+    <div class="section-label">📈 삼대운동 추이</div>
+    <div class="chart-card">
+      <div class="chart-title">월별 삼대 기록 (kg)</div>
+      <div class="chart-wrap"><canvas id="liftChart"></canvas></div>
+    </div>
+
+    <div class="section-label">📊 인바디 추이</div>
+    <div class="chart-card">
+      <div class="chart-title">골격근량 · 체지방률</div>
+      <div class="chart-wrap"><canvas id="bodyChart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   ⬇⬇⬇  여기가 데이터 입력하는 곳입니다  ⬇⬇⬇
+   - 멤버 추가: { 이름:"...", 기록:[ ... ] } 통째로 복사해서 추가
+   - 매달 측정 후: 각 멤버 기록 배열에 { 월:"...", ... } 한 줄 추가
+═══════════════════════════════════════════════════ */
+const 멤버데이터 = [
+  { 이름: "김철수", 기록: [
+      { 월:"3월", 체중:75, 스쿼트:120, 벤치:90, 데드:150, 골격근량:35.2, 체지방률:14.5 },
+      { 월:"4월", 체중:76, 스쿼트:125, 벤치:92, 데드:155, 골격근량:35.8, 체지방률:14.0 },
+      { 월:"5월", 체중:76, 스쿼트:130, 벤치:95, 데드:162, 골격근량:36.4, 체지방률:13.2 },
+  ]},
+  { 이름: "이영호", 기록: [
+      { 월:"3월", 체중:68, 스쿼트:100, 벤치:75, 데드:130, 골격근량:31.0, 체지방률:16.0 },
+      { 월:"4월", 체중:69, 스쿼트:108, 벤치:78, 데드:138, 골격근량:31.8, 체지방률:15.2 },
+      { 월:"5월", 체중:69, 스쿼트:115, 벤치:82, 데드:145, 골격근량:32.5, 체지방률:14.5 },
+  ]},
+  { 이름: "박민준", 기록: [
+      { 월:"3월", 체중:82, 스쿼트:140, 벤치:100, 데드:170, 골격근량:38.5, 체지방률:18.0 },
+      { 월:"4월", 체중:81, 스쿼트:145, 벤치:102, 데드:175, 골격근량:38.9, 체지방률:17.0 },
+      { 월:"5월", 체중:80, 스쿼트:150, 벤치:105, 데드:180, 골격근량:39.2, 체지방률:16.2 },
+  ]},
+  { 이름: "최우식", 기록: [
+      { 월:"3월", 체중:70, 스쿼트:95, 벤치:65, 데드:120, 골격근량:30.5, 체지방률:17.5 },
+      { 월:"4월", 체중:71, 스쿼트:102, 벤치:70, 데드:128, 골격근량:31.2, 체지방률:16.8 },
+      { 월:"5월", 체중:71, 스쿼트:110, 벤치:74, 데드:135, 골격근량:31.9, 체지방률:16.0 },
+  ]},
+  { 이름: "정해인", 기록: [
+      { 월:"3월", 체중:78, 스쿼트:130, 벤치:95, 데드:160, 골격근량:36.8, 체지방률:13.0 },
+      { 월:"4월", 체중:78, 스쿼트:133, 벤치:97, 데드:165, 골격근량:37.1, 체지방률:12.5 },
+      { 월:"5월", 체중:79, 스쿼트:138, 벤치:100, 데드:170, 골격근량:37.6, 체지방률:12.0 },
+  ]},
+];
+/* ═══════════════════════════════════════════════════
+   ⬆⬆⬆  데이터 입력 끝  ⬆⬆⬆
+═══════════════════════════════════════════════════ */
+
+// ── 이하 기능 코드 (건드릴 필요 없음) ──
+let 현재월 = null;
+let 현재정렬 = 'total';
+let liftChartObj = null, bodyChartObj = null;
+
+// 모든 월 목록 추출
+function 월목록() {
+  const s = new Set();
+  멤버데이터.forEach(m => m.기록.forEach(r => s.add(r.월)));
+  return [...s];
+}
+
+function 해당월기록(member, 월) {
+  return member.기록.find(r => r.월 === 월);
+}
+
+function 합계(rec) { return rec.스쿼트 + rec.벤치 + rec.데드; }
+function 상대점수(rec) { return (합계(rec) / rec.체중); }
+
+function 월탭그리기() {
+  const tabs = 월목록();
+  현재월 = tabs[tabs.length - 1]; // 최신 월 기본 선택
+  const box = document.getElementById('monthTabs');
+  box.innerHTML = tabs.map(m =>
+    `<div class="month-tab ${m===현재월?'active':''}" onclick="selectMonth('${m}')">${m}</div>`
+  ).join('');
+}
+
+function selectMonth(m) {
+  현재월 = m;
+  document.querySelectorAll('.month-tab').forEach(t =>
+    t.classList.toggle('active', t.textContent === m));
+  랭킹그리기();
+}
+
+function setSort(s) {
+  현재정렬 = s;
+  document.querySelectorAll('.sort-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.sort === s));
+  랭킹그리기();
+}
+
+function 랭킹그리기() {
+  // 현재 월에 기록 있는 멤버만
+  let list = 멤버데이터
+    .map(m => ({ member: m, rec: 해당월기록(m, 현재월) }))
+    .filter(x => x.rec);
+
+  list.sort((a, b) => 현재정렬 === 'total'
+    ? 합계(b.rec) - 합계(a.rec)
+    : 상대점수(b.rec) - 상대점수(a.rec));
+
+  const html = list.map((x, i) => {
+    const topClass = i < 3 ? `top${i+1}` : '';
+    const medal = ['🥇','🥈','🥉'][i] || (i+1);
+    const score = 상대점수(x.rec).toFixed(2);
+    const mainNum = 현재정렬 === 'total' ? 합계(x.rec) : score;
+    const mainUnit = 현재정렬 === 'total' ? 'kg' : '점';
+    return `
+      <div class="rank-card ${topClass}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
+        <div class="rank-num">${medal}</div>
+        <div class="rank-info">
+          <div class="rank-name">${x.member.이름}</div>
+          <div class="rank-detail">체중 ${x.rec.체중}kg · 상대점수 ${score}</div>
+        </div>
+        <div class="rank-total">
+          <div class="num">${mainNum}</div>
+          <div class="unit">${mainUnit}</div>
+        </div>
+        <div class="chevron">›</div>
+      </div>`;
+  }).join('');
+  document.getElementById('rankList').innerHTML = html;
+}
+
+function showDetail(이름) {
+  const member = 멤버데이터.find(m => m.이름 === 이름);
+  if (!member) return;
+
+  document.getElementById('rankingView').style.display = 'none';
+  document.getElementById('detailView').classList.add('show');
+  window.scrollTo(0, 0);
+
+  document.getElementById('pName').textContent = 이름;
+
+  // 현재 월 순위 계산
+  let list = 멤버데이터
+    .map(m => ({ m, rec: 해당월기록(m, 현재월) })).filter(x => x.rec)
+    .sort((a,b) => 합계(b.rec) - 합계(a.rec));
+  const rankIdx = list.findIndex(x => x.m.이름 === 이름);
+  document.getElementById('pRank').textContent =
+    rankIdx >= 0 ? `${현재월} ${rankIdx+1}위` : '기록 없음';
+
+  // 최신 기록 통계
+  const latest = member.기록[member.기록.length - 1];
+  document.getElementById('pStats').innerHTML = `
+    <div class="stat-box"><div class="label">삼대합계</div><div class="value">${합계(latest)}<small>kg</small></div></div>
+    <div class="stat-box"><div class="label">골격근량</div><div class="value">${latest.골격근량}<small>kg</small></div></div>
+    <div class="stat-box"><div class="label">체지방률</div><div class="value">${latest.체지방률}<small>%</small></div></div>
+  `;
+
+  그래프그리기(member);
+}
+
+function showRanking() {
+  document.getElementById('detailView').classList.remove('show');
+  document.getElementById('rankingView').style.display = 'block';
+}
+
+function 그래프그리기(member) {
+  const 월s = member.기록.map(r => r.월);
+  const css = getComputedStyle(document.documentElement);
+  const accent = css.getPropertyValue('--accent').trim();
+  const gold = css.getPropertyValue('--gold').trim();
+  const silver = css.getPropertyValue('--silver').trim();
+  const textDim = css.getPropertyValue('--text-dim').trim();
+  const line = css.getPropertyValue('--line').trim();
+
+  const commonOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: textDim, font: { family: 'Noto Sans KR', size: 12 }, usePointStyle: true, pointStyleWidth: 10 } } },
+    scales: {
+      x: { ticks: { color: textDim }, grid: { color: line } },
+      y: { ticks: { color: textDim }, grid: { color: line } }
+    }
+  };
+
+  if (liftChartObj) liftChartObj.destroy();
+  liftChartObj = new Chart(document.getElementById('liftChart'), {
+    type: 'line',
+    data: { labels: 월s, datasets: [
+      { label:'스쿼트', data:member.기록.map(r=>r.스쿼트), borderColor:accent, backgroundColor:accent, tension:0.3, borderWidth:3, pointRadius:4 },
+      { label:'벤치', data:member.기록.map(r=>r.벤치), borderColor:gold, backgroundColor:gold, tension:0.3, borderWidth:3, pointRadius:4 },
+      { label:'데드', data:member.기록.map(r=>r.데드), borderColor:silver, backgroundColor:silver, tension:0.3, borderWidth:3, pointRadius:4 },
+    ]},
+    options: commonOpts
+  });
+
+  if (bodyChartObj) bodyChartObj.destroy();
+  bodyChartObj = new Chart(document.getElementById('bodyChart'), {
+    type: 'line',
+    data: { labels: 월s, datasets: [
+      { label:'골격근량(kg)', data:member.기록.map(r=>r.골격근량), borderColor:accent, backgroundColor:accent, tension:0.3, borderWidth:3, pointRadius:4, yAxisID:'y' },
+      { label:'체지방률(%)', data:member.기록.map(r=>r.체지방률), borderColor:'#4dd2ff', backgroundColor:'#4dd2ff', tension:0.3, borderWidth:3, pointRadius:4, yAxisID:'y1' },
+    ]},
+    options: { ...commonOpts, scales: {
+      x: { ticks:{color:textDim}, grid:{color:line} },
+      y: { position:'left', ticks:{color:textDim}, grid:{color:line} },
+      y1: { position:'right', ticks:{color:textDim}, grid:{drawOnChartArea:false} }
+    }}
+  });
+}
+
+// 시작
+월탭그리기();
+랭킹그리기();
+</script>
+</body>
+</html>
