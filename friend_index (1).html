@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>삼대 오백마 · 3대 500 PROJECT</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="삼대오백마">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+  :root{
+    --bg:#07090d; --panel:#11151c; --panel-light:#1a212c;
+    --blue:#1d4ed8; --blue-bright:#3b82f6; --blue-glow:rgba(59,130,246,0.45);
+    --gold:#ffc83d; --silver:#c4ccd6; --bronze:#e08953;
+    --text:#f4f7fb; --text-dim:#7d8a9c; --line:#232c3a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:
+    radial-gradient(ellipse 40% 30% at 15% 8%,rgba(59,130,246,0.10),transparent 60%),
+    radial-gradient(ellipse 35% 25% at 85% 92%,rgba(59,130,246,0.08),transparent 60%),
+    radial-gradient(circle at 50% 50%,rgba(29,78,216,0.04),transparent 70%);pointer-events:none;z-index:0;}
+  body::after{content:'';position:fixed;inset:0;opacity:0.04;pointer-events:none;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px 50px;}
+  header{padding:32px 0 20px;text-align:center;}
+  .emblem{width:128px;height:128px;margin:0 auto 4px;display:block;filter:drop-shadow(0 6px 22px rgba(59,130,246,0.45));animation:logoIn 0.7s ease-out;}
+  .logo-text{font-family:'Black Han Sans',sans-serif;font-size:42px;line-height:1;letter-spacing:2px;color:var(--text);text-shadow:0 2px 16px rgba(59,130,246,0.35);animation:logoIn 0.7s ease-out 0.1s backwards;}
+  .logo-slogan{font-size:13px;letter-spacing:6px;font-weight:700;color:var(--blue-bright);margin-top:10px;animation:logoIn 0.7s ease-out 0.2s backwards;}
+  @keyframes logoIn{from{opacity:0;transform:scale(0.92) translateY(-10px);}to{opacity:1;transform:scale(1) translateY(0);}}
+  .header-divider{width:100%;height:2px;margin-top:16px;background:linear-gradient(90deg,transparent,var(--blue-bright),transparent);opacity:0.6;}
+  .input-launch{width:100%;margin:24px 0 4px;padding:15px;background:var(--blue);border:none;border-radius:10px;color:#fff;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 0 16px var(--blue-glow);transition:transform 0.15s;}
+  .input-launch:active{transform:scale(0.98);}
+  .year-tabs{display:flex;gap:8px;padding:18px 0 0;}
+  .year-tab{padding:7px 20px;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .year-tab.active{background:rgba(59,130,246,0.15);border-color:var(--blue-bright);color:var(--blue-bright);}
+  .month-tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 0 12px;scrollbar-width:none;}
+  .month-tabs::-webkit-scrollbar{display:none;}
+  .month-tab{flex-shrink:0;padding:8px 18px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .month-tab.active{background:var(--blue);border-color:var(--blue-bright);color:#fff;box-shadow:0 0 16px var(--blue-glow);}
+  .sort-toggle{display:flex;gap:6px;margin-bottom:16px;}
+  .sort-btn{flex:1;padding:11px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .sort-btn.active{background:var(--panel-light);color:var(--blue-bright);border-color:var(--blue-bright);}
+  .rank-card{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:transform 0.15s,border-color 0.2s;animation:slideIn 0.4s backwards;position:relative;overflow:hidden;}
+  .rank-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
+  .rank-card:active{transform:scale(0.98);}
+  .rank-card.top1{border-color:var(--gold);background:linear-gradient(100deg,rgba(255,200,61,0.12),var(--panel) 55%);}
+  .rank-card.top1::before{background:var(--gold);}
+  .rank-card.top2{border-color:var(--silver);}.rank-card.top2::before{background:var(--silver);}
+  .rank-card.top3{border-color:var(--bronze);}.rank-card.top3::before{background:var(--bronze);}
+  @keyframes slideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .rank-num{font-family:'Black Han Sans',sans-serif;font-size:26px;width:42px;text-align:center;flex-shrink:0;color:var(--text-dim);}
+  .top1 .rank-num{color:var(--gold);}.top2 .rank-num{color:var(--silver);}.top3 .rank-num{color:var(--bronze);}
+  .rank-info{flex:1;min-width:0;}
+  .rank-name{font-size:17px;font-weight:700;margin-bottom:3px;}
+  .rank-detail{font-size:12px;color:var(--text-dim);}
+  .rank-total{text-align:right;flex-shrink:0;}
+  .rank-total .num{font-family:'Black Han Sans',sans-serif;font-size:24px;color:var(--blue-bright);line-height:1;}
+  .rank-total .unit{font-size:11px;color:var(--text-dim);}
+  .chevron{color:var(--text-dim);font-size:20px;flex-shrink:0;}
+  .detail{display:none;animation:fadeIn 0.3s;}
+  .detail.show{display:block;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 18px;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;margin:20px 0;}
+  .back-btn:active{background:var(--panel-light);}
+  .profile-head{text-align:center;margin-bottom:24px;}
+  .profile-name{font-family:'Black Han Sans',sans-serif;font-size:32px;letter-spacing:1px;}
+  .profile-rank{display:inline-block;margin-top:8px;padding:5px 16px;background:var(--blue);border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 0 14px var(--blue-glow);}
+  .stat-row{display:flex;gap:10px;margin-bottom:24px;}
+  .stat-box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 10px;text-align:center;}
+  .stat-box .label{font-size:11px;color:var(--text-dim);margin-bottom:6px;}
+  .stat-box .value{font-family:'Black Han Sans',sans-serif;font-size:22px;color:var(--text);}
+  .stat-box .value small{font-size:12px;color:var(--text-dim);}
+  .chart-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 16px 12px;margin-bottom:16px;}
+  .chart-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .chart-title::before{content:'';width:4px;height:16px;background:var(--blue-bright);border-radius:2px;}
+  .chart-wrap{position:relative;height:240px;}
+  .section-label{font-size:13px;color:var(--text-dim);font-weight:700;letter-spacing:1px;margin:4px 0 14px;}
+  footer{text-align:center;padding:30px 0 0;color:var(--text-dim);font-size:11px;letter-spacing:2px;}
+  .diff{font-size:12px;font-weight:700;margin-left:6px;vertical-align:middle;}
+  .diff.up{color:#4ade80;}
+  .diff.down{color:#f87171;}
+  .diff.same{color:var(--text-dim);}
+  .edit-row{display:flex;gap:10px;margin-bottom:20px;}
+  .edit-btn{flex:1;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text-dim);font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;}
+  .edit-btn.del{color:#f87171;border-color:rgba(248,113,113,0.3);}
+  .edit-btn:active{background:var(--panel-light);}
+  .detail-tabs{display:flex;gap:8px;margin-bottom:20px;}
+  .detail-tab{flex:1;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .detail-tab.active{background:rgba(59,130,246,0.15);border-color:var(--blue-bright);color:var(--blue-bright);}
+  .train-input-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
+  .train-suggest{font-size:13px;font-weight:700;color:var(--blue-bright);background:rgba(59,130,246,0.12);border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.5;}
+  .train-fields{display:flex;align-items:center;gap:8px;}
+  .train-fields select,.train-fields input{padding:11px 8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;min-width:0;}
+  .train-fields select{flex:1.2;}
+  .train-fields input{flex:1;width:100%;}
+  .train-x{color:var(--text-dim);font-weight:700;}
+  .train-save{flex-shrink:0;padding:11px 14px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;}
+  .train-save:active{transform:scale(0.97);}
+  .train-1rm{margin-top:12px;font-size:14px;color:var(--text-dim);text-align:center;}
+  .train-1rm b{color:var(--text);font-size:16px;}
+  .train-log{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+  .train-log .wk{font-weight:700;color:var(--blue-bright);font-size:14px;}
+  .train-log .detail{font-size:13px;color:var(--text);}
+  .train-log .rm{font-size:13px;color:var(--text-dim);}
+  .train-log .del-x{color:#f87171;cursor:pointer;font-size:18px;padding:0 4px;}
+  /* 입력 모달 */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:420px;animation:slideIn 0.3s;}
+  .modal h2{font-family:'Black Han Sans',sans-serif;font-size:22px;margin-bottom:4px;}
+  .modal .sub{font-size:12px;color:var(--text-dim);margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:6px;}
+  .field input,.field select{width:100%;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--blue-bright);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .lift-entry-block{margin-bottom:10px;}
+  .lift-entry-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .lift-entry-name{font-size:13px;font-weight:700;color:var(--text);}
+  .lift-mode-toggle{display:flex;gap:4px;}
+  .lift-mode-btn{padding:4px 10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .lift-mode-btn.active{background:rgba(59,130,246,0.15);border-color:var(--blue-bright);color:var(--blue-bright);}
+  .rep-result-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 4px;margin-top:20px;}
+  .rep-result-num{font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--blue-bright);line-height:1;}
+  .rep-result-label{font-size:10px;color:var(--text-dim);margin-top:2px;}
+  .input-warn{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:#f87171;margin-top:4px;display:none;line-height:1.5;}
+  .input-warn.show{display:block;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  .grid3 .field input,.grid3 .field select{padding:11px 6px;}
+  .modal-btns{display:flex;gap:10px;margin-top:22px;}
+  .btn{flex:1;padding:13px;border:none;border-radius:8px;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;}
+  .btn-save{background:var(--blue);color:#fff;}
+  .btn-cancel{background:var(--panel-light);color:var(--text-dim);}
+  .modal-delete{display:none;width:100%;margin-top:12px;padding:11px;background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#f87171;font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;}
+  .modal-delete:active{background:rgba(248,113,113,0.1);}
+  .status{text-align:center;padding:40px 0;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="rankingView">
+        <header>
+      <div class="emblem-wrap">
+        <img class="emblem" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDIiIGhlaWdodD0iNTk5IiBvdmVyZmxvdz0iaGlkZGVuIj48ZGVmcz48Y2xpcFBhdGggaWQ9ImEiPjxwYXRoIGQ9Ik0tNTI2NC0yOTIwaDYwMnY1OTloLTYwMnoiLz48L2NsaXBQYXRoPjwvZGVmcz48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcGF0aD0idXJsKCNhKSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTI2NCAyOTIwKSI+PHBhdGggZmlsbD0iIzFEMjA4OCIgZD0iTS00OTYyLjE2LTIzMjFjLTE2Ni4wMSAwLTMwMC44NC0xMzQuMjUtMzAwLjg0LTI5OS40NSAwLTE2NS4wOSAxMzQuODMtMjk4LjU1IDMwMC44NC0yOTguNTUgMTY1LjMzIDAgMzAwLjE2IDEzMy40NiAzMDAuMTYgMjk4LjU1IDAgMTY1LjItMTM0LjgzIDI5OS40NS0zMDAuMTYgMjk5LjQ1WiIvPjxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik0tNTA0Mi4xOS0yNzcyLjFjLTQuMzggMi45MS0xNS4yNiAxMy0yMi40NCAxNy4zNy03LjA3IDMuNTktMTAuODktLjc4LTE1LjgyIDMuNTktMy41OSAyLjY5LTYuNjIgNS4wNC05LjMyIDYuMzktMy43IDIuMTMtNy4xOCAzLjAzLTEzLjEzIDMuNy00LjI2LjY3LTQuMjYtNS4wNS00LjI2LTYuNSAwLTMuMDMgNC4yNi0zLjAzIDUuNzItNC4zOCAxLjM1LS42NyA2LjQtMy44MSA3LjE5LTQuNDhsMi44LTUuMDRjMS41Ny0xLjQ2Ljc4LTMuNDgtMS4zNS0yLjAybC01Ljk0IDQuOTMtNC45NCAyLjhjLTYuNTEgMy44MS03Ljk3IDQuNDktMTQuNDggNS4wNS02LjM5IDAtNy45Ni0yLjU4LTEwLjA5LTcuMTgtLjU3LTEuNDUtLjU3LTIuOTEtLjU3LTQuMjUtLjc4LTIuMTMgMC0zLjU5IDAtNS43MnMxLjM1LTMuNTkgMi44MS01LjgzYy43OC0uNTYgMi4yNC0xLjM1IDIuOC0yLjAybDUuMDUtMi4yNCA2LjUxLTQuMzcgMTAuMjEtNy4wNiA5LjMyLTEyLjIyYzQuOTMtOC43NCA3Ljk2LTEzLjExIDE4LjE3LTE2LjcgMS40Ni0uNjcgMi4xNC0uNjcgMy40OC0xLjU3bDEwLjEtMi4wMi0zLjU5LTE1LjEzYzExLjU2IDEuNDYgMTkuNjQgNy4xNyAyNC41NyAxNS4xMyAxMy4yNS04LjYzIDI0LjgtMTMgMzUuNDYtMTIuMzMtMi4yNCAxMC44Ny04LjY0IDE4Ljk1LTE1LjE1IDIzLjc2IDEwLjEgMTQuMjQgMTUuOTQgMjkuNiAyMC44OCA0Ni4xOSAyLjggMTcuMzcgNC4yNiA0My44MiA1LjgzIDYzLjMzLjY3IDEwLjA4IDUuODQgMTguOTQgMTIuMjMgMjUuODkgOC42NCAxMC45OCAxNi42MSA3Ljk2IDI4Ljk1IDEzLjY3IDIuNTguNzkgMjAuMDkgMTIuNDQgMjIuMzMgMTMuMTIgMTAuNzcgNC4yNiAxOC43NCA3LjczIDI1LjE0IDcuNzMgMTAuMS42NyAyMC4xOSA4LjA3IDI4Ljk1IDE0LjU3IDQuMjYgMy41OSA5LjMxIDYuNSAxMS40NCAxMC45OSA0LjM4IDQuMjYgOC44NyA4LjUyIDEzLjAyIDExLjMyIDMuNTkgMS4zNCA5LjIgMS4zNCAxMy41OCAwIDMuMDItMi4xMyAzLjctNS43MiA0LjQ4LTkuMTkgMC0yLjkyIDAtNi42Mi0uNzgtMTAuMi0yLjEzLTguNjMtNy4xOC0xNy4zOC03Ljk3LTE5LjQtMjEuNTQtMjkuNDctMzEuNzUtNTAuMjEtMzIuNDMtNzQuODctLjY3LTEzLjExIDEyLjM1LTMzLjk2IDIxLjY2LTQzLjQ5IDE2LjYxLTE0LjI0IDQ4LjM2LTIwLjA2IDY2LjU0LTQuMTUgNi41MSA1LjcyIDExLjU2IDEzLjY4IDEyLjIzIDIxLjQxbC0zMy4yMS03LjE3YzguNzUgOS41MyAxMi4xMiAxMC4yIDE1LjkzIDIyLjUzLTIwLjQyLTguMDctMzQuNzgtLjc5LTQ1LjY3IDEzLjU2IDkuNjUtNy4yOSAxOC43NC0xMC43NiAyOC4yOC03Ljg1LTExIDkuMzEtMTguNjMgMjAuODUtMjEuNzcgMzQuNzUgNS44My04Ljc0IDE0LjctMTcuMjYgMjAuNDItMTEuNjYtNS43MiA2LjczLTExIDEyLjg5LTEzLjggMjEuNTMgNi41MSAwIDEyLjEyLTQuMDQgMTkuNTItOS44N2wtMTUuODIgMzkuNTdjOC41My0yLjM1IDE1LjgyLTcuMTcgMjEuNjYtMTMuMTItMy44MiAxMy43OS0xMC4yMSAyNC42Ni0xOC4wNyAzMi41MSA4LjUzLjkgMTUuNzEtMi45MSAyMi4zMy04Ljc0bC0xOC4wNiAyMy44N2M1LjYxLTEuMzQgMTIuMTItMy44MSAxOC4wNi03LjI4LTIuOCA3LjI4LTcuMjkgMTMuNzgtMTEuNTUgMTguNzItNS4wNSA1Ljk0LTkuOTkgMTAuMDgtMTYuNjEgMTMuMTEtOC43NSA0LjI2LTIzLjY4IDcuOTYtMzEuODcuOWwuNzkgOS44NmMxLjQ2IDI3LjQ2LTE0LjM3IDQ4LjQyLTMxLjA5IDY3LjE0IDE1Ljk0IDEzLjQ1IDExLjU2IDMzLjg1LS42NyA0Ny42NC02LjI4IDkuMy0xNC4zNiAxNS44LTIzLjExIDIwLjczLTE1LjA0IDkuMzEtMTguNjMgMTIuMzMtMjcuOTQgMjkuNiAwIDcuMjguNjcgMTIuMjEuNjcgMTQuOSAxLjQ2IDE1LjM2LTEwLjc3LTMuNDctMjMuNzkgNS45NC0yLjggMS41Ny0yLjgtNS4xNS0uNjctMTMgMi4yNC0xNi43IDIxLjY1LTMzLjE4IDMzLjIxLTQzLjk0bDE0LjM2LTE1LjAyYzMuNzEtNC4zNyA2LjYyLTEwLjg3IDIuMjUtMTMuNzgtOS41NC02LjYyLTIxLjY2LTE3LjM4LTMwLjQxLTI5LjU5LTkuMzEtMTcuMzgtMTcuMjgtMzQuNjQtMjEuNTQtNTQuMTQtNTEuMjggMTMuNzgtOTAuMjItMjYuNTctMTAxLjExLTU2Ljk0LTYuNjIgNS44Mi0yMC40MiAxMC44Ny0zMy4yMSAxMi4zMy0xNS4zNyAwLTQyLjUzLTEzLjAxLTU0Ljk4LTIzLjA5LTUuNzItNC45NC03LjE4LTIuODEtMTQuMzcgMS42OC0xMC44OCAxMy0xMi4zNCAyMC4wNi0xNS4yNiAzMy43NC0uNjcgMi4xMiAwIDEuMzQgMi4yNSAzLjU4IDcuOTcgNy45NiAxNi42MSA3LjE4IDE3Ljg0IDEwLjY1LTQuODMgNy40LTkuMDkgMTUuMjQtMTEuMzMgMjQuNjYtLjY4IDQuMzctOC43Ni05LjMtOS4zMi0xMS41NWwtNS4wNS00LjI1Yy01Ljk0LTUuODMtNy4yOS05LjUzLTcuMjktMTYuNTkgMC00LjM4IDAtNS44MyAxLjQ2LTEwLjA5IDQuMzctMTAuODcgOS4zMS0yMC44NSAxMy44LTMwLjk0bDYuNTEtMTUuMTNjNi41MS05LjQyIDE0LjQ3LTEzLjU2IDIzLjc5LTE1LjI0IDExLjU1LS42OCAxOS41Mi42NyAzMC4yOSA0LjM3bDcuOTcgNS44MyA2LjUxLTEwLjJjMTIuMzQtMTUuMTQgMTAuODgtMTUuOTIgMzEuMTktMjIuODcgMi43LS45IDAtNy40IDEuMzUtMTAuNzZsMS40Ni0xNi44MSA1LjA1LTE3Ljk0IDYuNTEtMTQuNDYgNS44My0xMi4yMSA5LjA5LTE4LjA1WiIvPjxwYXRoIGZpbGw9IiNGRkYiIGQ9Ik0tNTE0Ny4zNS0yNjkzLjcyYy0xOS41NSAyLjIyLTE1LjI4IDE1LjY1LTE2LjYzIDMxLjQtLjY3IDUuNzcgMTMuMDQtLjU1IDE5LjU1LS41NSAxLjU4LTcuMjEtMi4xMy0xMy4xIDUuMDYtNy44OGwxMi4zNiA3Ljg4YzIuMTMgMS4yMiAxMS41NyA2LjQ0IDE1LjcyIDcuNzcgMi4zNi42NiAwLTIuMTEuNzktMi4xMSA0LjM4LTQuNTUgMTYuNTItMTYuNTQgOS4yMS0yMC44Ni0yLjgxLTEuNDUtOS4yMS41NS0xNS43My0uNjctNS4wNS0yLTkuOTktOS4zMi0xNi41MS0xMi43Ni02LjYzLTMuNjYtNS45NS0yLjIyLTEzLjgyLTIuMjJaTS01MTU5Ljk3LTI2MjQuMTJjMy4xMSAxNS4yNCAxMC45OCAxOS41MyAxOC42NCAzMS44MyAxLjQ0IDMuMDUgMy42NiAwIDUuNzctMi4wMyAyLjIyLTIuOTQgNC4zMy03LjM0IDQuOTktOC4wMSAxLjQ0LTIuODMgMC00Ljk3LTIuNzctNi41NS0xLjU2LTEuMzUtNC45OS42OC03Ljk5LTEuMzUtMi0uNjgtMi44OC01LjA4LTQuMjItMTAuMjgtNy43Ni02LjU0LTE0Ljk3LTYuNTQtMTQuNDItMy42MVpNLTQ5NzUuNjEtMjU1NC43NWwxMS41My0yLjI1YzMuMDIgMTguMDkgMTEuNTIgMzkuMSAyMi40OCA1NC4yNyAxMi45NyAxNy4zMSAyMi44MiAxOC43NyAyMy42IDI0LjYxIDAgLjc5LS43OCAxLjU4LS43OCAyLjM2IDAgMy40OS0zLjU4IDYuOTctOS4yOSAxMC43OS0xMy41MyAxMC0yNS4wNSAxNC4yNy0zNy4zNiAyOC4wOS0xLjM0IDIuMjUtMS4zNCAyLjI1LTEuMzQgNS4yOGwtMS41NyAxMC41N2MtLjY3IDMuMDMgMCAyLjM2LTIuMjMgMi4zNmwtMjAuMDIuNjdjLTMuNyAwLTIuMjQgMC0xLjQ2LTQuMjcgMi4zNS0xMS4wMSAxLjQ2LTE1LjI4IDEwLjc0LTIxLjggOC44NC02LjUyIDE3LjIzLTE0LjUgMjQuNjEtMjMuMDMgNi40OS04LjY2IDEwLjc0LTEzLjgzIDIwLjEzLTIxLjY5LTI1Ljg0LTE4LjMyLTMyLjQ0LTM3LjItMzkuMDQtNjUuOTZaTS01MDE1LTI4MDkuNjZjOS4xNy01LjQ5IDQ2LjU0IDcuMTggNDguNzggMTQuNTggMCAyLjkxLTE1LjExLjY3LTI5LjY1IDUuNzIgMTYuNTYgMy41OSAyOS42NSA5Ljk4IDM2LjY5IDIwLjE4aC0yNS4wNmMxNC4zMiA1LjcyIDIyLjM4IDEzLjU3IDI2LjYzIDIzLjFsLTI0LjYxLTUuNzJjMTcuMjMgMTAuODggMzEuODggMjcuMjUgMjcuNDEgMzAuMDVsLTI1Ljk2LTEyLjExYzE0LjQzIDE2LjYgMjEuNTkgMjYuNTggMTkuNTggMjguOTNsLTE3LjM0LTYuNWM5Ljk2IDkuMTkgMTUuNzcgMTkuNTEgMTYuNTYgMzAuMjdsLTE4LjAxLTEzLjEyYzMuNDYgMTAuNzcgMTEuMjkgMTguODQgMTcuMjIgMjAuODYtOS4zOSA2LjUtMjYuNzMtMTAuMDktMjcuMjktMzMuOTguNzgtNDcuMzEtNC4zNy03OC4yNi0yNC45NS0xMDIuMjZaIi8+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTS00OTg0LTI4ODZ2MTkuNGMtMzMuMTkgMi44LTU5LjA5IDcuMTctODQuNDMgMjAuMTgtMTM3LjEzIDY1LjctMTcyLjQ1IDIyMy41NS0xMTQuNzEgMzM0LjY2bC0yMi40MiAxMC43NmMtMzUuMzItOTAuOTItMzIuNDEtMTgwLjE3IDIwLjI5LTI2OC45NiA0My44NC03MC4wNyAxMTEuNzktMTExLjExIDIwMS4yNy0xMTYuMDRaTS00OTU0LTI4ODZ2MTkuMzhjMzIuNDQgMi44MSA1OS4yNyA3LjE3IDg0LjQxIDIwLjE3IDEzOS40MiA2NyAxNzcuNyAyMjcuMTIgMTE2LjMgMzM0LjQ1bDIyLjM0IDEzYzgwLjkzLTE3MS42NS0xMi4zNS0zNzMuNDQtMjIzLjA1LTM4N1pNLTQ3NDMtMjQ2OC40MWwtMjUuODgtMTQuNDNjLTc2LjI5IDEzNy4zNy0yOTEuMTcgMTUzLjI2LTM5Ny4wNC03LjE2bC0yMy4wOCAxNS4xYzU5LjcxIDc5Ljk5IDE0My40IDEyOS41NSAyNDkuMjcgMTIwLjkzIDgzLjU4LTUuMTQgMTUwLjY5LTQ1LjQyIDE5Ni43My0xMTQuNDRaIi8+PHBhdGggZD0iTS01MDg3LTI3OTVjMS42Ny00LjcxIDUtNyAxMC03LS4xMSA0LjQ3LTUuNzggNi4wMy0xMCA3WiIvPjwvZz48L3N2Zz4=" alt="백마 엠블럼">
+      </div>
+      <h1 class="title-main">삼대오백마</h1>
+      <div class="title-sub">9사단 공식 헬스 동아리</div>
+      <div class="header-divider"></div>
+    </header>
+    <div class="year-tabs" id="yearTabs"></div>
+    <div class="month-tabs" id="monthTabs"></div>
+    <div class="sort-toggle">
+      <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계 순</button>
+      <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비 순</button>
+    </div>
+    <div id="rankList"><div class="status">기록을 불러오는 중...</div></div>
+    <button class="input-launch" onclick="openNewModal()">＋ 내 기록 입력하기</button>
+    <footer>백절불굴의 정신으로 무장하라</footer>
+  </div>
+
+  <div id="detailView" class="detail">
+    <button class="back-btn" onclick="showRanking()">← 랭킹으로</button>
+    <div class="profile-head"><div class="profile-name" id="pName"></div><div class="profile-rank" id="pRank"></div></div>
+    <div class="stat-row" id="pStats"></div>
+
+    <div class="detail-tabs">
+      <button class="detail-tab active" id="tabTraining" onclick="switchTab('training')">📒 내 훈련</button>
+      <button class="detail-tab" id="tabOfficial" onclick="switchTab('official')">📊 공식 기록</button>
+    </div>
+
+    <div id="paneOfficial">
+      <div class="edit-row" id="pEditRow"></div>
+      <div class="section-label">📈 삼대운동 추이</div>
+      <div class="chart-card"><div class="chart-title">월별 삼대 기록 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
+      <div class="section-label">📊 인바디 추이</div>
+      <div class="chart-card"><div class="chart-title">골격근량 · 체지방률</div><div class="chart-wrap"><canvas id="bodyChart"></canvas></div></div>
+    </div>
+
+    <div id="paneTraining" style="display:none;">
+      <div class="section-label">📒 주간 훈련 일지 (벤치프레스)</div>
+      <div class="train-input-card">
+        <div class="train-suggest" id="trainSuggest"></div>
+        <div class="train-fields">
+          <input type="date" id="trainDate">
+          <input type="number" id="trainWeight" placeholder="중량(kg)" inputmode="decimal">
+          <span class="train-x">×</span>
+          <input type="number" id="trainReps" placeholder="횟수" inputmode="numeric">
+          <button class="train-save" onclick="saveTraining()">기록</button>
+        </div>
+        <div class="train-1rm" id="train1rm"></div>
+      </div>
+      <div class="chart-card"><div class="chart-title">날짜별 예상 1RM 추이 (kg)</div><div class="chart-wrap"><canvas id="trainChart"></canvas></div></div>
+      <div id="trainList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 입력 모달 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>기록 입력</h2>
+    <div class="sub">측정한 기록을 입력하면 랭킹에 바로 반영됩니다.</div>
+    <div class="field"><label>이름</label><select id="inName"></select></div>
+    <div class="grid3">
+      <div class="field"><label>연도</label><select id="inYear"></select></div>
+      <div class="field"><label>측정월</label><select id="inMonth"></select></div>
+      <div class="field"><label>체중 (kg)</label><input type="number" id="inWeight" inputmode="decimal"></div>
+    </div>
+    <!-- 벤치프레스 -->
+    <div class="lift-entry-block">
+      <div class="lift-entry-header">
+        <span class="lift-entry-name">벤치프레스</span>
+        <div class="lift-mode-toggle">
+          <button class="lift-mode-btn active" id="modeBenchDir" onclick="setLiftMode('Bench','direct')">직접</button>
+          <button class="lift-mode-btn" id="modeBenchRep" onclick="setLiftMode('Bench','rep')">횟수</button>
+        </div>
+      </div>
+      <div id="benchDirField"><div class="field"><input type="number" id="inBench" inputmode="decimal" placeholder="1RM (kg)"></div></div>
+      <div id="benchRepField" style="display:none;">
+        <div class="grid3">
+          <div class="field"><label>중량 (kg)</label><input type="number" id="repBenchKg" inputmode="decimal" placeholder="kg" oninput="previewRM('Bench')"></div>
+          <div class="field"><label>횟수 (회)</label><input type="number" id="repBenchRep" inputmode="numeric" placeholder="회" oninput="previewRM('Bench')"></div>
+          <div class="rep-result-cell" id="prevBench"><div class="rep-result-num">—</div><div class="rep-result-label">1RM</div></div>
+        </div>
+        <div class="input-warn" id="warnBench"></div>
+      </div>
+    </div>
+    <!-- 스쿼트 -->
+    <div class="lift-entry-block">
+      <div class="lift-entry-header">
+        <span class="lift-entry-name">스쿼트</span>
+        <div class="lift-mode-toggle">
+          <button class="lift-mode-btn active" id="modeSquatDir" onclick="setLiftMode('Squat','direct')">직접</button>
+          <button class="lift-mode-btn" id="modeSquatRep" onclick="setLiftMode('Squat','rep')">횟수</button>
+        </div>
+      </div>
+      <div id="squatDirField"><div class="field"><input type="number" id="inSquat" inputmode="decimal" placeholder="1RM (kg)"></div></div>
+      <div id="squatRepField" style="display:none;">
+        <div class="grid3">
+          <div class="field"><label>중량 (kg)</label><input type="number" id="repSquatKg" inputmode="decimal" placeholder="kg" oninput="previewRM('Squat')"></div>
+          <div class="field"><label>횟수 (회)</label><input type="number" id="repSquatRep" inputmode="numeric" placeholder="회" oninput="previewRM('Squat')"></div>
+          <div class="rep-result-cell" id="prevSquat"><div class="rep-result-num">—</div><div class="rep-result-label">1RM</div></div>
+        </div>
+        <div class="input-warn" id="warnSquat"></div>
+      </div>
+    </div>
+    <!-- 데드리프트 -->
+    <div class="lift-entry-block">
+      <div class="lift-entry-header">
+        <span class="lift-entry-name">데드리프트</span>
+        <div class="lift-mode-toggle">
+          <button class="lift-mode-btn active" id="modeDeadDir" onclick="setLiftMode('Dead','direct')">직접</button>
+          <button class="lift-mode-btn" id="modeDeadRep" onclick="setLiftMode('Dead','rep')">횟수</button>
+        </div>
+      </div>
+      <div id="deadDirField"><div class="field"><input type="number" id="inDead" inputmode="decimal" placeholder="1RM (kg)"></div></div>
+      <div id="deadRepField" style="display:none;">
+        <div class="grid3">
+          <div class="field"><label>중량 (kg)</label><input type="number" id="repDeadKg" inputmode="decimal" placeholder="kg" oninput="previewRM('Dead')"></div>
+          <div class="field"><label>횟수 (회)</label><input type="number" id="repDeadRep" inputmode="numeric" placeholder="회" oninput="previewRM('Dead')"></div>
+          <div class="rep-result-cell" id="prevDead"><div class="rep-result-num">—</div><div class="rep-result-label">1RM</div></div>
+        </div>
+        <div class="input-warn" id="warnDead"></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>골격근량 (kg) <span style="color:var(--text-dim);font-weight:400;">· 선택</span></label><input type="number" id="inMuscle" inputmode="decimal"></div>
+      <div class="field"><label>체지방률 (%) <span style="color:var(--text-dim);font-weight:400;">· 선택</span></label><input type="number" id="inFat" inputmode="decimal"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn btn-save" id="saveBtn" onclick="saveRecord()">저장</button>
+    </div>
+    <button class="modal-delete" id="modalDeleteBtn" onclick="deleteFromModal()">🗑️ 이 기록 삭제하기</button>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAHO7dPueyJL-4wEDQwqmWgMp7zzJLoGO4",
+  authDomain: "obaengma.firebaseapp.com",
+  projectId: "obaengma",
+  storageBucket: "obaengma.firebasestorage.app",
+  messagingSenderId: "735708832846",
+  appId: "1:735708832846:web:287dd6dedcf554aa054f1f",
+  measurementId: "G-GS92TRPC2X"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const recordsCol = collection(db, "records");
+const trainingCol = collection(db, "training");  // 주간 훈련 일지 (벤치)
+
+/* =====================================================
+   멤버 명단 — 실제 부원 이름으로 바꾸세요
+   (이름만 ""안에 넣고, 쉼표로 구분)
+===================================================== */
+const 멤버명단 = ["노재헌","이승민","장상훈","김태규","이동희","이시현","강승제","남윤호","서유찬","한재희","안서진","장성욱","조익태","신은수","호예권"];
+/* ===================================================== */
+
+const 월선택지 = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+const 시작연도 = 2026;
+// 시작연도부터 올해까지 연도 목록 (올해가 2026 이후면 자동 확장)
+function 연도선택지(){
+  const 올해 = new Date().getFullYear();
+  const 끝 = Math.max(올해, 시작연도);
+  const arr = [];
+  for(let y=시작연도; y<=끝; y++) arr.push(y);
+  return arr;
+}
+// 연도 없는 기존 기록은 2026으로 간주
+function 연도of(r){ return r.연도 || 시작연도; }
+
+let 기록목록 = [];   // Firebase에서 실시간으로 채워짐
+let 훈련목록 = [];   // 훈련 기록 [{이름,날짜,중량,횟수,...}]
+let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, bodyChartObj = null;
+
+// ── 드롭다운 채우기 ──
+document.getElementById('inName').innerHTML = 멤버명단.map(n=>`<option>${n}</option>`).join('');
+document.getElementById('inMonth').innerHTML = 월선택지.map(m=>`<option>${m}</option>`).join('');
+document.getElementById('inYear').innerHTML = 연도선택지().map(y=>`<option>${y}</option>`).join('');
+document.getElementById('inYear').value = Math.max(new Date().getFullYear(), 시작연도);
+// 측정월 기본값을 현재 달로
+document.getElementById('inMonth').value = (new Date().getMonth()+1)+"월";
+
+// ── Firebase 실시간 수신 ──
+onSnapshot(recordsCol, (snap)=>{
+  기록목록 = [];
+  snap.forEach(d => 기록목록.push({ ...d.data(), _id:d.id }));
+  화면갱신();
+});
+// 목표 실시간 수신 (문서 id = 멤버 이름)
+// 주간 훈련 일지 실시간 수신
+onSnapshot(trainingCol, (snap)=>{
+  훈련목록 = [];
+  snap.forEach(d => 훈련목록.push({ ...d.data(), _id:d.id }));
+  if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
+    showDetail(현재상세이름);
+  }
+});
+
+// ── 데이터 가공: 멤버별로 묶기 ──
+function 멤버별데이터(){
+  const map = {};
+  기록목록.forEach(r=>{
+    if(연도of(r) !== 현재연도) return;  // 현재 선택된 연도만
+    if(!map[r.이름]) map[r.이름] = { 이름:r.이름, 기록:[] };
+    map[r.이름].기록.push(r);
+  });
+  Object.values(map).forEach(m=>{
+    m.기록.sort((a,b)=>월선택지.indexOf(a.월)-월선택지.indexOf(b.월));
+  });
+  return Object.values(map);
+}
+// 기록이 있는 연도 목록
+function 데이터연도목록(){
+  const s=new Set(); 기록목록.forEach(r=>s.add(연도of(r)));
+  return [...s].sort((a,b)=>a-b);
+}
+function 월목록(){
+  const s=new Set();
+  기록목록.forEach(r=>{ if(r.월 && 연도of(r)===현재연도) s.add(r.월); });
+  return [...s].filter(m=>m && 월선택지.includes(m)).sort((a,b)=>월선택지.indexOf(a)-월선택지.indexOf(b));
+}
+function 해당월기록(m,월){ return m.기록.find(r=>r.월===월); }
+function 합계(r){ return r.스쿼트+r.벤치+r.데드; }
+function 상대점수(r){ return 합계(r)/r.체중; }
+// 전월 대비 삼대합계 증감 계산
+function 전월대비(member, 현재월){
+  const idx = 월선택지.indexOf(현재월);
+  const cur = member.기록.find(r=>r.월===현재월);
+  if(!cur) return null;
+  // 현재월보다 앞선 달 중 가장 최근 기록 찾기
+  let prev = null;
+  for(let i=idx-1; i>=0; i--){
+    const f = member.기록.find(r=>r.월===월선택지[i]);
+    if(f){ prev = f; break; }
+  }
+  if(!prev) return null;
+  return 합계(cur) - 합계(prev);
+}
+
+function 화면갱신(){
+  const years = 데이터연도목록();
+  // 기록이 하나도 없을 때
+  if(years.length===0){
+    document.getElementById('rankList').innerHTML='<div class="status">아직 기록이 없습니다.<br>아래 버튼으로 첫 기록을 입력해보세요!</div>';
+    document.getElementById('yearTabs').innerHTML='';
+    document.getElementById('monthTabs').innerHTML='';
+    return;
+  }
+  // 현재 연도 정하기 (없거나 기록 없는 연도면 가장 최근 연도로)
+  if(!현재연도 || !years.includes(현재연도)) 현재연도 = years[years.length-1];
+  // 연도 탭 그리기
+  document.getElementById('yearTabs').innerHTML = years.map(y=>
+    `<div class="year-tab ${y===현재연도?'active':''}" onclick="selectYear(${y})">${y} 시즌</div>`).join('');
+  // 그 연도의 월 탭 그리기
+  const tabs = 월목록();
+  if(tabs.length===0){
+    document.getElementById('rankList').innerHTML='<div class="status">이 시즌 기록이 없습니다.</div>';
+    document.getElementById('monthTabs').innerHTML='';
+    return;
+  }
+  if(!현재월 || !tabs.includes(현재월)) 현재월 = tabs[tabs.length-1];
+  document.getElementById('monthTabs').innerHTML = tabs.map(m=>
+    `<div class="month-tab ${m===현재월?'active':''}" onclick="selectMonth('${m}')">${m}</div>`).join('');
+  랭킹그리기();
+}
+window.selectYear = function(y){
+  현재연도 = y;
+  현재월 = null;  // 연도 바뀌면 월은 그 연도 최신으로 다시 잡힘
+  화면갱신();
+}
+window.selectMonth = function(m){
+  현재월=m;
+  document.querySelectorAll('.month-tab').forEach(t=>t.classList.toggle('active',t.textContent===m));
+  랭킹그리기();
+}
+window.setSort = function(s){
+  현재정렬=s;
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===s));
+  랭킹그리기();
+}
+function 랭킹그리기(){
+  const members = 멤버별데이터();
+  let list = members.map(m=>({member:m,rec:해당월기록(m,현재월)})).filter(x=>x.rec);
+  list.sort((a,b)=>현재정렬==='total'?합계(b.rec)-합계(a.rec):상대점수(b.rec)-상대점수(a.rec));
+  if(list.length===0){ document.getElementById('rankList').innerHTML='<div class="status">이 달 기록이 없습니다.</div>'; return; }
+  document.getElementById('rankList').innerHTML = list.map((x,i)=>{
+    const topClass=i<3?`top${i+1}`:'';
+    const medal=['🥇','🥈','🥉'][i]||(i+1);
+    const score=상대점수(x.rec).toFixed(2);
+    const mainNum=현재정렬==='total'?합계(x.rec):score;
+    const mainUnit=현재정렬==='total'?'kg':'점';
+    // 전월 대비 증감 화살표
+    const diff=전월대비(x.member,현재월);
+    let diffHtml='';
+    if(diff!==null && diff>0) diffHtml=`<span class="diff up">▲${diff}</span>`;
+    else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.abs(diff)}</span>`;
+    else if(diff!==null && diff===0) diffHtml=`<span class="diff same">―</span>`;
+    return `<div class="rank-card ${topClass}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
+        <div class="rank-num">${medal}</div>
+        <div class="rank-info"><div class="rank-name">${x.member.이름} ${diffHtml}</div>
+        <div class="rank-detail">체중 ${x.rec.체중}kg · 상대점수 ${score}</div></div>
+        <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div></div>
+        <div class="chevron">›</div></div>`;
+  }).join('');
+}
+window.showDetail = function(이름){
+  const 같은사람갱신 = (현재상세이름===이름 && document.getElementById('detailView').classList.contains('show'));
+  현재상세이름 = 이름;
+  // 새로 들어올 땐 공식 기록부터, 데이터 갱신으로 다시 그릴 땐 보던 탭 유지
+  switchTab(같은사람갱신 ? 현재탭 : 'training');
+  const members = 멤버별데이터();
+  const member=members.find(m=>m.이름===이름); if(!member)return;
+  document.getElementById('rankingView').style.display='none';
+  document.getElementById('detailView').classList.add('show');
+  window.scrollTo(0,0);
+  document.getElementById('pName').textContent=이름;
+  let list=members.map(m=>({m,rec:해당월기록(m,현재월)})).filter(x=>x.rec).sort((a,b)=>합계(b.rec)-합계(a.rec));
+  const ri=list.findIndex(x=>x.m.이름===이름);
+  document.getElementById('pRank').textContent = ri>=0?`${현재월} ${ri+1}위`:'기록 없음';
+  const latest=member.기록[member.기록.length-1];
+  document.getElementById('pStats').innerHTML=`
+    <div class="stat-box"><div class="label">삼대합계</div><div class="value">${합계(latest)}<small>kg</small></div></div>
+    <div class="stat-box"><div class="label">골격근량</div><div class="value">${latest.골격근량==null?'-':latest.골격근량}<small>${latest.골격근량==null?'':'kg'}</small></div></div>
+    <div class="stat-box"><div class="label">체지방률</div><div class="value">${latest.체지방률==null?'-':latest.체지방률}<small>${latest.체지방률==null?'':'%'}</small></div></div>`;
+  // 기록 수정 버튼 (삭제는 수정 창 안에 있음)
+  // 기록 수정 버튼 (공식 기록 탭 안)
+  document.getElementById('pEditRow').innerHTML =
+    `<button class="edit-btn" onclick="editRecord('${이름}')">✏️ 공식 기록 수정</button>`;
+  그래프그리기(member);
+  훈련일지그리기(이름);
+}
+window.switchTab = function(tab){
+  현재탭 = tab;
+  const isOfficial = tab==='official';
+  document.getElementById('paneOfficial').style.display = isOfficial?'block':'none';
+  document.getElementById('paneTraining').style.display = isOfficial?'none':'block';
+  document.getElementById('tabOfficial').classList.toggle('active', isOfficial);
+  document.getElementById('tabTraining').classList.toggle('active', !isOfficial);
+  // 숨겨졌다 나타난 그래프는 크기가 틀어질 수 있어 다시 그려줌
+  setTimeout(()=>{
+    if(isOfficial){ if(liftChartObj)liftChartObj.resize(); if(bodyChartObj)bodyChartObj.resize(); }
+    else { if(trainChartObj)trainChartObj.resize(); }
+  }, 50);
+}
+window.showRanking = function(){
+  document.getElementById('detailView').classList.remove('show');
+  document.getElementById('rankingView').style.display='block';
+}
+// ── 주간 훈련 일지 ──
+const 벤치목표회수 = 8;  // 8회 찍으면 다음주 무게 올림
+let trainChartObj = null;
+
+function 추정1RM(중량, 횟수){
+  // Epley 공식
+  return Math.round(중량 * (1 + 0.0333 * 횟수) * 10) / 10;
+}
+
+function 훈련일지그리기(이름){
+  // 이 사람 기록만, 날짜 순으로 정렬
+  const 내훈련 = 훈련목록.filter(t=>t.이름===이름)
+    .sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+
+  // 날짜 입력칸 기본값: 오늘
+  const dateInput = document.getElementById('trainDate');
+  if(!dateInput.value){
+    const t = new Date();
+    dateInput.value = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+  }
+
+  // 다음주 제안 계산
+  const suggestEl = document.getElementById('trainSuggest');
+  if(내훈련.length>0){
+    const last = 내훈련[내훈련.length-1];
+    if(last.횟수 >= 벤치목표회수){
+      // 8회 달성 → 무게 +2.5kg, 다시 5회부터
+      suggestEl.innerHTML = `💡 지난주 ${last.중량}kg × ${last.횟수}회 성공! 🎉<br>이번주 제안: <b>${last.중량+5}kg × 5회</b> (무게 올리기!) 🔥`;
+    } else {
+      // 아직 8회 못 채움 → 같은 무게로 1회 더
+      suggestEl.innerHTML = `💡 지난주 ${last.중량}kg × ${last.횟수}회<br>이번주 제안: <b>${last.중량}kg × ${last.횟수+1}회</b> 도전! 💪`;
+    }
+  } else {
+    suggestEl.innerHTML = `💡 첫 기록을 남겨봐! 중량 × 횟수를 입력하면 다음주 제안을 해줄게 😎`;
+  }
+
+  // 실시간 1RM 미리보기 (입력값 바뀔 때)
+  function update1rm(){
+    const w = parseFloat(document.getElementById('trainWeight').value);
+    const r = parseInt(document.getElementById('trainReps').value);
+    const el = document.getElementById('train1rm');
+    if(!isNaN(w) && !isNaN(r) && w>0 && r>0){
+      el.innerHTML = `예상 1RM <b>${추정1RM(w,r)}kg</b>`;
+    } else { el.innerHTML=''; }
+  }
+  document.getElementById('trainWeight').oninput = update1rm;
+  document.getElementById('trainReps').oninput = update1rm;
+  document.getElementById('train1rm').innerHTML='';
+
+  // 그래프 (날짜별 예상 1RM)
+  const labels = 내훈련.map(t=>{
+    const p=(t.날짜||'').split('-'); return p.length===3?`${p[1]}/${p[2]}`:t.날짜;
+  });
+  const rmData = 내훈련.map(t=>추정1RM(t.중량,t.횟수));
+  const css=getComputedStyle(document.documentElement);
+  const blue=css.getPropertyValue('--blue-bright').trim();
+  const textDim=css.getPropertyValue('--text-dim').trim();
+  const line=css.getPropertyValue('--line').trim();
+  if(trainChartObj)trainChartObj.destroy();
+  trainChartObj=new Chart(document.getElementById('trainChart'),{type:'line',
+    data:{labels,datasets:[{label:'예상 1RM',data:rmData,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
+      scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}}});
+
+  // 기록 목록 (최신순)
+  const listEl = document.getElementById('trainList');
+  listEl.innerHTML = [...내훈련].reverse().map(t=>
+    `<div class="train-log">
+      <span class="wk">${(t.날짜||'').replaceAll('-','/')}</span>
+      <span class="detail">${t.중량}kg × ${t.횟수}회</span>
+      <span class="rm">1RM ${추정1RM(t.중량,t.횟수)}kg</span>
+      <span class="del-x" onclick="deleteTraining('${t._id}')">×</span>
+    </div>`).join('');
+}
+
+window.saveTraining = async function(){
+  const 이름 = 현재상세이름;
+  const 날짜 = document.getElementById('trainDate').value;
+  const 중량 = parseFloat(document.getElementById('trainWeight').value);
+  const 횟수 = parseInt(document.getElementById('trainReps').value);
+  if(!날짜){ alert("날짜를 선택해줘!"); return; }
+  if(isNaN(중량)||isNaN(횟수)||중량<=0||횟수<=0){ alert("중량과 횟수를 입력해줘!"); return; }
+  try{
+    // 같은 사람+같은 날짜면 덮어쓰기
+    const 기존 = 훈련목록.find(t=>t.이름===이름 && t.날짜===날짜);
+    const 데이터 = {이름,날짜,중량,횟수,등록시각:Date.now()};
+    if(기존){
+      await setDoc(doc(db,"training",기존._id), 데이터);
+    } else {
+      await addDoc(trainingCol, 데이터);
+    }
+    document.getElementById('trainWeight').value='';
+    document.getElementById('trainReps').value='';
+    document.getElementById('train1rm').innerHTML='';
+  }catch(e){ alert("저장 실패: "+e.message); }
+}
+
+window.deleteTraining = async function(id){
+  if(!confirm("이 기록을 삭제할까?")) return;
+  try{ await deleteDoc(doc(db,"training",id)); }
+  catch(e){ alert("삭제 실패: "+e.message); }
+}
+
+function 그래프그리기(member){
+  const 월s=member.기록.map(r=>r.월);
+  const css=getComputedStyle(document.documentElement);
+  const blue=css.getPropertyValue('--blue-bright').trim();
+  const gold=css.getPropertyValue('--gold').trim();
+  const silver=css.getPropertyValue('--silver').trim();
+  const textDim=css.getPropertyValue('--text-dim').trim();
+  const line=css.getPropertyValue('--line').trim();
+  const opts={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
+    scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}};
+  if(liftChartObj)liftChartObj.destroy();
+  liftChartObj=new Chart(document.getElementById('liftChart'),{type:'line',
+    data:{labels:월s,datasets:[
+      {label:'삼대합계',data:member.기록.map(r=>합계(r)),borderColor:'#ff4d6d',backgroundColor:'#ff4d6d',tension:0.3,borderWidth:3,pointRadius:6,pointStyle:'circle'},
+      {label:'스쿼트',data:member.기록.map(r=>r.스쿼트),borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:2,pointRadius:3},
+      {label:'벤치',data:member.기록.map(r=>r.벤치),borderColor:gold,backgroundColor:gold,tension:0.3,borderWidth:2,pointRadius:3},
+      {label:'데드',data:member.기록.map(r=>r.데드),borderColor:silver,backgroundColor:silver,tension:0.3,borderWidth:2,pointRadius:3},
+    ]},options:opts});
+  if(bodyChartObj)bodyChartObj.destroy();
+  bodyChartObj=new Chart(document.getElementById('bodyChart'),{type:'line',
+    data:{labels:월s,datasets:[
+      {label:'골격근량(kg)',data:member.기록.map(r=>r.골격근량),borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:4,yAxisID:'y',spanGaps:true},
+      {label:'체지방률(%)',data:member.기록.map(r=>r.체지방률),borderColor:'#ff9f40',backgroundColor:'#ff9f40',tension:0.3,borderWidth:3,pointRadius:4,yAxisID:'y1',spanGaps:true},
+    ]},options:{...opts,scales:{x:{ticks:{color:textDim},grid:{color:line}},
+      y:{position:'left',ticks:{color:textDim},grid:{color:line}},
+      y1:{position:'right',ticks:{color:textDim},grid:{drawOnChartArea:false}}}}});
+}
+
+// ── 입력 모달 ──
+window.openModal = function(){ document.getElementById('modalBg').classList.add('show'); }
+let 수정대상이름 = null;  // 수정 모드에서 누구 기록인지 기억
+window.openNewModal = function(){
+  // 새 입력: 월 자동로딩 해제 + 입력칸 비우기 + 삭제버튼 숨김
+  수정대상이름 = null;
+  document.getElementById('inMonth').onchange = null;
+  document.getElementById('inYear').onchange = null;
+  document.getElementById('inMonth').value = (new Date().getMonth()+1)+"월";
+  ['inWeight','inSquat','inBench','inDead','inMuscle','inFat'].forEach(id=>document.getElementById(id).value='');
+  ['repBenchKg','repBenchRep','repSquatKg','repSquatRep','repDeadKg','repDeadRep'].forEach(id=>document.getElementById(id).value='');
+  ['prevBench','prevSquat','prevDead'].forEach(id=>{document.getElementById(id).innerHTML='<div class="rep-result-num">—</div><div class="rep-result-label">1RM</div>';});
+  ['warnBench','warnSquat','warnDead'].forEach(id=>{document.getElementById(id).classList.remove('show');});
+  resetAllLiftModes();
+  document.getElementById('modalDeleteBtn').style.display = 'none';
+  openModal();
+}
+window.closeModal = function(){ document.getElementById('modalBg').classList.remove('show'); }
+// 1RM 공식
+function calc1RM(kg, rep){
+  if(rep===1) return kg;
+  if(rep<=5) return Math.round(kg*(1+0.0333*rep));
+  return Math.round(kg*(1+rep/30));
+}
+
+// 종목별 모드
+const 리프트모드={Bench:'direct',Squat:'direct',Dead:'direct'};
+const 리프트맵={Bench:'bench',Squat:'squat',Dead:'dead'};
+
+window.setLiftMode=function(lift,mode){
+  리프트모드[lift]=mode;
+  const key=리프트맵[lift];
+  document.getElementById('mode'+lift+'Dir').classList.toggle('active',mode==='direct');
+  document.getElementById('mode'+lift+'Rep').classList.toggle('active',mode==='rep');
+  document.getElementById(key+'DirField').style.display=mode==='direct'?'block':'none';
+  document.getElementById(key+'RepField').style.display=mode==='rep'?'block':'none';
+}
+
+function resetAllLiftModes(){
+  ['Bench','Squat','Dead'].forEach(l=>setLiftMode(l,'direct'));
+}
+
+window.previewRM=function(lift){
+  const kg=parseFloat(document.getElementById('rep'+lift+'Kg').value);
+  const rep=parseInt(document.getElementById('rep'+lift+'Rep').value);
+  const prev=document.getElementById('prev'+lift);
+  const warn=document.getElementById('warn'+lift);
+  warn.classList.remove('show');
+  if(isNaN(kg)||isNaN(rep)){
+    prev.innerHTML='<div class="rep-result-num">—</div><div class="rep-result-label">1RM</div>';
+    return;
+  }
+  if(rep>=13){
+    prev.innerHTML='<div class="rep-result-num" style="color:#f87171;">✕</div><div class="rep-result-label">1RM</div>';
+    warn.textContent='13회 이상은 근지구력 영역으로 저장이 제한됩니다.';
+    warn.classList.add('show'); return;
+  }
+  if(rep<1){prev.innerHTML='<div class="rep-result-num">—</div><div class="rep-result-label">1RM</div>';return;}
+  const rm=calc1RM(kg,rep);
+  prev.innerHTML='<div class="rep-result-num">'+rm+'</div><div class="rep-result-label">1RM</div>';
+}
+
+function getLiftVal(lift,name){
+  if(리프트모드[lift]==='rep'){
+    const kg=parseFloat(document.getElementById('rep'+lift+'Kg').value);
+    const rep=parseInt(document.getElementById('rep'+lift+'Rep').value);
+    if(isNaN(kg)||isNaN(rep)){alert(name+' 중량과 횟수를 모두 입력해주세요!');return null;}
+    if(rep>=13){alert(name+': 13회 이상은 근지구력 영역으로 저장이 제한됩니다.');return null;}
+    if(rep<1){alert(name+' 횟수를 1 이상 입력해주세요!');return null;}
+    return calc1RM(kg,rep);
+  }
+  return parseFloat(document.getElementById('in'+lift).value);
+}
+
+window.saveRecord = async function(){
+  const 이름 = document.getElementById('inName').value;
+  const 연도 = parseInt(document.getElementById('inYear').value);
+  const 월 = document.getElementById('inMonth').value;
+  const 체중 = parseFloat(document.getElementById('inWeight').value);
+  const 벤치 = getLiftVal('Bench','벤치프레스'); if(벤치===null) return;
+  const 스쿼트 = getLiftVal('Squat','스쿼트'); if(스쿼트===null) return;
+  const 데드 = getLiftVal('Dead','데드리프트'); if(데드===null) return;
+  const 골격근량입력 = document.getElementById('inMuscle').value;
+  const 체지방률입력 = document.getElementById('inFat').value;
+  // 삼대운동 칸은 필수, 인바디(골격근량·체지방률)는 선택
+  if([체중,스쿼트,벤치,데드].some(v=>isNaN(v))){
+    alert("체중·스쿼트·벤치·데드는 꼭 입력해주세요!"); return;
+  }
+  // 인바디는 비어있으면 null로 저장 (나중에 측정 후 다시 입력 가능)
+  const 골격근량 = 골격근량입력==='' ? null : parseFloat(골격근량입력);
+  const 체지방률 = 체지방률입력==='' ? null : parseFloat(체지방률입력);
+  const btn=document.getElementById('saveBtn');
+  btn.textContent="저장 중..."; btn.disabled=true;
+  const 데이터 = {이름,연도,월,체중,스쿼트,벤치,데드,골격근량,체지방률,등록시각:Date.now()};
+  try{
+    // 같은 이름+월 기록이 이미 있으면 덮어쓰기 (중복 방지)
+    const 기존 = 기록목록.find(r=>r.이름===이름 && 연도of(r)===연도 && r.월===월);
+    if(기존){
+      await setDoc(doc(db,"records",기존._id), 데이터);
+    }else{
+      await addDoc(recordsCol, 데이터);
+    }
+    closeModal();
+    ['inWeight','inSquat','inBench','inDead','inMuscle','inFat'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){
+    alert("저장 실패: "+e.message);
+  }
+  btn.textContent="저장"; btn.disabled=false;
+}
+
+// ── 기록 삭제 ──
+window.deleteRecord = async function(이름, 연도, 월){
+  if(!confirm(`${이름}님의 ${연도}년 ${월} 기록을 삭제할까요?`)) return;
+  const 대상 = 기록목록.find(r=>r.이름===이름 && 연도of(r)===연도 && r.월===월);
+  if(!대상) return;
+  try{
+    await deleteDoc(doc(db,"records",대상._id));
+  }catch(e){ alert("삭제 실패: "+e.message); }
+}
+
+// ── 수정 창 안에서 삭제 ──
+window.deleteFromModal = async function(){
+  const 이름 = 수정대상이름 || document.getElementById('inName').value;
+  const 연도 = parseInt(document.getElementById('inYear').value);
+  const 월 = document.getElementById('inMonth').value;
+  await deleteRecord(이름, 연도, 월);
+  closeModal();
+}
+
+// ── 기록 수정 (입력창에 기존 값 채워서 열기) ──
+window.editRecord = function(이름){
+  수정대상이름 = 이름;
+  document.getElementById("modalDeleteBtn").style.display = "block";
+  // 지금 보고 있는 연도의 기록만 대상으로
+  const 내기록 = 기록목록.filter(r=>r.이름===이름 && 연도of(r)===현재연도)
+    .sort((a,b)=>월선택지.indexOf(a.월)-월선택지.indexOf(b.월));
+  let 대상 = 내기록.find(r=>r.월===현재월) || 내기록[내기록.length-1];
+  document.getElementById('inName').value = 이름;
+  document.getElementById('inYear').value = 현재연도;
+  if(대상){
+    document.getElementById('inMonth').value = 대상.월;
+    document.getElementById('inWeight').value = 대상.체중;
+    document.getElementById('inSquat').value = 대상.스쿼트;
+    document.getElementById('inBench').value = 대상.벤치;
+    document.getElementById('inDead').value = 대상.데드;
+    document.getElementById('inMuscle').value = 대상.골격근량==null?'':대상.골격근량;
+    document.getElementById('inFat').value = 대상.체지방률==null?'':대상.체지방률;
+  }
+  openModal();
+  // 연도/월을 바꾸면 그 시점 기록을 자동으로 불러오도록
+  function 자동로드(){
+    const y = parseInt(document.getElementById('inYear').value);
+    const m = document.getElementById('inMonth').value;
+    const r = 기록목록.find(x=>x.이름===이름 && 연도of(x)===y && x.월===m);
+    if(r){
+      document.getElementById('inWeight').value = r.체중;
+      document.getElementById('inSquat').value = r.스쿼트;
+      document.getElementById('inBench').value = r.벤치;
+      document.getElementById('inDead').value = r.데드;
+      document.getElementById('inMuscle').value = r.골격근량==null?'':r.골격근량;
+      document.getElementById('inFat').value = r.체지방률==null?'':r.체지방률;
+    }
+  }
+  document.getElementById('inMonth').onchange = 자동로드;
+  document.getElementById('inYear').onchange = 자동로드;
+}
+
+</script>
+</body>
+</html>
