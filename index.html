@@ -144,6 +144,10 @@
   .train-exercise-tabs::-webkit-scrollbar{display:none;}
   .ex-tab{flex-shrink:0;padding:8px 14px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
   .ex-tab.active{background:var(--blue);border-color:var(--blue-bright);color:#10141b;}
+  .train-exercise-select{margin-bottom:14px;}
+  .train-exercise-select select{width:100%;padding:11px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23dce3ee' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+  .train-exercise-select input{width:100%;margin-top:8px;padding:11px 12px;background:var(--bg);border:1px solid var(--blue-bright);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;box-sizing:border-box;}
+  .train-exercise-select input:focus{outline:none;}
   .train-suggest{font-size:13px;font-weight:700;color:var(--blue-bright);background:rgba(200,212,228,0.12);border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.5;}
   .train-fields{display:flex;align-items:center;gap:8px;}
   .train-fields select,.train-fields input{padding:11px 8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;min-width:0;}
@@ -271,7 +275,10 @@
     <div id="diaryContent">
       <div class="section-label">📒 주간 훈련 일지</div>
       <div class="train-input-card">
-        <div class="train-exercise-tabs" id="exerciseTabs"></div>
+        <div class="train-exercise-select">
+          <select id="exerciseSelect" onchange="onExerciseSelectChange(this.value)"></select>
+          <input type="text" id="customExerciseInput" placeholder="운동명을 직접 입력 (예: 풀업)" maxlength="20" style="display:none;" oninput="onCustomExerciseInput(this.value)">
+        </div>
         <div class="train-suggest" id="trainSuggest"></div>
         <div class="train-fields">
           <input type="date" id="trainDate">
@@ -409,7 +416,7 @@ import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, onSnapshot } 
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.10";
+const APP_VERSION = "2026.06.06.11";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -707,8 +714,13 @@ const 종목설정 = {
   'OHP':        { 목표회수:8, 증가:5, 시작회수:5 },
 };
 const 종목목록 = Object.keys(종목설정);
+const 기본종목설정 = { 목표회수:8, 증가:5, 시작회수:5 }; // 직접 입력 종목용 기본값
+const 직접입력값 = '__custom__';
 let 현재종목 = '벤치프레스';
+let 직접입력모드 = false;
 let trainChartObj = null;
+
+function escHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function 추정1RM(중량, 횟수){
   // 1회: 그대로 / 2~5회: 에플리 / 6회 이상: 웰던
@@ -718,16 +730,24 @@ function 추정1RM(중량, 횟수){
 }
 
 function 훈련일지그리기(이름){
-  // 종목 탭 그리기
-  document.getElementById('exerciseTabs').innerHTML = 종목목록.map(ex=>
-    `<button class="ex-tab ${ex===현재종목?'active':''}" onclick="selectExercise('${ex}')">${ex}</button>`).join('');
+  // 종목 드롭다운 그리기 (기본 종목 + 이 사람이 직접 입력한 종목 + '직접 입력' 옵션)
+  const 내커스텀종목 = [...new Set(
+    훈련목록.filter(t=>t.이름===이름 && t.종목 && !종목목록.includes(t.종목))
+            .map(t=>t.종목)
+  )];
+  const 옵션목록 = [...종목목록, ...내커스텀종목];
+  const sel = document.getElementById('exerciseSelect');
+  sel.innerHTML =
+    옵션목록.map(ex=>`<option value="${escHtml(ex)}" ${(!직접입력모드 && ex===현재종목)?'selected':''}>${escHtml(ex)}</option>`).join('')
+    + `<option value="${직접입력값}" ${직접입력모드?'selected':''}>✏️ 직접 입력</option>`;
+  document.getElementById('customExerciseInput').style.display = 직접입력모드 ? 'block' : 'none';
 
   // 이 사람 + 현재 종목 기록만, 날짜 순으로 정렬
   // (옛날 기록은 종목 필드가 없으니 벤치프레스로 간주)
   const 내훈련 = 훈련목록.filter(t=>t.이름===이름 && (t.종목||'벤치프레스')===현재종목)
     .sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
 
-  const 설정 = 종목설정[현재종목];
+  const 설정 = 종목설정[현재종목] || 기본종목설정;
 
   // 날짜 입력칸 기본값: 오늘
   const dateInput = document.getElementById('trainDate');
@@ -738,7 +758,9 @@ function 훈련일지그리기(이름){
 
   // 다음 훈련 제안 계산
   const suggestEl = document.getElementById('trainSuggest');
-  if(내훈련.length>0){
+  if(직접입력모드 && !현재종목){
+    suggestEl.innerHTML = `✏️ 위 칸에 운동명을 입력하면 그 운동의 기록과 그래프를 볼 수 있어요!`;
+  } else if(내훈련.length>0){
     const last = 내훈련[내훈련.length-1];
     if(last.횟수 >= 설정.목표회수){
       suggestEl.innerHTML = `💡 지난 훈련 ${last.중량}kg × ${last.횟수}회 성공! 🎉<br>다음 훈련 제안: <b>${last.중량+설정.증가}kg × ${설정.시작회수}회</b> (무게 올리기!) 🔥`;
@@ -798,11 +820,24 @@ function 훈련일지그리기(이름){
   }).join('');
 }
 
-window.selectExercise = function(ex){
-  현재종목 = ex;
+window.onExerciseSelectChange = function(val){
+  if(val === 직접입력값){
+    직접입력모드 = true;
+    현재종목 = document.getElementById('customExerciseInput').value.trim();
+  } else {
+    직접입력모드 = false;
+    현재종목 = val;
+  }
   document.getElementById('trainWeight').value='';
   document.getElementById('trainReps').value='';
   document.getElementById('train1rm').innerHTML='';
+  const 이름 = 일지대상 || 현재상세이름;
+  if(이름) 훈련일지그리기(이름);
+  if(직접입력모드) document.getElementById('customExerciseInput').focus();
+}
+
+window.onCustomExerciseInput = function(val){
+  현재종목 = val.trim();
   const 이름 = 일지대상 || 현재상세이름;
   if(이름) 훈련일지그리기(이름);
 }
@@ -813,6 +848,7 @@ window.saveTraining = async function(){
   const 날짜 = document.getElementById('trainDate').value;
   const 중량 = parseFloat(document.getElementById('trainWeight').value);
   const 횟수 = parseInt(document.getElementById('trainReps').value);
+  if(!종목){ alert("운동 종목을 선택하거나 직접 입력해줘!"); return; }
   if(!날짜){ alert("날짜를 선택해줘!"); return; }
   if(isNaN(중량)||isNaN(횟수)||중량<=0||횟수<=0){ alert("중량과 횟수를 입력해줘!"); return; }
   try{
