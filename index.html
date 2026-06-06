@@ -22,9 +22,9 @@
     --text:#f4f7fb; --text-dim:#7d8a9c; --line:#232c3a;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  #splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;animation:splashOut 0.5s ease-in 2.2s forwards;}
+  #splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-bottom:12vh;animation:splashOut 0.5s ease-in 2.2s forwards;}
   #splash.hide{display:none;}
-  .splash-logo{width:140px;height:140px;filter:drop-shadow(0 6px 24px rgba(59,130,246,0.5));animation:splashLogo 0.8s ease-out;}
+  .splash-logo{width:140px;height:140px;filter:drop-shadow(0 0 26px rgba(59,130,246,0.28)) drop-shadow(0 6px 14px rgba(0,0,0,0.45));animation:splashLogo 0.8s ease-out;}
   .splash-title{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:700;font-size:30px;letter-spacing:1px;color:var(--text);text-shadow:0 2px 16px rgba(59,130,246,0.4);animation:splashText 0.7s ease-out 0.25s backwards;}
   .splash-sub{font-size:14px;letter-spacing:4px;font-weight:700;color:var(--blue-bright);animation:splashText 0.7s ease-out 0.4s backwards;}
   @keyframes splashLogo{from{opacity:0;transform:scale(0.7);}to{opacity:1;transform:scale(1);}}
