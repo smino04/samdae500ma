@@ -18,6 +18,8 @@
 <meta name="apple-mobile-web-app-title" content="삼대오백마">
 <script>
   // 안드로이드 '설치앱'으로 켤 때만: OS 스플래시와 겹치지 않게 자체 스플래시 생략 (아이폰/브라우저는 그대로)
+  // + 스플래시는 '사이트에 새로 접속할 때'만 표시. 스와이프 뒤로가기 등으로 같은 세션 안에서
+  //   페이지가 다시 로드돼도 다시 뜨지 않도록 sessionStorage로 1회만 노출.
   (function(){
     var standalone = (window.matchMedia &&
         (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches))
@@ -25,6 +27,13 @@
     if(/Android/i.test(navigator.userAgent) && standalone){
       document.documentElement.classList.add('no-splash');
     }
+    try{
+      if(sessionStorage.getItem('splashSeen')){
+        document.documentElement.classList.add('no-splash');  // 이번 세션에 이미 봤으면 생략
+      } else {
+        sessionStorage.setItem('splashSeen','1');
+      }
+    }catch(e){}
   })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -501,7 +510,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.13";
+const APP_VERSION = "2026.06.06.14";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
