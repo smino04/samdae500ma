@@ -208,6 +208,41 @@
   .bottom-nav-btn .nav-label{font-size:11px;font-weight:700;font-family:'Noto Sans KR';}
   #diaryMemberSelect{width:100%;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;outline:none;}
   #diaryMemberSelect:focus{border-color:var(--blue-bright);}
+  /* 로그인 / 회원가입 화면 */
+  #authView{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
+  .auth-card{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 22px;text-align:center;}
+  .auth-title{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:700;font-size:28px;letter-spacing:1px;color:var(--text);}
+  .auth-sub{font-size:12px;letter-spacing:4px;font-weight:700;color:var(--blue-bright);margin-top:8px;}
+  .auth-tabs{display:flex;gap:8px;margin-bottom:18px;}
+  .auth-tab{flex:1;padding:11px;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .auth-tab.active{background:rgba(200,212,228,0.15);border-color:var(--blue-bright);color:var(--blue-bright);}
+  .auth-input{width:100%;box-sizing:border-box;padding:13px;margin-bottom:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;}
+  .auth-input:focus{outline:none;border-color:var(--blue-bright);}
+  select.auth-input{font-weight:700;cursor:pointer;}
+  .auth-hint{font-size:12px;color:var(--text-dim);text-align:left;margin:-2px 2px 10px;line-height:1.5;}
+  .auth-msg{min-height:18px;font-size:13px;font-weight:700;color:#f87171;margin-bottom:8px;text-align:left;line-height:1.5;}
+  .auth-msg.ok{color:var(--blue-bright);}
+  .auth-btn{width:100%;padding:14px;background:var(--blue);border:none;border-radius:10px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 0 16px var(--blue-glow);}
+  .auth-btn:disabled{opacity:0.6;cursor:default;}
+  .auth-btn-ghost{background:var(--panel-light);color:var(--text-dim);box-shadow:none;margin-top:10px;}
+  .auth-pending{font-size:14px;color:var(--text);line-height:1.7;background:rgba(200,212,228,0.1);border-radius:10px;padding:18px 14px;margin-bottom:6px;}
+  /* 계정 바 */
+  .acct-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;font-size:13px;color:var(--text-dim);}
+  .acct-bar #acctName{font-weight:700;color:var(--text);}
+  .acct-logout{padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;}
+  .acct-logout:active{background:var(--panel-light);}
+  /* 관리자 패널 */
+  .admin-card{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;}
+  .admin-card .ac-info{min-width:0;}
+  .admin-card .ac-name{font-size:15px;font-weight:700;color:var(--text);}
+  .admin-card .ac-name .ac-tag{font-size:11px;font-weight:700;color:#10141b;background:var(--gold);border-radius:5px;padding:1px 6px;margin-left:6px;}
+  .admin-card .ac-email{font-size:12px;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .admin-card .ac-btns{display:flex;gap:6px;flex-shrink:0;}
+  .ac-btn{padding:8px 12px;border:none;border-radius:8px;font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;}
+  .ac-approve{background:var(--blue);color:#10141b;}
+  .ac-reject{background:transparent;border:1px solid rgba(248,113,113,0.4);color:#f87171;}
+  .ac-empty{color:var(--text-dim);font-size:13px;padding:8px 2px 14px;}
+  .admin-badge{position:absolute;top:6px;right:50%;transform:translateX(22px);min-width:16px;height:16px;padding:0 4px;background:#ff4d6d;border-radius:9px;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
 </style>
 </head>
 <body>
@@ -217,7 +252,37 @@
   <div class="splash-title">삼대오백마</div>
   <div class="splash-sub">3대 500을 향하여</div>
 </div>
-<div class="app">
+
+<!-- 로그인 / 회원가입 화면 -->
+<div id="authView">
+  <div class="auth-card">
+    <div class="auth-title">삼대오백마</div>
+    <div class="auth-sub">3대 500을 향하여</div>
+    <div class="header-divider" style="margin-bottom:22px;"></div>
+
+    <div id="authForm">
+      <div class="auth-tabs">
+        <button id="authTabLogin" class="auth-tab active" onclick="setAuthMode('login')">로그인</button>
+        <button id="authTabSignup" class="auth-tab" onclick="setAuthMode('signup')">회원가입</button>
+      </div>
+      <input type="email" id="authEmail" class="auth-input" placeholder="이메일" autocomplete="email">
+      <input type="password" id="authPw" class="auth-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+      <div id="signupNameWrap" style="display:none;">
+        <select id="authName" class="auth-input"></select>
+        <div class="auth-hint">본인 이름을 선택하세요. 가입 후 관리자 승인을 받으면 입장할 수 있어요.</div>
+      </div>
+      <div class="auth-msg" id="authMsg"></div>
+      <button class="auth-btn" id="authSubmit" onclick="authSubmit()">로그인</button>
+    </div>
+
+    <div id="pendingBox" style="display:none;">
+      <div class="auth-pending">⏳ <b>가입 신청 완료!</b><br>관리자(신은수·이승민)의 승인을 기다리는 중입니다.<br>승인되면 자동으로 입장돼요.</div>
+      <button class="auth-btn auth-btn-ghost" onclick="로그아웃()">로그아웃</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" style="display:none;">
   <div id="rankingView">
         <header>
       <div class="emblem-wrap">
@@ -227,6 +292,7 @@
       <div class="title-sub">3대 500을 향하여</div>
       <div class="header-divider"></div>
     </header>
+    <div class="acct-bar"><span id="acctName"></span><button class="acct-logout" onclick="로그아웃()">로그아웃</button></div>
     <div class="sort-toggle">
       <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계 순</button>
       <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비 순</button>
@@ -280,7 +346,7 @@
           <input type="text" id="customExerciseInput" placeholder="운동명을 직접 입력 (예: 풀업)" maxlength="20" style="display:none;" oninput="onCustomExerciseInput(this.value)">
         </div>
         <div class="train-suggest" id="trainSuggest"></div>
-        <div class="train-fields">
+        <div class="train-fields" id="trainFields">
           <input type="date" id="trainDate">
           <input type="number" id="trainWeight" placeholder="중량(kg)" inputmode="decimal">
           <span class="train-x">×</span>
@@ -309,6 +375,20 @@
     </div>
   </div>
 
+  <!-- 관리자 뷰 -->
+  <div id="adminView" style="display:none;">
+    <header style="padding:24px 0 16px;text-align:center;">
+      <h1 class="title-main">🛡️ 관리자</h1>
+      <div class="title-sub">회원 승인 &amp; 관리</div>
+      <div class="header-divider"></div>
+    </header>
+    <div class="section-label">⏳ 가입 승인 대기</div>
+    <div id="adminPending"></div>
+    <div class="section-label" style="margin-top:18px;">👥 회원 목록</div>
+    <div id="adminMembers"></div>
+    <footer>백절불굴의 정신으로 무장하라</footer>
+  </div>
+
   <!-- 하단 고정 탭 -->
   <nav class="bottom-nav">
     <button class="bottom-nav-btn active" id="navRanking" onclick="switchMainTab('ranking')">
@@ -316,6 +396,10 @@
     </button>
     <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary')">
       <span class="nav-icon">📒</span><span class="nav-label">운동일지</span>
+    </button>
+    <button class="bottom-nav-btn" id="navAdmin" onclick="switchMainTab('admin')" style="display:none;position:relative;">
+      <span class="nav-icon">🛡️</span><span class="nav-label">관리자</span>
+      <span class="admin-badge" id="adminBadge" style="display:none;">0</span>
     </button>
   </nav>
 </div>
@@ -409,14 +493,15 @@
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 /* =====================================================
    자동 업데이트 감지
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.12";
+const APP_VERSION = "2026.06.06.13";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -440,9 +525,11 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 const recordsCol = collection(db, "records");
 const trainingCol = collection(db, "training");  // 주간 훈련 일지
 const quotesCol = collection(db, "quotes");  // 멤버별 명언
+const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
 
 /* =====================================================
    멤버 명단 — 실제 부원 이름으로 바꾸세요
@@ -467,7 +554,15 @@ function 연도of(r){ return r.연도 || 시작연도; }
 let 기록목록 = [];   // Firebase에서 실시간으로 채워짐
 let 훈련목록 = [];   // 훈련 기록 [{이름,날짜,중량,횟수,...}]
 let 명언목록 = {};   // { 이름: 명언 } (없으면 "직접 입력하세요" 안내)
+let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
+
+// ── 로그인 / 권한 상태 ──
+const 관리자이름 = ['신은수','이승민'];   // 이 이름으로 먼저 가입한 계정이 자동 관리자
+let 현재유저 = null;     // { uid, email, 이름, role:'admin'|'member', status:'pending'|'approved' }
+let 내문서구독 = null;   // 본인 users 문서 실시간 구독 해제 함수
+function 관리자인가(){ return !!(현재유저 && 현재유저.role==='admin'); }
+function 내권한(이름){ return !!(현재유저 && (현재유저.role==='admin' || 현재유저.이름===이름)); }
 
 // ── 드롭다운 채우기 ──
 document.getElementById('inName').innerHTML = [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option>${n}</option>`).join('');
@@ -477,35 +572,53 @@ document.getElementById('inYear').value = Math.max(new Date().getFullYear(), 시
 // 측정월 기본값을 현재 달로
 document.getElementById('inMonth').value = (new Date().getMonth()+1)+"월";
 
-// ── Firebase 실시간 수신 ──
-onSnapshot(recordsCol, (snap)=>{
-  기록목록 = [];
-  snap.forEach(d => 기록목록.push({ ...d.data(), _id:d.id }));
-  화면갱신();
-});
-// 목표 실시간 수신 (문서 id = 멤버 이름)
-// 주간 훈련 일지 실시간 수신
-onSnapshot(trainingCol, (snap)=>{
-  훈련목록 = [];
-  snap.forEach(d => 훈련목록.push({ ...d.data(), _id:d.id }));
-  if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
-    훈련일지그리기(일지대상);
-  }
-});
-// 명언 실시간 수신 (문서 id = 멤버 이름)
-onSnapshot(quotesCol, (snap)=>{
-  명언목록 = {};
-  snap.forEach(d => { 명언목록[d.id] = d.data().명언; });
-  // 개인 화면이 열려있으면 명언 갱신
-  if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
-    const q = 명언목록[현재상세이름];
-    const el = document.getElementById('pQuote');
-    if(el){
-      el.textContent = q || '+ 한마디를 입력하세요';
-      el.classList.toggle('empty', !q);
+// ── Firebase 실시간 수신 (로그인 승인 후 시작) ──
+let 구독함수들 = [];
+let 구독중 = false;
+function 데이터구독시작(){
+  if(구독중) return; 구독중 = true;
+  구독함수들.push(onSnapshot(recordsCol, (snap)=>{
+    기록목록 = [];
+    snap.forEach(d => 기록목록.push({ ...d.data(), _id:d.id }));
+    화면갱신();
+  }));
+  // 주간 훈련 일지 실시간 수신
+  구독함수들.push(onSnapshot(trainingCol, (snap)=>{
+    훈련목록 = [];
+    snap.forEach(d => 훈련목록.push({ ...d.data(), _id:d.id }));
+    if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
+      훈련일지그리기(일지대상);
     }
+  }));
+  // 명언 실시간 수신 (문서 id = 멤버 이름)
+  구독함수들.push(onSnapshot(quotesCol, (snap)=>{
+    명언목록 = {};
+    snap.forEach(d => { 명언목록[d.id] = d.data().명언; });
+    if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
+      const q = 명언목록[현재상세이름];
+      const el = document.getElementById('pQuote');
+      if(el){
+        el.textContent = q || (내권한(현재상세이름) ? '+ 한마디를 입력하세요' : '');
+        el.classList.toggle('empty', !q);
+      }
+    }
+  }));
+  // 회원 관리(관리자만 users 컬렉션 전체를 읽을 수 있음)
+  if(관리자인가()){
+    구독함수들.push(onSnapshot(usersCol, (snap)=>{
+      회원목록 = [];
+      snap.forEach(d => 회원목록.push({ ...d.data(), uid:d.id }));
+      const av = document.getElementById('adminView');
+      if(av && av.style.display==='block') 관리자화면그리기();
+      const badge = document.getElementById('adminBadge');
+      if(badge){ const p = 회원목록.filter(u=>u.status==='pending').length; badge.style.display = p>0?'flex':'none'; badge.textContent = p; }
+    }));
   }
-});
+}
+function 데이터구독중지(){
+  구독함수들.forEach(u=>{ try{ u(); }catch(e){} });
+  구독함수들 = []; 구독중 = false;
+}
 
 // ── 데이터 가공: 멤버별로 묶기 ──
 function 멤버별데이터(){
@@ -626,11 +739,13 @@ window.showDetail = function(이름){
   if(!이미열림){ try{ history.pushState({view:'detail'}, ''); }catch(e){} }
   window.scrollTo(0,0);
   document.getElementById('pName').textContent=이름;
-  // 명언 표시 (없으면 안내 문구)
+  const 권한 = 내권한(이름);
+  // 명언 표시 (없으면 안내 문구 — 본인/관리자만)
   const 내명언 = 명언목록[이름];
   const qEl = document.getElementById('pQuote');
-  qEl.textContent = 내명언 || '+ 한마디를 입력하세요';
+  qEl.textContent = 내명언 || (권한 ? '+ 한마디를 입력하세요' : '');
   qEl.classList.toggle('empty', !내명언);
+  qEl.style.cursor = 권한 ? 'pointer' : 'default';
   let list=members.map(m=>({m,rec:해당월기록(m,현재월)})).filter(x=>x.rec).sort((a,b)=>합계(b.rec)-합계(a.rec));
   const ri=list.findIndex(x=>x.m.이름===이름);
   document.getElementById('pRank').textContent = ri>=0?`${현재월} ${ri+1}위`:'기록 없음';
@@ -639,15 +754,16 @@ window.showDetail = function(이름){
     <div class="stat-box"><div class="label">삼대합계</div><div class="value">${합계(latest)}<small>kg</small></div></div>
     <div class="stat-box"><div class="label">골격근량</div><div class="value">${latest.골격근량==null?'-':latest.골격근량}<small>${latest.골격근량==null?'':'kg'}</small></div></div>
     <div class="stat-box"><div class="label">체지방률</div><div class="value">${latest.체지방률==null?'-':latest.체지방률}<small>${latest.체지방률==null?'':'%'}</small></div></div>`;
-  document.getElementById('pEditLift').innerHTML =
-    `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>`;
-  document.getElementById('pEditBody').innerHTML =
-    `<button class="edit-btn" onclick="editRecord('${이름}','body')">✏️ 인바디 기록 수정</button>`;
+  document.getElementById('pEditLift').innerHTML = 권한 ?
+    `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>` : '';
+  document.getElementById('pEditBody').innerHTML = 권한 ?
+    `<button class="edit-btn" onclick="editRecord('${이름}','body')">✏️ 인바디 기록 수정</button>` : '';
   그래프그리기(member);
   setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
 }
 window.editQuote = async function(){
   if(!현재상세이름) return;
+  if(!내권한(현재상세이름)){ alert('본인 명언만 수정할 수 있어요.'); return; }
   const 현재 = 명언목록[현재상세이름] || '';
   const 입력 = prompt(`${현재상세이름}님의 한마디를 입력하세요 💬\n(좌우명, 각오, 명언 등 자유롭게!)`, 현재);
   if(입력===null) return;  // 취소
@@ -708,13 +824,17 @@ window.switchMainTab = function(tab){
   if(document.getElementById('detailView').classList.contains('show') && history.state && history.state.view==='detail'){
     history.back();
   }
+  if(tab==='admin' && !관리자인가()){ tab='ranking'; 현재메인탭='ranking'; }  // 비관리자 차단
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 화면 바뀌면 토글 접기
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
+  const navAdmin = document.getElementById('navAdmin'); if(navAdmin) navAdmin.classList.toggle('active', tab==='admin');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'block':'none';
+  document.getElementById('adminView').style.display = tab==='admin'?'block':'none';
   window.scrollTo(0,0);
+  if(tab==='admin'){ 관리자화면그리기(); }
   if(tab==='diary'){
     // 멤버 드롭다운 채우기 (맨 위에 안내 옵션)
     const sel = document.getElementById('diaryMemberSelect');
@@ -722,7 +842,8 @@ window.switchMainTab = function(tab){
       sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
         [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option value="${n}">${n}</option>`).join('');
     }
-    // 아직 아무도 안 골랐으면 일지 내용 숨김
+    // 처음 들어오면 본인 일지를 기본으로 보여줌
+    if(!일지대상 && 현재유저){ 일지대상 = 현재유저.이름; }
     if(!일지대상){
       sel.value = '';
       document.getElementById('diaryContent').style.display = 'none';
@@ -784,6 +905,11 @@ function 훈련일지그리기(이름){
     + `<option value="${직접입력값}" ${직접입력모드?'selected':''}>✏️ 직접 입력</option>`;
   document.getElementById('customExerciseInput').style.display = 직접입력모드 ? 'block' : 'none';
 
+  // 권한: 본인(또는 관리자)만 기록 입력칸 표시, 그 외엔 보기 전용
+  const 일지권한 = 내권한(이름);
+  const tf = document.getElementById('trainFields'); if(tf) tf.style.display = 일지권한 ? 'flex' : 'none';
+  if(!일지권한){ const t1 = document.getElementById('train1rm'); if(t1) t1.innerHTML=''; }
+
   // 이 사람 + 현재 종목 기록만, 날짜 순으로 정렬
   // (옛날 기록은 종목 필드가 없으니 벤치프레스로 간주)
   const 내훈련 = 훈련목록.filter(t=>t.이름===이름 && (t.종목||'벤치프레스')===현재종목)
@@ -810,7 +936,9 @@ function 훈련일지그리기(이름){
       suggestEl.innerHTML = `💡 지난 훈련 ${last.중량}kg × ${last.횟수}회<br>다음 훈련 제안: <b>${last.중량}kg × ${last.횟수+1}회</b> 도전! (목표 ${설정.목표회수}회) 💪`;
     }
   } else {
-    suggestEl.innerHTML = `💡 <b>${현재종목}</b> 첫 기록을 남겨봐! (목표 ${설정.목표회수}회) 😎`;
+    suggestEl.innerHTML = 일지권한
+      ? `💡 <b>${현재종목}</b> 첫 기록을 남겨봐! (목표 ${설정.목표회수}회) 😎`
+      : `📊 아직 <b>${현재종목}</b> 기록이 없어요.`;
   }
 
   // 실시간 1RM 미리보기 (입력값 바뀔 때)
@@ -856,7 +984,7 @@ function 훈련일지그리기(이름){
       </div>
       <div class="train-log-right">
         <span class="rm">${rm표시}</span>
-        <button class="del-x" onclick="deleteTraining('${t._id}')" title="삭제">삭제</button>
+        ${일지권한 ? `<button class="del-x" onclick="deleteTraining('${t._id}')" title="삭제">삭제</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -886,6 +1014,7 @@ window.onCustomExerciseInput = function(val){
 
 window.saveTraining = async function(){
   const 이름 = 일지대상 || 현재상세이름;
+  if(!내권한(이름)){ alert('본인 운동일지에만 기록할 수 있어요.'); return; }
   const 종목 = 현재종목;
   const 날짜 = document.getElementById('trainDate').value;
   const 중량 = parseFloat(document.getElementById('trainWeight').value);
@@ -909,6 +1038,8 @@ window.saveTraining = async function(){
 }
 
 window.deleteTraining = async function(id){
+  const 대상 = 훈련목록.find(t=>t._id===id);
+  if(대상 && !내권한(대상.이름)){ alert('본인 운동일지만 삭제할 수 있어요.'); return; }
   if(!confirm("이 기록을 삭제할까?")) return;
   try{ await deleteDoc(doc(db,"training",id)); }
   catch(e){ alert("삭제 실패: "+e.message); }
@@ -992,6 +1123,10 @@ window.openNewModal = function(){
   // 새 입력: 월 자동로딩 해제 + 입력칸 비우기 + 삭제버튼 숨김
   수정대상이름 = null;
   모달그룹설정('all');
+  // 일반 회원은 본인 이름으로 고정, 관리자는 자유 선택
+  const inName = document.getElementById('inName');
+  if(현재유저 && !관리자인가()){ inName.value = 현재유저.이름; inName.disabled = true; }
+  else { inName.disabled = false; }
   document.getElementById('inMonth').onchange = null;
   document.getElementById('inYear').onchange = null;
   document.getElementById('inMonth').value = (new Date().getMonth()+1)+"월";
@@ -1062,6 +1197,7 @@ function getLiftVal(lift,name){
 
 window.saveRecord = async function(){
   const 이름 = document.getElementById('inName').value;
+  if(!내권한(이름)){ alert('본인 기록만 저장할 수 있어요.'); return; }
   const 연도 = parseInt(document.getElementById('inYear').value);
   const 월 = document.getElementById('inMonth').value;
   // 현재 어떤 그룹이 보이는지 확인
@@ -1121,6 +1257,7 @@ window.saveRecord = async function(){
 
 // ── 기록 삭제 ──
 window.deleteRecord = async function(이름, 연도, 월){
+  if(!내권한(이름)){ alert('본인 기록만 삭제할 수 있어요.'); return; }
   if(!confirm(`${이름}님의 ${연도}년 ${월} 기록을 삭제할까요?`)) return;
   const 대상 = 기록목록.find(r=>r.이름===이름 && 연도of(r)===연도 && r.월===월);
   if(!대상) return;
@@ -1148,6 +1285,7 @@ window.deleteFromModal = async function(){
 
 // ── 기록 수정 (입력창에 기존 값 채워서 열기) ──
 window.editRecord = function(이름, 모드){
+  if(!내권한(이름)){ alert('본인 기록만 수정할 수 있어요.'); return; }
   수정대상이름 = 이름;
   모달그룹설정(모드 || 'all');  // 삼대만 / 인바디만 / 전체
   document.getElementById("modalDeleteBtn").style.display = "block";
@@ -1184,6 +1322,204 @@ window.editRecord = function(이름, 모드){
   document.getElementById('inMonth').onchange = 자동로드;
   document.getElementById('inYear').onchange = 자동로드;
 }
+
+/* =====================================================
+   로그인 / 회원가입 / 권한 / 관리자
+===================================================== */
+// 회원가입 화면의 이름 드롭다운 채우기
+document.getElementById('authName').innerHTML =
+  '<option value="">이름 선택</option>' +
+  [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option value="${n}">${n}</option>`).join('');
+
+let authMode = 'login';
+let 회원가입중 = false;
+
+window.setAuthMode = function(mode){
+  authMode = mode;
+  document.getElementById('authTabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('authTabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('signupNameWrap').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('authSubmit').textContent = mode==='signup' ? '회원가입' : '로그인';
+  authMsg('');
+};
+function authMsg(text, ok){
+  const el = document.getElementById('authMsg');
+  el.textContent = text || ''; el.classList.toggle('ok', !!ok);
+}
+function authError한글(code){
+  const m = {
+    'auth/invalid-email':'이메일 형식이 올바르지 않습니다.',
+    'auth/missing-password':'비밀번호를 입력해주세요.',
+    'auth/weak-password':'비밀번호는 6자 이상이어야 합니다.',
+    'auth/email-already-in-use':'이미 가입된 이메일입니다. 로그인해주세요.',
+    'auth/invalid-credential':'이메일 또는 비밀번호가 올바르지 않습니다.',
+    'auth/wrong-password':'비밀번호가 올바르지 않습니다.',
+    'auth/user-not-found':'가입되지 않은 이메일입니다.',
+    'auth/too-many-requests':'시도가 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    'auth/operation-not-allowed':'이메일 로그인이 아직 활성화되지 않았습니다. 관리자에게 문의하세요.',
+    'auth/network-request-failed':'네트워크 오류입니다. 연결을 확인해주세요.'
+  };
+  return m[code] || ('오류가 발생했습니다: ' + code);
+}
+
+window.authSubmit = async function(){
+  const email = document.getElementById('authEmail').value.trim();
+  const pw = document.getElementById('authPw').value;
+  const btn = document.getElementById('authSubmit');
+  if(!email || !pw){ authMsg('이메일과 비밀번호를 입력해주세요.'); return; }
+  btn.disabled = true; authMsg('처리 중...', true);
+  try{
+    await setPersistence(auth, browserLocalPersistence);  // 같은 기기에서 로그인 유지
+    if(authMode === 'signup'){
+      const 이름 = document.getElementById('authName').value;
+      if(!멤버명단.includes(이름)){ authMsg('본인 이름을 선택해주세요.'); btn.disabled=false; return; }
+      회원가입중 = true;
+      const cred = await createUserWithEmailAndPassword(auth, email, pw);
+      // 이름 중복(이미 가입/신청) 확인 — 인증 후 조회
+      const snap = await getDocs(query(usersCol, where('이름','==',이름)));
+      if(!snap.empty){
+        try{ await deleteUser(cred.user); }catch(_){}
+        회원가입중 = false; btn.disabled = false;
+        authMsg(이름 + ' 이름은 이미 가입(또는 신청)되어 있습니다.');
+        return;
+      }
+      const isAdmin = 관리자이름.includes(이름);
+      await setDoc(doc(db,'users',cred.user.uid), {
+        email, 이름,
+        role: isAdmin ? 'admin' : 'member',
+        status: isAdmin ? 'approved' : 'pending',
+        가입시각: Date.now()
+      });
+      회원가입중 = false;
+      await 사용자라우팅(cred.user);
+    } else {
+      await signInWithEmailAndPassword(auth, email, pw);
+      // onAuthStateChanged → 사용자라우팅 에서 처리
+    }
+  }catch(e){
+    회원가입중 = false;
+    authMsg(authError한글(e.code || e.message));
+    btn.disabled = false;
+  }
+};
+
+window.로그아웃 = async function(){
+  try{ await signOut(auth); }catch(e){}
+  location.reload();
+};
+
+function 로그인화면표시(pending){
+  document.getElementById('authView').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('authForm').style.display = pending ? 'none' : 'block';
+  document.getElementById('pendingBox').style.display = pending ? 'block' : 'none';
+  if(!pending) document.getElementById('authSubmit').disabled = false;
+}
+function 앱표시(){
+  document.getElementById('authView').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+}
+function 권한UI적용(){
+  document.getElementById('navAdmin').style.display = 관리자인가() ? 'flex' : 'none';
+  const acct = document.getElementById('acctName');
+  if(acct) acct.textContent = 현재유저 ? (현재유저.이름 + (관리자인가() ? ' · 🛡️관리자' : '님')) : '';
+}
+
+// 로그인 상태 라우팅 (자동 로그인 유지 포함)
+async function 사용자라우팅(user){
+  if(내문서구독){ 내문서구독(); 내문서구독 = null; }
+  let snap;
+  try{ snap = await getDoc(doc(db,'users',user.uid)); }
+  catch(e){ 로그인화면표시(false); authMsg('정보를 불러오지 못했습니다: ' + (e.code||e.message)); return; }
+  if(!snap.exists()){
+    if(회원가입중) return;  // 가입 처리 중이면 대기
+    await signOut(auth); 로그인화면표시(false);
+    authMsg('회원 정보가 없습니다. 회원가입을 다시 진행해주세요.');
+    return;
+  }
+  현재유저 = { uid:user.uid, ...snap.data() };
+  // 본인 문서 실시간 감시 (승인/추방 즉시 반영)
+  내문서구독 = onSnapshot(doc(db,'users',user.uid), (d)=>{
+    if(!d.exists()){ alert('회원 자격이 해제되었습니다.'); window.로그아웃(); return; }
+    const prev = 현재유저 ? 현재유저.status : null;
+    const now = d.data().status;
+    현재유저 = { uid:user.uid, ...d.data() };
+    if(prev !== 'approved' && now === 'approved'){ location.reload(); return; }   // 승인되면 입장
+    if(prev === 'approved' && now !== 'approved'){ alert('회원 자격이 변경되었습니다.'); window.로그아웃(); }
+  });
+  if(현재유저.status !== 'approved'){
+    데이터구독중지();
+    로그인화면표시(true);   // 승인 대기 화면
+    return;
+  }
+  // 승인됨 → 입장
+  앱표시();
+  권한UI적용();
+  데이터구독시작();
+  // 일반 회원은 기록 입력 이름을 본인으로 고정
+  const inName = document.getElementById('inName');
+  if(!관리자인가()){ inName.value = 현재유저.이름; inName.disabled = true; }
+  else { inName.disabled = false; }
+}
+
+onAuthStateChanged(auth, (user)=>{
+  if(!user){
+    현재유저 = null;
+    if(내문서구독){ 내문서구독(); 내문서구독 = null; }
+    데이터구독중지();
+    setAuthMode('login');
+    로그인화면표시(false);
+    return;
+  }
+  사용자라우팅(user);
+});
+
+// ── 관리자 화면 ──
+function 관리자화면그리기(){
+  if(!관리자인가()) return;
+  const pendingEl = document.getElementById('adminPending');
+  const memberEl = document.getElementById('adminMembers');
+  const 대기 = 회원목록.filter(u=>u.status==='pending').sort((a,b)=>(a.가입시각||0)-(b.가입시각||0));
+  const 승인됨 = 회원목록.filter(u=>u.status==='approved').sort((a,b)=>a.이름.localeCompare(b.이름,'ko'));
+
+  pendingEl.innerHTML = 대기.length ? 대기.map(u=>`
+    <div class="admin-card">
+      <div class="ac-info">
+        <div class="ac-name">${escHtml(u.이름)}</div>
+        <div class="ac-email">${escHtml(u.email||'')}</div>
+      </div>
+      <div class="ac-btns">
+        <button class="ac-btn ac-approve" onclick="승인회원('${u.uid}')">승인</button>
+        <button class="ac-btn ac-reject" onclick="거절회원('${u.uid}','${escHtml(u.이름)}')">거절</button>
+      </div>
+    </div>`).join('') : `<div class="ac-empty">대기 중인 신청이 없습니다.</div>`;
+
+  memberEl.innerHTML = 승인됨.length ? 승인됨.map(u=>`
+    <div class="admin-card">
+      <div class="ac-info">
+        <div class="ac-name">${escHtml(u.이름)}${u.role==='admin'?'<span class="ac-tag">관리자</span>':''}</div>
+        <div class="ac-email">${escHtml(u.email||'')}</div>
+      </div>
+      <div class="ac-btns">
+        ${u.role==='admin' ? '' : `<button class="ac-btn ac-reject" onclick="추방회원('${u.uid}','${escHtml(u.이름)}')">추방</button>`}
+      </div>
+    </div>`).join('') : `<div class="ac-empty">승인된 회원이 없습니다.</div>`;
+}
+
+window.승인회원 = async function(uid){
+  try{ await setDoc(doc(db,'users',uid), { status:'approved' }, { merge:true }); }
+  catch(e){ alert('승인 실패: ' + (e.code||e.message)); }
+};
+window.거절회원 = async function(uid, 이름){
+  if(!confirm(`${이름}님의 가입 신청을 거절할까요?`)) return;
+  try{ await deleteDoc(doc(db,'users',uid)); }
+  catch(e){ alert('거절 실패: ' + (e.code||e.message)); }
+};
+window.추방회원 = async function(uid, 이름){
+  if(!confirm(`${이름}님을 회원에서 추방할까요?\n(로그인이 즉시 차단됩니다. 기존 기록은 유지됩니다.)`)) return;
+  try{ await deleteDoc(doc(db,'users',uid)); }
+  catch(e){ alert('추방 실패: ' + (e.code||e.message)); }
+};
 
 </script>
 <script>
