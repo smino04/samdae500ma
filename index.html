@@ -112,10 +112,14 @@
   .profile-head{text-align:center;margin-top:32px;margin-bottom:24px;}
   .profile-name{font-family:'Black Han Sans',sans-serif;font-size:32px;letter-spacing:3px;word-spacing:2px;}
   .profile-rank{display:inline-block;margin-top:8px;padding:5px 16px;background:var(--blue);border-radius:8px;font-size:13px;font-weight:700;color:#10141b;box-shadow:0 0 14px var(--blue-glow);}
-  .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;}
+  .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
   .badge.b300{color:var(--bronze);border-color:var(--bronze);background:rgba(224,137,83,0.12);}
   .badge.b400{color:var(--silver);border-color:var(--silver);background:rgba(196,204,214,0.12);}
   .badge.b500{color:var(--gold);border-color:var(--gold);background:rgba(255,200,61,0.14);}
+  .bhorse{display:inline-block;margin-right:2px;}
+  .b300 .bhorse{filter:brightness(0) saturate(100%) invert(58%) sepia(36%) saturate(958%) hue-rotate(338deg) brightness(91%) contrast(89%);}   /* 동 */
+  .b400 .bhorse{filter:brightness(0) saturate(100%) invert(85%) brightness(0.96);}                                                          /* 은 */
+  .b500 .bhorse{filter:brightness(0) saturate(100%) invert(78%) sepia(55%) saturate(900%) hue-rotate(357deg) brightness(102%) contrast(101%);} /* 금 */
   .profile-quote{display:block;margin:10px auto 14px;font-size:18px;font-weight:500;color:var(--text-dim);font-style:italic;cursor:pointer;line-height:1.5;transition:opacity 0.2s;}
   .profile-quote:active{opacity:0.6;}
   .profile-quote:not(.empty)::before{content:'“';}
@@ -345,7 +349,7 @@
     <div class="profile-head">
       <div class="profile-name" id="pName"></div>
       <div class="profile-quote" id="pQuote" onclick="editQuote()"></div>
-      <div class="profile-rank" id="pRank"></div><span id="pBadge"></span>
+      <div class="profile-rank" id="pRank"></div>
     </div>
     <div class="stat-row" id="pStats"></div>
 
@@ -569,7 +573,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.21";
+const APP_VERSION = "2026.06.06.22";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -716,9 +720,9 @@ function 합계(r){ return r.스쿼트+r.벤치+r.데드; }
 function 상대점수(r){ return 합계(r)/r.체중; }
 // 삼대합계 마일스톤 뱃지 (300/400/500)
 function 뱃지HTML(합계값){
-  if(합계값>=500) return `<span class="badge b500">🐎오백마</span>`;
-  if(합계값>=400) return `<span class="badge b400">🐎사백마</span>`;
-  if(합계값>=300) return `<span class="badge b300">🐎삼백마</span>`;
+  if(합계값>=500) return `<span class="badge b500"><span class="bhorse">🐎</span>오백마</span>`;
+  if(합계값>=400) return `<span class="badge b400"><span class="bhorse">🐎</span>사백마</span>`;
+  if(합계값>=300) return `<span class="badge b300"><span class="bhorse">🐎</span>삼백마</span>`;
   return '';
 }
 // 전월 대비 삼대합계 증감 계산
@@ -824,7 +828,8 @@ window.showDetail = function(이름){
   let list=members.map(m=>({m,rec:해당월기록(m,현재월)})).filter(x=>x.rec).sort((a,b)=>합계(b.rec)-합계(a.rec));
   const ri=list.findIndex(x=>x.m.이름===이름);
   document.getElementById('pRank').textContent = ri>=0?`${현재월} ${ri+1}위`:'기록 없음';
-  document.getElementById('pBadge').innerHTML = ri>=0 ? 뱃지HTML(합계(list[ri].rec)) : '';
+  // 이름 옆에 마일스톤 뱃지 표시
+  document.getElementById('pName').innerHTML = 이름 + (ri>=0 ? 뱃지HTML(합계(list[ri].rec)) : '');
   const latest=member.기록[member.기록.length-1];
   document.getElementById('pStats').innerHTML=`
     <div class="stat-box"><div class="label">삼대합계</div><div class="value">${합계(latest)}<small>kg</small></div></div>
