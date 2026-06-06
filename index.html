@@ -416,7 +416,7 @@ import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, onSnapshot } 
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.11";
+const APP_VERSION = "2026.06.06.12";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -617,9 +617,13 @@ window.showDetail = function(이름){
   현재상세이름 = 이름;
   const members = 멤버별데이터();
   const member=members.find(m=>m.이름===이름); if(!member)return;
+  const 이미열림 = document.getElementById('detailView').classList.contains('show');
   document.getElementById('rankingView').style.display='none';
   document.getElementById('diaryView').style.display='none';
   document.getElementById('detailView').classList.add('show');
+  // 뒤로가기(아이폰 스와이프/안드로이드 뒤로 버튼) 대응용 히스토리 추가
+  // (이미 열린 상태에서의 재렌더링은 중복 추가하지 않음)
+  if(!이미열림){ try{ history.pushState({view:'detail'}, ''); }catch(e){} }
   window.scrollTo(0,0);
   document.getElementById('pName').textContent=이름;
   // 명언 표시 (없으면 안내 문구)
@@ -652,7 +656,7 @@ window.editQuote = async function(){
     await setDoc(doc(db,"quotes",현재상세이름), { 명언 });
   }catch(e){ alert("저장 실패: "+e.message); }
 }
-window.showRanking = function(){
+function 개인화면닫기(){
   document.getElementById('detailView').classList.remove('show');
   if(현재메인탭==='diary'){
     document.getElementById('diaryView').style.display='block';
@@ -660,12 +664,50 @@ window.showRanking = function(){
     document.getElementById('rankingView').style.display='block';
   }
 }
+window.showRanking = function(){
+  // 히스토리에 쌓인 상태가 있으면 뒤로가기로 처리(아이폰 스와이프와 동일한 흐름)
+  if(history.state && history.state.view==='detail'){
+    history.back();
+  } else {
+    개인화면닫기();
+  }
+}
+// 뒤로가기(아이폰 가장자리 스와이프 / 안드로이드 뒤로 버튼) → 개인화면 닫기
+window.addEventListener('popstate', function(){
+  if(document.getElementById('detailView').classList.contains('show')){
+    개인화면닫기();
+  }
+});
+// 홈화면 설치(standalone) 앱에는 가장자리 스와이프 제스처가 없으므로 직접 구현:
+// 왼쪽 가장자리에서 오른쪽으로 스와이프하면 개인화면 → 이전 화면으로
+(function 스와이프뒤로(){
+  let x0=null, y0=null, t0=0;
+  const EDGE=40, DISTX=70, MAXY=55, MAXT=600;
+  const 열림 = ()=>document.getElementById('detailView').classList.contains('show');
+  document.addEventListener('touchstart', e=>{
+    if(!열림()){ x0=null; return; }
+    const t=e.touches[0];
+    if(t.clientX<=EDGE){ x0=t.clientX; y0=t.clientY; t0=Date.now(); }
+    else { x0=null; }
+  }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    if(x0===null) return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-x0, dy=Math.abs(t.clientY-y0), dt=Date.now()-t0;
+    x0=null;
+    if(dx>DISTX && dy<MAXY && dt<MAXT && 열림()){ showRanking(); }
+  }, {passive:true});
+})();
 
 // ── 메인 하단 탭 ──
 let 현재메인탭 = 'ranking';
 let 일지대상 = null;
 window.switchMainTab = function(tab){
   현재메인탭 = tab;
+  // 개인화면이 열린 채로 하단 탭을 누르면, 쌓아둔 뒤로가기 히스토리도 정리
+  if(document.getElementById('detailView').classList.contains('show') && history.state && history.state.view==='detail'){
+    history.back();
+  }
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 화면 바뀌면 토글 접기
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
