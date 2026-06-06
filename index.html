@@ -252,6 +252,25 @@
   .ac-reject{background:transparent;border:1px solid rgba(248,113,113,0.4);color:#f87171;}
   .ac-empty{color:var(--text-dim);font-size:13px;padding:8px 2px 14px;}
   .admin-badge{position:absolute;top:6px;right:50%;transform:translateX(22px);min-width:16px;height:16px;padding:0 4px;background:#ff4d6d;border-radius:9px;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  /* 계정 탭 */
+  .acct-info-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+  .acct-info-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px;color:var(--text-dim);border-bottom:1px solid var(--line);}
+  .acct-info-row:last-child{border-bottom:none;}
+  .acct-info-row b{color:var(--text);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;}
+  .acct-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:6px;}
+  .acct-input{width:100%;box-sizing:border-box;padding:12px;margin-bottom:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;}
+  .acct-input:focus{outline:none;border-color:var(--blue-bright);}
+  .acct-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin:0 0 12px;}
+  .acct-desc b{color:var(--text);}
+  .acct-msg{min-height:0;font-size:13px;font-weight:700;color:#f87171;line-height:1.5;margin-bottom:8px;}
+  .acct-msg:empty{margin-bottom:0;}
+  .acct-msg.ok{color:var(--blue-bright);}
+  .acct-btn{width:100%;padding:13px;background:var(--blue);border:none;border-radius:10px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;}
+  .acct-btn:disabled{opacity:0.6;cursor:default;}
+  .acct-btn-sub{background:var(--panel-light);color:var(--text-dim);}
+  .danger-label{color:#f87171;}
+  .danger-box{border-color:rgba(248,113,113,0.35);}
+  .danger-btn{background:#f87171;color:#1a0e0e;}
 </style>
 </head>
 <body>
@@ -381,17 +400,52 @@
     </div>
   </div>
 
-  <!-- 관리자 뷰 -->
-  <div id="adminView" style="display:none;">
+  <!-- 계정 뷰 -->
+  <div id="accountView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
-      <h1 class="title-main">🛡️ 관리자</h1>
-      <div class="title-sub">회원 승인 &amp; 관리</div>
+      <h1 class="title-main">👤 계정</h1>
+      <div class="title-sub">내 정보 &amp; 보안 설정</div>
       <div class="header-divider"></div>
     </header>
-    <div class="section-label">⏳ 가입 승인 대기</div>
-    <div id="adminPending"></div>
-    <div class="section-label" style="margin-top:18px;">👥 회원 목록</div>
-    <div id="adminMembers"></div>
+
+    <div class="acct-info-card">
+      <div class="acct-info-row"><span>이름</span><b id="accName">-</b></div>
+      <div class="acct-info-row"><span>이메일</span><b id="accEmail">-</b></div>
+      <div class="acct-info-row"><span>역할</span><b id="accRole">-</b></div>
+    </div>
+    <button class="acct-btn acct-btn-sub" onclick="로그아웃()">로그아웃</button>
+
+    <!-- 관리자 전용 -->
+    <div id="accountAdmin" style="display:none;">
+      <div class="section-label" style="margin-top:22px;">🛡️ 가입 승인 대기</div>
+      <div id="adminPending"></div>
+      <div class="section-label" style="margin-top:18px;">👥 회원 목록</div>
+      <div id="adminMembers"></div>
+    </div>
+
+    <div class="section-label" style="margin-top:22px;">🔒 비밀번호 변경</div>
+    <div class="acct-box">
+      <input type="password" id="curPw" class="acct-input" placeholder="현재 비밀번호" autocomplete="current-password">
+      <input type="password" id="newPw" class="acct-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
+      <input type="password" id="newPw2" class="acct-input" placeholder="새 비밀번호 확인" autocomplete="new-password">
+      <div class="acct-msg" id="pwMsg"></div>
+      <button class="acct-btn" onclick="비밀번호변경()">비밀번호 변경</button>
+    </div>
+
+    <div class="section-label">📧 비밀번호 재설정</div>
+    <div class="acct-box">
+      <p class="acct-desc">가입한 이메일로 재설정 링크를 보냅니다. 비밀번호가 기억나지 않을 때 사용하세요.</p>
+      <div class="acct-msg" id="resetMsg"></div>
+      <button class="acct-btn acct-btn-sub" onclick="비밀번호재설정()">재설정 메일 보내기</button>
+    </div>
+
+    <div class="section-label danger-label">⚠️ 회원 탈퇴</div>
+    <div class="acct-box danger-box">
+      <p class="acct-desc">계정과 내 모든 기록(삼대·운동일지·명언)이 <b>영구 삭제</b>되며 되돌릴 수 없습니다.</p>
+      <input type="password" id="delPw" class="acct-input" placeholder="현재 비밀번호 확인" autocomplete="current-password">
+      <div class="acct-msg" id="delMsg"></div>
+      <button class="acct-btn danger-btn" onclick="회원탈퇴()">회원 탈퇴</button>
+    </div>
   </div>
 
   <footer>백절불굴의 정신으로 무장하라</footer>
@@ -404,8 +458,8 @@
     <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary')">
       <span class="nav-icon">📒</span><span class="nav-label">운동일지</span>
     </button>
-    <button class="bottom-nav-btn" id="navAdmin" onclick="switchMainTab('admin')" style="display:none;position:relative;">
-      <span class="nav-icon">🛡️</span><span class="nav-label">관리자</span>
+    <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
+      <span class="nav-icon">👤</span><span class="nav-label">계정</span>
       <span class="admin-badge" id="adminBadge" style="display:none;">0</span>
     </button>
   </nav>
@@ -501,14 +555,14 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 /* =====================================================
    자동 업데이트 감지
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.19";
+const APP_VERSION = "2026.06.06.20";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -615,7 +669,7 @@ function 데이터구독시작(){
     구독함수들.push(onSnapshot(usersCol, (snap)=>{
       회원목록 = [];
       snap.forEach(d => 회원목록.push({ ...d.data(), uid:d.id }));
-      const av = document.getElementById('adminView');
+      const av = document.getElementById('accountView');
       if(av && av.style.display==='block') 관리자화면그리기();
       const badge = document.getElementById('adminBadge');
       if(badge){ const p = 회원목록.filter(u=>u.status==='pending').length; badge.style.display = p>0?'flex':'none'; badge.textContent = p; }
@@ -831,17 +885,16 @@ window.switchMainTab = function(tab){
   if(document.getElementById('detailView').classList.contains('show') && history.state && history.state.view==='detail'){
     history.back();
   }
-  if(tab==='admin' && !관리자인가()){ tab='ranking'; 현재메인탭='ranking'; }  // 비관리자 차단
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 화면 바뀌면 토글 접기
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
-  const navAdmin = document.getElementById('navAdmin'); if(navAdmin) navAdmin.classList.toggle('active', tab==='admin');
+  const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'block':'none';
-  document.getElementById('adminView').style.display = tab==='admin'?'block':'none';
+  document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
-  if(tab==='admin'){ 관리자화면그리기(); }
+  if(tab==='account'){ 계정화면그리기(); }
   if(tab==='diary'){
     // 멤버 드롭다운 채우기 (맨 위에 안내 옵션)
     const sel = document.getElementById('diaryMemberSelect');
@@ -1381,7 +1434,9 @@ function authError한글(code){
     'auth/user-not-found':'가입되지 않은 이메일입니다.',
     'auth/too-many-requests':'시도가 너무 많습니다. 잠시 후 다시 시도해주세요.',
     'auth/operation-not-allowed':'이메일 로그인이 아직 활성화되지 않았습니다. 관리자에게 문의하세요.',
-    'auth/network-request-failed':'네트워크 오류입니다. 연결을 확인해주세요.'
+    'auth/network-request-failed':'네트워크 오류입니다. 연결을 확인해주세요.',
+    'auth/requires-recent-login':'보안을 위해 다시 로그인한 뒤 시도해주세요.',
+    'auth/missing-email':'이메일 정보가 없습니다.'
   };
   return m[code] || ('오류가 발생했습니다: ' + code);
 }
@@ -1444,7 +1499,7 @@ function 앱표시(){
   document.getElementById('appRoot').style.display = 'flex';
 }
 function 권한UI적용(){
-  document.getElementById('navAdmin').style.display = 관리자인가() ? 'flex' : 'none';
+  // 계정 탭은 모두에게 보임. 관리자 배지는 관리자만.
   const acct = document.getElementById('acctName');
   if(acct) acct.textContent = 현재유저 ? (현재유저.이름 + (관리자인가() ? ' · 🛡️관리자' : '님')) : '';
 }
@@ -1543,6 +1598,78 @@ window.추방회원 = async function(uid, 이름){
   if(!confirm(`${이름}님을 회원에서 추방할까요?\n(로그인이 즉시 차단됩니다. 기존 기록은 유지됩니다.)`)) return;
   try{ await deleteDoc(doc(db,'users',uid)); }
   catch(e){ alert('추방 실패: ' + (e.code||e.message)); }
+};
+
+// ── 계정 탭 ──
+function 계정화면그리기(){
+  if(!현재유저) return;
+  document.getElementById('accName').textContent = 현재유저.이름 || '-';
+  document.getElementById('accEmail').textContent = 현재유저.email || '-';
+  document.getElementById('accRole').textContent = 관리자인가() ? '🛡️ 관리자' : '일반 회원';
+  // 입력칸/메시지 초기화
+  ['curPw','newPw','newPw2','delPw'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['pwMsg','resetMsg','delMsg'].forEach(id=>acctMsg(id,''));
+  // 관리자만 회원 관리 섹션 표시
+  document.getElementById('accountAdmin').style.display = 관리자인가() ? 'block' : 'none';
+  if(관리자인가()) 관리자화면그리기();
+}
+function acctMsg(id, text, ok){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = text || ''; el.classList.toggle('ok', !!ok);
+}
+
+window.비밀번호변경 = async function(){
+  const cur = document.getElementById('curPw').value;
+  const n1 = document.getElementById('newPw').value;
+  const n2 = document.getElementById('newPw2').value;
+  if(!cur){ acctMsg('pwMsg','현재 비밀번호를 입력해주세요.'); return; }
+  if(n1.length < 6){ acctMsg('pwMsg','새 비밀번호는 6자 이상이어야 합니다.'); return; }
+  if(n1 !== n2){ acctMsg('pwMsg','새 비밀번호가 서로 일치하지 않습니다.'); return; }
+  acctMsg('pwMsg','변경 중...', true);
+  try{
+    const user = auth.currentUser;
+    const cred = EmailAuthProvider.credential(user.email, cur);
+    await reauthenticateWithCredential(user, cred);   // 현재 비밀번호 확인
+    await updatePassword(user, n1);
+    ['curPw','newPw','newPw2'].forEach(id=>document.getElementById(id).value='');
+    acctMsg('pwMsg','✅ 비밀번호가 변경되었습니다.', true);
+  }catch(e){ acctMsg('pwMsg', authError한글(e.code||e.message)); }
+};
+
+window.비밀번호재설정 = async function(){
+  if(!현재유저 || !현재유저.email){ acctMsg('resetMsg','이메일 정보가 없습니다.'); return; }
+  acctMsg('resetMsg','전송 중...', true);
+  try{
+    await sendPasswordResetEmail(auth, 현재유저.email);
+    acctMsg('resetMsg','✅ '+현재유저.email+' 로 재설정 메일을 보냈습니다. (스팸함도 확인해주세요)', true);
+  }catch(e){ acctMsg('resetMsg', authError한글(e.code||e.message)); }
+};
+
+window.회원탈퇴 = async function(){
+  const pw = document.getElementById('delPw').value;
+  if(!pw){ acctMsg('delMsg','현재 비밀번호를 입력해주세요.'); return; }
+  if(!confirm('정말 탈퇴하시겠어요?\n계정과 내 모든 기록(삼대·운동일지·명언)이 영구 삭제되며 되돌릴 수 없습니다.')) return;
+  acctMsg('delMsg','처리 중...', true);
+  try{
+    const user = auth.currentUser;
+    const 이름 = 현재유저.이름;
+    const cred = EmailAuthProvider.credential(user.email, pw);
+    await reauthenticateWithCredential(user, cred);   // 현재 비밀번호 확인
+    // 자동 로그아웃 알림 방지: 본인 문서 감시 먼저 해제
+    if(내문서구독){ 내문서구독(); 내문서구독 = null; }
+    // 내 기록/운동일지/명언 삭제 (회원 문서가 남아있어야 보안규칙 통과하므로 먼저 처리)
+    const rs = await getDocs(query(recordsCol, where('이름','==',이름)));
+    for(const d of rs.docs){ await deleteDoc(doc(db,'records',d.id)); }
+    const ts = await getDocs(query(trainingCol, where('이름','==',이름)));
+    for(const d of ts.docs){ await deleteDoc(doc(db,'training',d.id)); }
+    try{ await deleteDoc(doc(db,'quotes',이름)); }catch(_){}
+    // 회원 문서 → 인증 계정 순으로 삭제
+    await deleteDoc(doc(db,'users',user.uid));
+    await deleteUser(user);
+    alert('회원 탈퇴가 완료되었습니다.');
+    location.reload();
+  }catch(e){ acctMsg('delMsg', authError한글(e.code||e.message)); }
 };
 
 </script>
