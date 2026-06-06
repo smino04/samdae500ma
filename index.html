@@ -139,6 +139,9 @@
   .detail-tabs{display:flex;gap:8px;margin-bottom:20px;}
   .detail-tab{flex:1;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
   .detail-tab.active{background:rgba(200,212,228,0.15);border-color:var(--blue-bright);color:var(--blue-bright);}
+  #diaryView{flex:1;flex-direction:column;}
+  #diaryContent{flex:1;flex-direction:column;}
+  #whyToggle{margin-top:auto;}
   .why-toggle{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-top:16px;margin-bottom:16px;overflow:hidden;}
   .why-toggle summary{padding:14px 16px;font-size:14px;font-weight:700;color:var(--blue-bright);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;}
   .why-toggle summary::-webkit-details-marker{display:none;}
@@ -369,7 +372,7 @@
       <div class="train-input-card">
         <div class="train-exercise-select">
           <select id="exerciseSelect" onchange="onExerciseSelectChange(this.value)"></select>
-          <input type="text" id="customExerciseInput" placeholder="운동명을 직접 입력 (예: 풀업)" maxlength="20" style="display:none;" oninput="onCustomExerciseInput(this.value)">
+          <input type="text" id="customExerciseInput" placeholder="운동명을 직접 입력 (예: 오버헤드프레스)" maxlength="20" style="display:none;" oninput="onCustomExerciseInput(this.value)">
         </div>
         <div class="train-suggest" id="trainSuggest"></div>
         <div class="train-fields" id="trainFields">
@@ -836,7 +839,7 @@ window.editQuote = async function(){
 function 개인화면닫기(){
   document.getElementById('detailView').classList.remove('show');
   if(현재메인탭==='diary'){
-    document.getElementById('diaryView').style.display='block';
+    document.getElementById('diaryView').style.display='flex';
   } else {
     document.getElementById('rankingView').style.display='block';
   }
@@ -891,7 +894,7 @@ window.switchMainTab = function(tab){
   const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
-  document.getElementById('diaryView').style.display = tab==='diary'?'block':'none';
+  document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
   if(tab==='account'){ 계정화면그리기(); }
@@ -909,7 +912,7 @@ window.switchMainTab = function(tab){
       document.getElementById('diaryContent').style.display = 'none';
     } else {
       sel.value = 일지대상;
-      document.getElementById('diaryContent').style.display = 'block';
+      document.getElementById('diaryContent').style.display = 'flex';
       selectDiaryMember(일지대상);
     }
   }
@@ -926,7 +929,7 @@ window.selectDiaryMember = function(이름){
   현재종목 = null;       // 멤버를 고르면 운동은 다시 선택하도록 초기화
   직접입력모드 = false;
   document.getElementById('diaryMemberSelect').value = 이름;
-  document.getElementById('diaryContent').style.display = 'block';
+  document.getElementById('diaryContent').style.display = 'flex';
   훈련일지그리기(이름);
   setTimeout(()=>{ if(trainChartObj)trainChartObj.resize(); }, 50);
 }
@@ -1041,11 +1044,27 @@ function 훈련일지그리기(이름){
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
   if(trainChartObj)trainChartObj.destroy();
+  const 점숫자플러그인 = {
+    id:'trainPtVals',
+    afterDatasetsDraw(chart){
+      const {ctx}=chart; ctx.save();
+      ctx.font="700 11px 'Noto Sans KR'"; ctx.textAlign='center'; ctx.textBaseline='bottom';
+      chart.data.datasets.forEach((ds,di)=>{
+        chart.getDatasetMeta(di).data.forEach((pt,i)=>{
+          const v=ds.data[i]; if(v==null) return;
+          const r=(pt.options&&pt.options.radius)||ds.pointRadius||4;
+          ctx.fillStyle=ds.borderColor; ctx.fillText(v, pt.x, pt.y - r - 7);  // 점 위로 띄워 안 겹치게
+        });
+      });
+      ctx.restore();
+    }
+  };
   trainChartObj=new Chart(document.getElementById('trainChart'),{type:'line',
     data:{labels,datasets:[{label:현재종목+' 1RM',data:rmData,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
-    options:{responsive:true,maintainAspectRatio:false,
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},
       plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
-      scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}}});
+      scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}},
+    plugins:[점숫자플러그인]});
 
   // 기록 목록 (최신순)
   const listEl = document.getElementById('trainList');
