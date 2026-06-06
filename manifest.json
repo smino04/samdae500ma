@@ -1,6 +1,6 @@
 {
-  "name": "삼대오백마 · 3대500을 향해",
-  "short_name": "삼대오백마 · 3대500을 향해",
+  "name": "삼대오백마",
+  "short_name": "삼대오백마",
   "description": "3대 500을 향하여 — 동아리 웨이트 기록 앱",
   "lang": "ko",
   "start_url": "./",
@@ -10,8 +10,8 @@
   "background_color": "#07090d",
   "theme_color": "#000000",
   "icons": [
-    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
-    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
-    { "src": "apple-touch-icon.png", "type": "image/png", "sizes": "180x180", "purpose": "any" }
+    { "src": "icon-192.png?v=7", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png?v=7", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "apple-touch-icon.png?v=7", "type": "image/png", "sizes": "180x180", "purpose": "any" }
   ]
 }
