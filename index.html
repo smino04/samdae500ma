@@ -6,10 +6,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>삼대오백마 · 3대 500을 향하여</title>
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=7">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=7">
-<link rel="manifest" href="manifest.json?v=7">
+<title>삼대오백마</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=8">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=8">
+<link rel="manifest" href="manifest.json?v=8">
 <meta name="theme-color" content="#000000">
 <meta name="application-name" content="삼대오백마">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -397,7 +397,7 @@ import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, onSnapshot } 
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.7";
+const APP_VERSION = "2026.06.06.8";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
