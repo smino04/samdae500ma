@@ -594,7 +594,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.30";
+const APP_VERSION = "2026.06.06.31";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1013,13 +1013,17 @@ function 추정1RM(중량, 횟수){
 const 점값플러그인 = {
   id:'ptValsCommon',
   afterDatasetsDraw(chart){
-    const {ctx}=chart; ctx.save();
+    const {ctx}=chart; const ca=chart.chartArea; ctx.save();
     ctx.font="700 11px 'Noto Sans KR'"; ctx.textAlign='center'; ctx.textBaseline='bottom';
     chart.data.datasets.forEach((ds,di)=>{
       chart.getDatasetMeta(di).data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null) return;
         const r=(pt.options&&pt.options.radius)||ds.pointRadius||4;
-        ctx.fillStyle=ds.borderColor; ctx.fillText(v, pt.x, pt.y - r - 7);
+        // 가장자리 점의 숫자가 잘리지 않게 차트 영역 안으로 끌어당김
+        let x=pt.x; const hw=ctx.measureText(String(v)).width/2 + 2;
+        if(x-hw<ca.left) x=ca.left+hw;
+        if(x+hw>ca.right) x=ca.right-hw;
+        ctx.fillStyle=ds.borderColor; ctx.fillText(v, x, pt.y - r - 7);
       });
     });
     ctx.restore();
@@ -1067,9 +1071,9 @@ function 분석그리기(){
     const data = recs.map(t=>추정1RM(t.중량,t.횟수));
     const ch = new Chart(document.getElementById('anaChart'+idx),{type:'line',
       data:{labels,datasets:[{label:ex,data,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
-      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,left:12,right:16}},
         plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}},
+        scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{beginAtZero:true,ticks:{color:textDim},grid:{color:line}}}},
       plugins:[점값플러그인]});
     분석차트들.push(ch);
   });
@@ -1173,27 +1177,12 @@ function 훈련일지그리기(이름){
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
   if(trainChartObj)trainChartObj.destroy();
-  const 점숫자플러그인 = {
-    id:'trainPtVals',
-    afterDatasetsDraw(chart){
-      const {ctx}=chart; ctx.save();
-      ctx.font="700 11px 'Noto Sans KR'"; ctx.textAlign='center'; ctx.textBaseline='bottom';
-      chart.data.datasets.forEach((ds,di)=>{
-        chart.getDatasetMeta(di).data.forEach((pt,i)=>{
-          const v=ds.data[i]; if(v==null) return;
-          const r=(pt.options&&pt.options.radius)||ds.pointRadius||4;
-          ctx.fillStyle=ds.borderColor; ctx.fillText(v, pt.x, pt.y - r - 7);  // 점 위로 띄워 안 겹치게
-        });
-      });
-      ctx.restore();
-    }
-  };
   trainChartObj=new Chart(document.getElementById('trainChart'),{type:'line',
     data:{labels,datasets:[{label:현재종목+' 1RM',data:rmData,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,left:12,right:16}},
       plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
-      scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}},
-    plugins:[점숫자플러그인]});
+      scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{beginAtZero:true,ticks:{color:textDim},grid:{color:line}}}},
+    plugins:[점값플러그인]});
 
   // 기록 목록 (최신순)
   const listEl = document.getElementById('trainList');
