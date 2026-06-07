@@ -410,7 +410,6 @@
           <p style="margin-top:12px;"><b>🔥 왜 이렇게 기록하는 게 효과적인가요?</b></p>
           <p>· <b>점진적 과부하</b> — 매번 조금씩 더 → 계속 성장<br>
           · <b>기록 추적</b> — 1RM 그래프로 성장이 눈에 보임</p>
-          <p style="margin-top:12px;color:var(--blue-bright);"><b>👉 탑세트만 기록 → 매번 1개씩 더 → 채우면 +5kg</b></p>
         </div>
       </details>
     </div>
@@ -595,7 +594,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.28";
+const APP_VERSION = "2026.06.06.29";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
