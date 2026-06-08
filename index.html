@@ -649,7 +649,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.39";
+const APP_VERSION = "2026.06.06.40";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1699,6 +1699,23 @@ function authError한글(code){
   return m[code] || ('오류가 발생했습니다: ' + code);
 }
 
+// 가입 시 이메일이 이미 쓰였는데 예전에 '탈퇴(추방)'된 계정(=인증계정은 남고 회원정보 없음)이면
+// 그 인증계정을 삭제해 이메일을 비우고, 새로 가입을 진행한다. (재가입 허용)
+async function 탈퇴계정정리후재가입(email, pw){
+  let signed;
+  try{ signed = await signInWithEmailAndPassword(auth, email, pw); }
+  catch(_){ authMsg('이미 가입된 이메일입니다. 로그인하거나, 비밀번호가 다르면 "비밀번호를 잊으셨나요?"를 이용하세요.'); return null; }
+  const ex = await getDoc(doc(db,'users',signed.user.uid));
+  if(ex.exists()){
+    authMsg('이미 가입된 계정이에요. 로그인했습니다.', true);
+    return null;  // 정상 계정 → 로그인 상태(라우팅이 처리)
+  }
+  // 탈퇴(추방)된 계정 → 인증계정 삭제 후 새로 생성
+  try{ await deleteUser(signed.user); }
+  catch(_){ try{ await signOut(auth); }catch(__){} authMsg('이미 가입된 이메일입니다. 로그인해주세요.'); return null; }
+  return await createUserWithEmailAndPassword(auth, email, pw);
+}
+
 window.authSubmit = async function(){
   const email = document.getElementById('authEmail').value.trim();
   const pw = document.getElementById('authPw').value;
@@ -1711,7 +1728,15 @@ window.authSubmit = async function(){
       const 이름 = document.getElementById('authName').value;
       if(!멤버명단.includes(이름)){ authMsg('본인 이름을 선택해주세요.'); btn.disabled=false; return; }
       회원가입중 = true;
-      const cred = await createUserWithEmailAndPassword(auth, email, pw);
+      let cred;
+      try{
+        cred = await createUserWithEmailAndPassword(auth, email, pw);
+      }catch(e){
+        if(e.code === 'auth/email-already-in-use'){
+          cred = await 탈퇴계정정리후재가입(email, pw);   // 예전 탈퇴 계정이면 정리 후 재가입
+          if(!cred){ 회원가입중 = false; btn.disabled = false; return; }
+        } else { throw e; }
+      }
       // 이름 중복(이미 가입/신청) 확인 — 인증 후 조회
       const snap = await getDocs(query(usersCol, where('이름','==',이름)));
       if(!snap.empty){
@@ -1864,8 +1889,16 @@ async function 사용자라우팅(user){
   catch(e){ 로그인화면표시(false); authMsg('정보를 불러오지 못했습니다: ' + (e.code||e.message)); return; }
   if(!snap.exists()){
     if(회원가입중) return;  // 가입 처리 중이면 대기
-    await signOut(auth); 로그인화면표시(false);
-    authMsg('회원 정보가 없습니다. 회원가입을 다시 진행해주세요.');
+    // 탈퇴(추방)된 계정: 인증은 되지만 회원정보 없음 → 본인 인증계정을 삭제해 이메일을 비움(재가입 가능)
+    try{
+      await deleteUser(user);
+      로그인화면표시(false);
+      authMsg('탈퇴 처리된 계정입니다. 계정을 정리했어요. 같은 이메일로 다시 회원가입 할 수 있습니다.');
+    }catch(_){
+      try{ await signOut(auth); }catch(__){}
+      로그인화면표시(false);
+      authMsg('탈퇴 처리된 계정입니다. 다시 회원가입 해주세요.');
+    }
     return;
   }
   현재유저 = { uid:user.uid, ...snap.data() };
@@ -1939,7 +1972,7 @@ function 관리자화면그리기(){
         <div class="ac-email">${escHtml(u.email||'')}</div>
       </div>
       <div class="ac-btns">
-        ${u.role==='admin' ? '' : `<button class="ac-btn ac-reject" onclick="추방회원('${u.uid}','${escHtml(u.이름)}')">추방</button>`}
+        ${u.role==='admin' ? '' : `<button class="ac-btn ac-reject" onclick="추방회원('${u.uid}','${escHtml(u.이름)}')">탈퇴 처리</button>`}
       </div>
     </div>`).join('') : `<div class="ac-empty">승인된 회원이 없습니다.</div>`;
 }
@@ -1954,9 +1987,17 @@ window.거절회원 = async function(uid, 이름){
   catch(e){ alert('거절 실패: ' + (e.code||e.message)); }
 };
 window.추방회원 = async function(uid, 이름){
-  if(!confirm(`${이름}님을 회원에서 추방할까요?\n(로그인이 즉시 차단됩니다. 기존 기록은 유지됩니다.)`)) return;
-  try{ await deleteDoc(doc(db,'users',uid)); }
-  catch(e){ alert('추방 실패: ' + (e.code||e.message)); }
+  if(!confirm(`${이름}님을 탈퇴 처리할까요?\n회원 정보와 모든 기록(삼대·운동일지·명언)이 삭제됩니다.\n본인이 다시 접속하면 계정도 완전히 삭제되어 같은 이메일로 재가입할 수 있어요.\n되돌릴 수 없습니다.`)) return;
+  try{
+    // 해당 회원의 기록/운동일지/명언 삭제
+    const rs = await getDocs(query(recordsCol, where('이름','==',이름)));
+    for(const d of rs.docs){ await deleteDoc(doc(db,'records',d.id)); }
+    const ts = await getDocs(query(trainingCol, where('이름','==',이름)));
+    for(const d of ts.docs){ await deleteDoc(doc(db,'training',d.id)); }
+    try{ await deleteDoc(doc(db,'quotes',이름)); }catch(_){}
+    // 회원 문서 삭제 (인증계정은 본인 재접속 시 자동 정리됨)
+    await deleteDoc(doc(db,'users',uid));
+  }catch(e){ alert('탈퇴 처리 실패: ' + (e.code||e.message)); }
 };
 
 // ── 계정 탭 ──
