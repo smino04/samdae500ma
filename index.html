@@ -328,6 +328,12 @@
         <input type="password" id="authPw" class="auth-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSubmit()">
         <button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button>
       </div>
+      <div id="signupPwWrap" style="display:none;">
+        <div class="pw-wrap">
+          <input type="password" id="authPw2" class="auth-input" placeholder="비밀번호 확인 (다시 입력)" autocomplete="new-password" onkeydown="if(event.key==='Enter')authSubmit()">
+          <button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button>
+        </div>
+      </div>
       <div id="signupNameWrap" style="display:none;">
         <select id="authName" class="auth-input"></select>
         <div class="auth-hint">본인 이름을 선택하세요. 가입 후 관리자 승인을 받으면 입장할 수 있어요.</div>
@@ -649,7 +655,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.40";
+const APP_VERSION = "2026.06.06.41";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1654,6 +1660,7 @@ window.setAuthMode = function(mode){
   document.getElementById('authTabLogin').classList.toggle('active', mode==='login');
   document.getElementById('authTabSignup').classList.toggle('active', mode==='signup');
   document.getElementById('signupNameWrap').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('signupPwWrap').style.display = mode==='signup' ? 'block' : 'none';  // 비밀번호 확인칸은 회원가입만
   document.getElementById('authSubmit').textContent = mode==='signup' ? '회원가입' : '로그인';
   const fb = document.getElementById('forgotBtn'); if(fb) fb.style.display = mode==='signup' ? 'none' : 'block';  // 비밀번호 찾기는 로그인 모드만
   authMsg('');
@@ -1727,6 +1734,9 @@ window.authSubmit = async function(){
     if(authMode === 'signup'){
       const 이름 = document.getElementById('authName').value;
       if(!멤버명단.includes(이름)){ authMsg('본인 이름을 선택해주세요.'); btn.disabled=false; return; }
+      const pw2 = document.getElementById('authPw2').value;
+      if(pw.length < 6){ authMsg('비밀번호는 6자 이상이어야 합니다.'); btn.disabled=false; return; }
+      if(pw !== pw2){ authMsg('비밀번호가 서로 일치하지 않습니다. 다시 확인해주세요.'); btn.disabled=false; return; }
       회원가입중 = true;
       let cred;
       try{
