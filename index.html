@@ -94,6 +94,8 @@
   .rank-card.top1::before{background:var(--gold);}
   .rank-card.top2{border-color:var(--silver);}.rank-card.top2::before{background:var(--silver);}
   .rank-card.top3{border-color:var(--bronze);}.rank-card.top3::before{background:var(--bronze);}
+  .rank-card.mine{border-color:var(--blue-bright);box-shadow:0 0 0 1px var(--blue-bright) inset;}
+  .me-tag{display:inline-block;margin-left:6px;padding:1px 7px;background:var(--blue);border-radius:6px;color:#10141b;font-size:10px;font-weight:700;vertical-align:middle;}
   @keyframes slideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
   .rank-num{font-family:'Black Han Sans',sans-serif;font-size:26px;width:42px;text-align:center;flex-shrink:0;color:var(--text-dim);}
   .top1 .rank-num{color:var(--gold);}.top2 .rank-num{color:var(--silver);}.top3 .rank-num{color:var(--bronze);}
@@ -250,6 +252,10 @@
   .auth-btn{width:100%;padding:14px;background:var(--blue);border:none;border-radius:10px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 0 16px var(--blue-glow);}
   .auth-btn:disabled{opacity:0.6;cursor:default;}
   .auth-btn-ghost{background:var(--panel-light);color:var(--text-dim);box-shadow:none;margin-top:10px;}
+  .auth-link{display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--text-dim);font-family:'Noto Sans KR';font-size:13px;text-decoration:underline;cursor:pointer;}
+  .pw-wrap{position:relative;margin-bottom:10px;}
+  .pw-wrap > input{margin-bottom:0;padding-right:46px;}
+  .pw-eye{position:absolute;top:50%;right:6px;transform:translateY(-50%);background:none;border:none;font-size:18px;line-height:1;cursor:pointer;padding:4px 6px;opacity:0.85;}
   .auth-or{display:flex;align-items:center;gap:10px;margin:18px 0 4px;color:var(--text-dim);font-size:12px;}
   .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--line);}
   /* 게스트 모드 배너 */
@@ -316,14 +322,18 @@
         <button id="authTabLogin" class="auth-tab active" onclick="setAuthMode('login')">로그인</button>
         <button id="authTabSignup" class="auth-tab" onclick="setAuthMode('signup')">회원가입</button>
       </div>
-      <input type="email" id="authEmail" class="auth-input" placeholder="이메일" autocomplete="email">
-      <input type="password" id="authPw" class="auth-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+      <input type="email" id="authEmail" class="auth-input" placeholder="이메일" autocomplete="email" onkeydown="if(event.key==='Enter')authSubmit()">
+      <div class="pw-wrap">
+        <input type="password" id="authPw" class="auth-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSubmit()">
+        <button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button>
+      </div>
       <div id="signupNameWrap" style="display:none;">
         <select id="authName" class="auth-input"></select>
         <div class="auth-hint">본인 이름을 선택하세요. 가입 후 관리자 승인을 받으면 입장할 수 있어요.</div>
       </div>
       <div class="auth-msg" id="authMsg"></div>
       <button class="auth-btn" id="authSubmit" onclick="authSubmit()">로그인</button>
+      <button type="button" class="auth-link" id="forgotBtn" onclick="비밀번호찾기()">비밀번호를 잊으셨나요?</button>
     </div>
 
     <div id="guestArea">
@@ -349,7 +359,7 @@
       <div class="title-sub">3대 500을 향하여</div>
       <div class="header-divider"></div>
     </header>
-    <div class="acct-bar"><span id="acctName"></span><button class="acct-logout" onclick="로그아웃()">로그아웃</button></div>
+    <div class="acct-bar"><span id="acctName"></span><button class="acct-logout" onclick="로그아웃버튼()">로그아웃</button></div>
     <div class="guest-banner" id="guestBanner" style="display:none;">
       <div class="gb-text">👀 <b>게스트 모드</b>로 둘러보는 중이에요.<br>회원들의 성장 그래프, 마음에 드시나요? 함께 3대 500을 향해 달려봐요! 💪</div>
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
@@ -460,7 +470,7 @@
       <div class="acct-info-row"><span>이메일</span><b id="accEmail">-</b></div>
       <div class="acct-info-row"><span>역할</span><b id="accRole">-</b></div>
     </div>
-    <button class="acct-btn acct-btn-sub" id="accLogout" onclick="로그아웃()">로그아웃</button>
+    <button class="acct-btn acct-btn-sub" id="accLogout" onclick="로그아웃버튼()">로그아웃</button>
 
     <!-- 게스트 전용 가입 유도 -->
     <div id="guestProfile" style="display:none;">
@@ -481,9 +491,9 @@
 
     <div class="section-label" style="margin-top:22px;">🔒 비밀번호 변경</div>
     <div class="acct-box">
-      <input type="password" id="curPw" class="acct-input" placeholder="현재 비밀번호" autocomplete="current-password">
-      <input type="password" id="newPw" class="acct-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
-      <input type="password" id="newPw2" class="acct-input" placeholder="새 비밀번호 확인" autocomplete="new-password">
+      <div class="pw-wrap"><input type="password" id="curPw" class="acct-input" placeholder="현재 비밀번호" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+      <div class="pw-wrap"><input type="password" id="newPw" class="acct-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+      <div class="pw-wrap"><input type="password" id="newPw2" class="acct-input" placeholder="새 비밀번호 확인" autocomplete="new-password" onkeydown="if(event.key==='Enter')비밀번호변경()"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
       <div class="acct-msg" id="pwMsg"></div>
       <button class="acct-btn" onclick="비밀번호변경()">비밀번호 변경</button>
     </div>
@@ -498,7 +508,7 @@
     <div class="section-label danger-label">⚠️ 회원 탈퇴</div>
     <div class="acct-box danger-box">
       <p class="acct-desc">계정과 내 모든 기록(삼대·운동일지·명언)이 <b>영구 삭제</b>되며 되돌릴 수 없습니다.</p>
-      <input type="password" id="delPw" class="acct-input" placeholder="현재 비밀번호 확인" autocomplete="current-password">
+      <div class="pw-wrap"><input type="password" id="delPw" class="acct-input" placeholder="현재 비밀번호 확인" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
       <div class="acct-msg" id="delMsg"></div>
       <button class="acct-btn danger-btn" onclick="회원탈퇴()">회원 탈퇴</button>
     </div>
@@ -622,7 +632,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.35";
+const APP_VERSION = "2026.06.06.36";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -850,9 +860,10 @@ function 랭킹그리기(){
     if(diff!==null && diff>0) diffHtml=`<span class="diff up">▲${diff}</span>`;
     else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.abs(diff)}</span>`;
     else if(diff!==null && diff===0) diffHtml=`<span class="diff same">―</span>`;
-    return `<div class="rank-card ${topClass}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
+    const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
+    return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.member.이름}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
+        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
         <div class="rank-detail">체중 ${x.rec.체중}kg · 상대점수 ${score}</div></div>
         <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div></div>
         <div class="chevron">›</div></div>`;
@@ -1627,7 +1638,27 @@ window.setAuthMode = function(mode){
   document.getElementById('authTabSignup').classList.toggle('active', mode==='signup');
   document.getElementById('signupNameWrap').style.display = mode==='signup' ? 'block' : 'none';
   document.getElementById('authSubmit').textContent = mode==='signup' ? '회원가입' : '로그인';
+  const fb = document.getElementById('forgotBtn'); if(fb) fb.style.display = mode==='signup' ? 'none' : 'block';  // 비밀번호 찾기는 로그인 모드만
   authMsg('');
+};
+// 비밀번호 입력칸 보기/숨기기 토글 (눈 아이콘)
+window.비번토글 = function(btn){
+  const el = btn.previousElementSibling;
+  if(!el) return;
+  const willShow = el.type === 'password';
+  el.type = willShow ? 'text' : 'password';
+  btn.textContent = willShow ? '🙈' : '👁';
+};
+// 로그인 화면에서 비밀번호 찾기 (재설정 메일 발송)
+window.비밀번호찾기 = async function(){
+  let email = document.getElementById('authEmail').value.trim();
+  if(!email){ email = (prompt('가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드려요.')||'').trim(); }
+  if(!email){ return; }
+  authMsg('재설정 메일 전송 중...', true);
+  try{
+    await sendPasswordResetEmail(auth, email);
+    authMsg('✅ '+email+' 로 재설정 메일을 보냈습니다. (스팸함도 확인해주세요)', true);
+  }catch(e){ authMsg(authError한글(e.code||e.message)); }
 };
 function authMsg(text, ok){
   const el = document.getElementById('authMsg');
@@ -1695,6 +1726,11 @@ window.authSubmit = async function(){
 window.로그아웃 = async function(){
   try{ await signOut(auth); }catch(e){}
   location.reload();
+};
+// 사용자가 버튼으로 로그아웃할 때만 확인(게스트는 바로 나감, 프로그램 호출은 확인 없음)
+window.로그아웃버튼 = function(){
+  if(게스트인가()){ 로그아웃(); return; }
+  if(confirm('로그아웃 할까요?')) 로그아웃();
 };
 
 function 로그인화면표시(pending){
