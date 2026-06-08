@@ -349,6 +349,12 @@
       <div class="auth-msg" id="verifyMsg"></div>
       <button class="auth-btn" onclick="인증확인()">인증을 완료했어요</button>
       <button class="auth-btn auth-btn-ghost" onclick="인증메일재전송()">인증 메일 다시 보내기</button>
+      <button class="auth-btn auth-btn-ghost" onclick="이메일변경토글()">이메일을 잘못 입력했어요</button>
+      <div id="changeEmailForm" style="display:none;margin-top:6px;">
+        <input type="email" id="newEmail" class="auth-input" placeholder="올바른 이메일 주소" autocomplete="email">
+        <div class="pw-wrap"><input type="password" id="changeEmailPw" class="auth-input" placeholder="현재 비밀번호" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+        <button class="auth-btn" onclick="이메일변경()">이 주소로 변경하고 인증메일 받기</button>
+      </div>
       <button class="auth-btn auth-btn-ghost" onclick="로그아웃()">로그아웃</button>
     </div>
 
@@ -636,14 +642,14 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail, signInAnonymously, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail, signInAnonymously, sendEmailVerification, verifyBeforeUpdateEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 /* =====================================================
    자동 업데이트 감지
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.38";
+const APP_VERSION = "2026.06.06.39";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1757,6 +1763,29 @@ window.인증메일재전송 = async function(){
     await sendEmailVerification(u);
     if(msg){ msg.classList.add('ok'); msg.textContent = '✅ 인증 메일을 다시 보냈습니다. (스팸함도 확인해주세요)'; }
   }catch(e){ if(msg){ msg.classList.remove('ok'); msg.textContent = authError한글(e.code||e.message); } }
+};
+function setVerifyMsg(text, ok){
+  const el = document.getElementById('verifyMsg');
+  if(!el) return; el.textContent = text || ''; el.classList.toggle('ok', !!ok);
+}
+// 이메일을 잘못 입력한 경우: 인증 화면에서 바로 이메일 변경
+window.이메일변경토글 = function(){
+  const f = document.getElementById('changeEmailForm');
+  if(f) f.style.display = (f.style.display==='none' || !f.style.display) ? 'block' : 'none';
+};
+window.이메일변경 = async function(){
+  const newEmail = document.getElementById('newEmail').value.trim();
+  const pw = document.getElementById('changeEmailPw').value;
+  if(!newEmail || !pw){ setVerifyMsg('올바른 이메일과 현재 비밀번호를 입력해주세요.'); return; }
+  setVerifyMsg('변경 중...', true);
+  try{
+    const user = auth.currentUser;
+    // 현재 비밀번호로 재인증 후 새 이메일로 인증 메일 발송(클릭하면 이메일 변경+인증 완료)
+    const cred = EmailAuthProvider.credential(user.email, pw);
+    await reauthenticateWithCredential(user, cred);
+    await verifyBeforeUpdateEmail(user, newEmail);
+    setVerifyMsg('✅ '+newEmail+' 로 인증 메일을 보냈어요. 메일의 링크를 누르면 이메일이 바뀌고 인증이 끝납니다. (스팸함도 꼭 확인!)\n이후 새 이메일로 로그인해주세요.', true);
+  }catch(e){ setVerifyMsg(authError한글(e.code||e.message)); }
 };
 
 window.로그아웃 = async function(){
