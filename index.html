@@ -46,10 +46,10 @@
     --text:#f4f7fb; --text-dim:#7d8a9c; --line:#232c3a;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  #splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-bottom:12vh;animation:splashOut 0.5s ease-in 2.2s forwards;}
+  #splash{position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-bottom:12vh;animation:splashOut 0.5s ease-in 2.2s forwards;}
   #splash.hide{display:none;}
   html.no-splash #splash{display:none!important;}  /* 안드로이드 설치앱: 자체 스플래시 생략 */
-  .splash-logo{width:140px;height:140px;filter:drop-shadow(0 0 26px rgba(200,212,228,0.28)) drop-shadow(0 6px 14px rgba(0,0,0,0.45));animation:splashLogo 0.8s ease-out;}
+  .splash-logo{width:150px;height:150px;filter:drop-shadow(0 0 38px rgba(220,227,238,0.65)) drop-shadow(0 0 80px rgba(150,190,255,0.5)) drop-shadow(0 0 6px rgba(255,255,255,0.5));animation:splashLogo 0.8s ease-out;}
   .splash-title{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:700;font-size:30px;letter-spacing:1px;color:var(--text);text-shadow:0 2px 16px rgba(200,212,228,0.4);animation:splashText 0.7s ease-out 0.25s backwards;}
   .splash-sub{font-size:14px;letter-spacing:4px;font-weight:700;color:var(--blue-bright);animation:splashText 0.7s ease-out 0.4s backwards;}
   @keyframes splashLogo{from{opacity:0;transform:scale(0.7);}to{opacity:1;transform:scale(1);}}
@@ -312,7 +312,7 @@
 </div>
 
 <!-- 로그인 / 회원가입 화면 -->
-<div id="authView">
+<div id="authView" style="display:none;">
   <div class="auth-card">
     <div class="auth-title">삼대오백마</div>
     <div class="auth-sub">3대 500을 향하여</div>
@@ -655,7 +655,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.41";
+const APP_VERSION = "2026.06.06.42";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
