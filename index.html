@@ -250,6 +250,13 @@
   .auth-btn{width:100%;padding:14px;background:var(--blue);border:none;border-radius:10px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 0 16px var(--blue-glow);}
   .auth-btn:disabled{opacity:0.6;cursor:default;}
   .auth-btn-ghost{background:var(--panel-light);color:var(--text-dim);box-shadow:none;margin-top:10px;}
+  .auth-or{display:flex;align-items:center;gap:10px;margin:18px 0 4px;color:var(--text-dim);font-size:12px;}
+  .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--line);}
+  /* 게스트 모드 배너 */
+  .guest-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(100deg,rgba(96,165,250,0.16),var(--panel) 70%);border:1px solid var(--blue-bright);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .guest-banner .gb-text{flex:1;font-size:13px;line-height:1.5;color:var(--text);}
+  .guest-banner .gb-text b{color:var(--blue-bright);}
+  .guest-banner .gb-join{flex-shrink:0;padding:9px 14px;background:var(--blue);border:none;border-radius:8px;color:#10141b;font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;}
   .auth-pending{font-size:14px;color:var(--text);line-height:1.7;background:rgba(200,212,228,0.1);border-radius:10px;padding:18px 14px;margin-bottom:6px;}
   /* 계정 바 */
   .acct-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;font-size:13px;color:var(--text-dim);}
@@ -319,6 +326,12 @@
       <button class="auth-btn" id="authSubmit" onclick="authSubmit()">로그인</button>
     </div>
 
+    <div id="guestArea">
+      <div class="auth-or"><span>또는</span></div>
+      <button class="auth-btn auth-btn-ghost" id="guestBtn" onclick="게스트로그인()">👀 게스트로 둘러보기</button>
+      <div class="auth-hint" style="text-align:center;margin-top:8px;">비회원도 회원들의 기록·운동일지를 구경할 수 있어요 (보기 전용)</div>
+    </div>
+
     <div id="pendingBox" style="display:none;">
       <div class="auth-pending">⏳ <b>가입 신청 완료!</b><br>관리자(신은수·이승민)의 승인을 기다리는 중입니다.<br>승인되면 자동으로 입장돼요.</div>
       <button class="auth-btn auth-btn-ghost" onclick="로그아웃()">로그아웃</button>
@@ -337,6 +350,10 @@
       <div class="header-divider"></div>
     </header>
     <div class="acct-bar"><span id="acctName"></span><button class="acct-logout" onclick="로그아웃()">로그아웃</button></div>
+    <div class="guest-banner" id="guestBanner" style="display:none;">
+      <div class="gb-text">👀 <b>게스트 모드</b>로 둘러보는 중이에요.<br>회원들의 성장 그래프, 마음에 드시나요? 함께 3대 500을 향해 달려봐요! 💪</div>
+      <button class="gb-join" onclick="로그아웃()">회원가입</button>
+    </div>
     <div class="sort-toggle">
       <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계 순</button>
       <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비 순</button>
@@ -443,8 +460,17 @@
       <div class="acct-info-row"><span>이메일</span><b id="accEmail">-</b></div>
       <div class="acct-info-row"><span>역할</span><b id="accRole">-</b></div>
     </div>
-    <button class="acct-btn acct-btn-sub" onclick="로그아웃()">로그아웃</button>
+    <button class="acct-btn acct-btn-sub" id="accLogout" onclick="로그아웃()">로그아웃</button>
 
+    <!-- 게스트 전용 가입 유도 -->
+    <div id="guestProfile" style="display:none;">
+      <div class="acct-box" style="margin-top:14px;text-align:center;">
+        <p class="acct-desc" style="margin-bottom:14px;">지금은 <b>게스트 모드</b>예요 👀<br>회원가입하면 나만의 삼대 기록과 운동일지를 만들고,<br>성장 그래프로 매주 강해지는 걸 직접 확인할 수 있어요!</p>
+        <button class="acct-btn" onclick="로그아웃()">회원가입 / 로그인 하러 가기</button>
+      </div>
+    </div>
+
+    <div id="memberOnlyAccount">
     <!-- 관리자 전용 -->
     <div id="accountAdmin" style="display:none;">
       <div class="section-label" style="margin-top:22px;">🛡️ 가입 승인 대기</div>
@@ -476,6 +502,7 @@
       <div class="acct-msg" id="delMsg"></div>
       <button class="acct-btn danger-btn" onclick="회원탈퇴()">회원 탈퇴</button>
     </div>
+    </div><!-- /memberOnlyAccount -->
   </div>
 
   <footer>백절불굴의 정신으로 무장하라</footer>
@@ -588,14 +615,14 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 /* =====================================================
    자동 업데이트 감지
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.34";
+const APP_VERSION = "2026.06.06.35";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -656,7 +683,8 @@ const 관리자이름 = ['신은수','이승민'];   // 이 이름으로 먼저 
 let 현재유저 = null;     // { uid, email, 이름, role:'admin'|'member', status:'pending'|'approved' }
 let 내문서구독 = null;   // 본인 users 문서 실시간 구독 해제 함수
 function 관리자인가(){ return !!(현재유저 && 현재유저.role==='admin'); }
-function 내권한(이름){ return !!(현재유저 && (현재유저.role==='admin' || 현재유저.이름===이름)); }
+function 게스트인가(){ return !!(현재유저 && 현재유저.role==='guest'); }
+function 내권한(이름){ return !!(현재유저 && 현재유저.role!=='guest' && (현재유저.role==='admin' || 현재유저.이름===이름)); }
 
 // ── 드롭다운 채우기 ──
 document.getElementById('inName').innerHTML = [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option>${n}</option>`).join('');
@@ -960,7 +988,7 @@ window.switchMainTab = function(tab){
         [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option value="${n}">${n}</option>`).join('');
     }
     // 처음 들어오면 본인 일지를 기본으로 보여줌
-    if(!일지대상 && 현재유저){ 일지대상 = 현재유저.이름; }
+    if(!일지대상 && 현재유저 && !게스트인가()){ 일지대상 = 현재유저.이름; }
     if(!일지대상){
       sel.value = '';
       document.getElementById('diaryContent').style.display = 'none';
@@ -1378,6 +1406,7 @@ function 모달그룹설정(모드){
   }
 }
 window.openNewModal = function(){
+  if(게스트인가()){ alert('게스트 모드에서는 기록을 입력할 수 없어요.\n회원가입 후 나만의 기록을 남겨보세요! 💪'); return; }
   // 새 입력: 월 자동로딩 해제 + 입력칸 비우기 + 삭제버튼 숨김
   수정대상이름 = null;
   모달그룹설정('all');
@@ -1673,6 +1702,8 @@ function 로그인화면표시(pending){
   document.getElementById('appRoot').style.display = 'none';
   document.getElementById('authForm').style.display = pending ? 'none' : 'block';
   document.getElementById('pendingBox').style.display = pending ? 'block' : 'none';
+  const ga = document.getElementById('guestArea'); if(ga) ga.style.display = pending ? 'none' : 'block';
+  const gb = document.getElementById('guestBtn'); if(gb) gb.disabled = false;
   if(!pending) document.getElementById('authSubmit').disabled = false;
 }
 function 앱표시(){
@@ -1681,14 +1712,48 @@ function 앱표시(){
   switchMainTab('ranking');  // 시작 화면을 랭킹으로
 }
 function 권한UI적용(){
-  // 계정 탭은 모두에게 보임. 관리자 배지는 관리자만.
+  const guest = 게스트인가();
+  // 계정 바 라벨
   const acct = document.getElementById('acctName');
-  if(acct) acct.textContent = 현재유저 ? (현재유저.이름 + (관리자인가() ? ' · 🛡️관리자' : '님')) : '';
+  if(acct) acct.textContent = !현재유저 ? '' : (guest ? '👀 게스트 모드' : (현재유저.이름 + (관리자인가() ? ' · 🛡️관리자' : '님')));
+  // 로그아웃 버튼: 게스트면 '나가기'
+  const logoutBtn = document.querySelector('.acct-bar .acct-logout');
+  if(logoutBtn) logoutBtn.textContent = guest ? '나가기' : '로그아웃';
+  // 게스트 배너 / 기록 입력 버튼
+  const banner = document.getElementById('guestBanner'); if(banner) banner.style.display = guest ? 'flex' : 'none';
+  const launch = document.querySelector('.input-launch'); if(launch) launch.style.display = guest ? 'none' : 'block';
 }
+
+window.게스트로그인 = async function(){
+  const btn = document.getElementById('guestBtn');
+  if(btn) btn.disabled = true;
+  authMsg('게스트 모드로 입장 중...', true);
+  try{
+    await setPersistence(auth, browserLocalPersistence);
+    await signInAnonymously(auth);
+    // onAuthStateChanged → 사용자라우팅 에서 게스트로 처리
+  }catch(e){
+    if(btn) btn.disabled = false;
+    const code = e.code || e.message;
+    if(code==='auth/operation-not-allowed' || code==='auth/admin-restricted-operation'){
+      authMsg('게스트(익명) 로그인이 아직 활성화되지 않았습니다. 관리자에게 문의하세요.');
+    } else {
+      authMsg(authError한글(code));
+    }
+  }
+};
 
 // 로그인 상태 라우팅 (자동 로그인 유지 포함)
 async function 사용자라우팅(user){
   if(내문서구독){ 내문서구독(); 내문서구독 = null; }
+  // 익명 사용자 = 게스트 모드 (보기 전용)
+  if(user.isAnonymous){
+    현재유저 = { uid:user.uid, 이름:null, role:'guest', status:'approved' };
+    앱표시();
+    권한UI적용();
+    데이터구독시작();
+    return;
+  }
   let snap;
   try{ snap = await getDoc(doc(db,'users',user.uid)); }
   catch(e){ 로그인화면표시(false); authMsg('정보를 불러오지 못했습니다: ' + (e.code||e.message)); return; }
@@ -1785,9 +1850,16 @@ window.추방회원 = async function(uid, 이름){
 // ── 계정 탭 ──
 function 계정화면그리기(){
   if(!현재유저) return;
-  document.getElementById('accName').textContent = 현재유저.이름 || '-';
-  document.getElementById('accEmail').textContent = 현재유저.email || '-';
-  document.getElementById('accRole').textContent = 관리자인가() ? '🛡️ 관리자' : '일반 회원';
+  const guest = 게스트인가();
+  document.getElementById('accName').textContent = guest ? '게스트' : (현재유저.이름 || '-');
+  document.getElementById('accEmail').textContent = guest ? '-' : (현재유저.email || '-');
+  document.getElementById('accRole').textContent = guest ? '👀 게스트 (보기 전용)' : (관리자인가() ? '🛡️ 관리자' : '일반 회원');
+  // 게스트: 가입 유도만 표시, 회원 전용 섹션 숨김
+  document.getElementById('guestProfile').style.display = guest ? 'block' : 'none';
+  document.getElementById('memberOnlyAccount').style.display = guest ? 'none' : 'block';
+  const accLogout = document.getElementById('accLogout');
+  if(accLogout) accLogout.textContent = guest ? '나가기' : '로그아웃';
+  if(guest) return;
   // 입력칸/메시지 초기화
   ['curPw','newPw','newPw2','delPw'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['pwMsg','resetMsg','delMsg'].forEach(id=>acctMsg(id,''));
