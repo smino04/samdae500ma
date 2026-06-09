@@ -279,6 +279,7 @@
   .admin-card .ac-name{font-size:15px;font-weight:700;color:var(--text);}
   .admin-card .ac-name .ac-tag{font-size:11px;font-weight:700;color:#10141b;background:var(--gold);border-radius:5px;padding:1px 6px;margin-left:6px;}
   .admin-card .ac-email{font-size:12px;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .admin-card .ac-real{font-size:11px;font-weight:700;color:#ffc83d;background:rgba(255,200,61,0.14);border-radius:5px;padding:1px 6px;}
   .admin-card .ac-btns{display:flex;gap:6px;flex-shrink:0;}
   .ac-btn{padding:8px 12px;border:none;border-radius:8px;font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;}
   .ac-approve{background:var(--blue);color:#10141b;}
@@ -336,8 +337,8 @@
         </div>
       </div>
       <div id="signupNameWrap" style="display:none;">
-        <select id="authName" class="auth-input"></select>
-        <div class="auth-hint">본인 이름을 선택하세요. 가입 후 관리자 승인을 받으면 입장할 수 있어요.</div>
+        <input type="text" id="authRealName" class="auth-input" placeholder="실명 (예: 홍길동)" maxlength="10" autocomplete="off" onkeydown="if(event.key==='Enter')authSubmit()">
+        <div class="auth-hint">관리자 본인 확인용으로 <b>실명</b>을 입력하세요. 닉네임은 <b>이름+성 이니셜</b>(예: 길동.H)로 자동 생성됩니다.<br>⚠️ 실명은 <b>관리자 승인 직후 자동 폐기</b>되어 어디에도 저장되지 않습니다.</div>
       </div>
       <div class="auth-msg" id="authMsg"></div>
       <button class="auth-btn" id="authSubmit" onclick="authSubmit()">로그인</button>
@@ -512,6 +513,22 @@
       <div id="adminMembers"></div>
     </div>
 
+    <div class="section-label" style="margin-top:22px;">🏷️ 닉네임 변경</div>
+    <div class="acct-box">
+      <input type="text" id="newNick" class="acct-input" placeholder="새 닉네임 (예: 길동.H)" maxlength="16" autocomplete="off" onkeydown="if(event.key==='Enter')닉네임변경()">
+      <div class="spam-note">⚠️ <b>실명 사용 금지</b> — 닉네임에 실명을 적지 마세요. (이름 + 성 이니셜 형태 권장)</div>
+      <div class="acct-msg" id="nickMsg"></div>
+      <button class="acct-btn" onclick="닉네임변경()">닉네임 변경</button>
+      <details class="why-toggle" style="margin-top:12px;">
+        <summary>💡 왜 실명이 금지되나요? <span class="why-arrow">▼</span></summary>
+        <div class="why-content">
+          <p><b>국방 보안 규정 준수</b></p>
+          <p>외부 클라우드 서버(Firebase)를 활용하는 서비스 특성상, 부대원의 실명과 소속이 연달아 노출될 경우 군 보안 및 개인정보 보호 규정에 위배될 수 있습니다.</p>
+          <p style="margin-top:12px;">본 서비스는 장병 여러분의 안전한 이용을 위해 <b>'완전 비식별화'</b>를 원칙으로 합니다. 실명 대신 은수.S, 승민.L과 같은 <b>[이름 + 성 이니셜]</b> 형태의 닉네임을 권장합니다.</p>
+        </div>
+      </details>
+    </div>
+
     <div class="section-label" style="margin-top:22px;">🔒 비밀번호 변경</div>
     <div class="acct-box">
       <div class="pw-wrap"><input type="password" id="curPw" class="acct-input" placeholder="현재 비밀번호" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
@@ -648,7 +665,7 @@
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail, signInAnonymously, sendEmailVerification, verifyBeforeUpdateEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 /* =====================================================
@@ -656,7 +673,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.45";
+const APP_VERSION = "2026.06.06.46";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -690,8 +707,43 @@ const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
    멤버 명단 — 실제 부원 이름으로 바꾸세요
    (이름만 ""안에 넣고, 쉼표로 구분)
 ===================================================== */
-const 멤버명단 = ["노재헌","이승민","장상훈","김태규","이동희","이시현","강승제","남윤호","서유찬","한재희","안서진","장성욱","조익태","신은수","호예권","test"];
+// 보안: 실명 대신 [이름 + 성 이니셜] 닉네임을 사용한다.
+const 멤버명단 = ["재헌.N","승민.L","상훈.J","태규.K","동희.L","시현.L","승제.K","윤호.N","유찬.S","재희.H","서진.A","성욱.J","익태.C","은수.S","예권.H","test"];
+// 기존 DB의 실명 → 닉네임 변환표 (마이그레이션 및 자동 정리에 사용)
+const 실명닉네임맵 = {
+  '노재헌':'재헌.N','이승민':'승민.L','장상훈':'상훈.J','김태규':'태규.K','이동희':'동희.L',
+  '이시현':'시현.L','강승제':'승제.K','남윤호':'윤호.N','서유찬':'유찬.S','한재희':'재희.H',
+  '안서진':'서진.A','장성욱':'성욱.J','조익태':'익태.C','신은수':'은수.S','호예권':'예권.H'
+};
 /* ===================================================== */
+
+// ── 실명 → 닉네임(이름+성 이니셜) 자동 생성 ──
+const 성씨이니셜 = {
+  '김':'K','이':'L','박':'P','최':'C','정':'J','강':'K','조':'C','윤':'Y','장':'J','임':'L',
+  '한':'H','오':'O','서':'S','신':'S','권':'K','황':'H','안':'A','송':'S','전':'J','홍':'H',
+  '고':'K','문':'M','양':'Y','손':'S','배':'B','백':'B','허':'H','유':'Y','남':'N','심':'S',
+  '노':'N','하':'H','곽':'K','성':'S','차':'C','주':'J','우':'W','구':'K','민':'M','류':'R',
+  '나':'N','진':'J','지':'J','엄':'E','채':'C','원':'W','천':'C','방':'B','공':'K','현':'H',
+  '함':'H','변':'B','염':'Y','여':'Y','추':'C','도':'D','소':'S','석':'S','선':'S','설':'S',
+  '마':'M','길':'K','연':'Y','위':'W','표':'P','명':'M','기':'K','반':'B','왕':'W','금':'K',
+  '옥':'O','육':'Y','인':'I','맹':'M','제':'J','모':'M','탁':'T','국':'K','어':'E','은':'E',
+  '편':'P','용':'Y','예':'Y','봉':'B','호':'H','경':'K','부':'B','감':'K','피':'P','패':'P'
+};
+function 로마자초성(ch){
+  const code = (ch||'').charCodeAt(0) - 0xAC00;
+  if(code < 0 || code > 11171) return (ch||'X').toUpperCase();
+  const cho = Math.floor(code/588);
+  const map = ['G','GG','N','D','DD','R','M','B','BB','S','SS','O','J','JJ','C','K','T','P','H'];
+  return (map[cho] || 'X')[0];
+}
+function 실명to닉네임(실명){
+  const s = (실명||'').trim().replace(/\s+/g,'');
+  if(s.length < 2) return s;
+  const 성 = s[0];
+  const 이름 = s.slice(1);
+  const ini = 성씨이니셜[성] || 로마자초성(성);
+  return 이름 + '.' + ini;
+}
 
 const 월선택지 = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 const 시작연도 = 2026;
@@ -1447,7 +1499,7 @@ window.openNewModal = function(){
   모달그룹설정('all');
   // 일반 회원은 본인 이름으로 고정, 관리자는 자유 선택
   const inName = document.getElementById('inName');
-  if(현재유저 && !관리자인가()){ inName.value = 현재유저.이름; inName.disabled = true; }
+  if(현재유저 && !관리자인가()){ inName.innerHTML = `<option>${escHtml(현재유저.이름)}</option>`; inName.value = 현재유저.이름; inName.disabled = true; }
   else { inName.disabled = false; }
   document.getElementById('inMonth').onchange = null;
   document.getElementById('inYear').onchange = null;
@@ -1615,7 +1667,9 @@ window.editRecord = function(이름, 모드){
   const 내기록 = 기록목록.filter(r=>r.이름===이름 && 연도of(r)===현재연도)
     .sort((a,b)=>월선택지.indexOf(a.월)-월선택지.indexOf(b.월));
   let 대상 = 내기록.find(r=>r.월===현재월) || 내기록[내기록.length-1];
-  document.getElementById('inName').value = 이름;
+  const inNameEl = document.getElementById('inName');
+  if(!Array.from(inNameEl.options).some(o=>o.value===이름)){ inNameEl.insertAdjacentHTML('beforeend', `<option>${escHtml(이름)}</option>`); }
+  inNameEl.value = 이름;
   document.getElementById('inYear').value = 현재연도;
   if(대상){
     document.getElementById('inMonth').value = 대상.월;
@@ -1648,11 +1702,6 @@ window.editRecord = function(이름, 모드){
 /* =====================================================
    로그인 / 회원가입 / 권한 / 관리자
 ===================================================== */
-// 회원가입 화면의 이름 드롭다운 채우기
-document.getElementById('authName').innerHTML =
-  '<option value="">이름 선택</option>' +
-  [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option value="${n}">${n}</option>`).join('');
-
 let authMode = 'login';
 let 회원가입중 = false;
 
@@ -1733,8 +1782,9 @@ window.authSubmit = async function(){
   try{
     await setPersistence(auth, browserLocalPersistence);  // 같은 기기에서 로그인 유지
     if(authMode === 'signup'){
-      const 이름 = document.getElementById('authName').value;
-      if(!멤버명단.includes(이름)){ authMsg('본인 이름을 선택해주세요.'); btn.disabled=false; return; }
+      const 실명 = document.getElementById('authRealName').value.trim().replace(/\s+/g,'');
+      if(실명.length < 2){ authMsg('실명을 정확히 입력해주세요.'); btn.disabled=false; return; }
+      const 닉네임 = 실명to닉네임(실명);
       const pw2 = document.getElementById('authPw2').value;
       if(pw.length < 6){ authMsg('비밀번호는 6자 이상이어야 합니다.'); btn.disabled=false; return; }
       if(pw !== pw2){ authMsg('비밀번호가 서로 일치하지 않습니다. 다시 확인해주세요.'); btn.disabled=false; return; }
@@ -1748,21 +1798,24 @@ window.authSubmit = async function(){
           if(!cred){ 회원가입중 = false; btn.disabled = false; return; }
         } else { throw e; }
       }
-      // 이름 중복(이미 가입/신청) 확인 — 인증 후 조회
-      const snap = await getDocs(query(usersCol, where('이름','==',이름)));
+      // 닉네임 중복(이미 가입/신청) 확인 — 인증 후 조회
+      const snap = await getDocs(query(usersCol, where('이름','==',닉네임)));
       if(!snap.empty){
         try{ await deleteUser(cred.user); }catch(_){}
         회원가입중 = false; btn.disabled = false;
-        authMsg(이름 + ' 이름은 이미 가입(또는 신청)되어 있습니다.');
+        authMsg('닉네임 "' + 닉네임 + '"이(가) 이미 사용 중입니다. 관리자에게 문의해주세요.');
         return;
       }
-      const isAdmin = 관리자이름.includes(이름);
-      await setDoc(doc(db,'users',cred.user.uid), {
-        email, 이름,
+      const isAdmin = 관리자이름.includes(실명);
+      const 데이터 = {
+        email, 이름: 닉네임,
         role: isAdmin ? 'admin' : 'member',
         status: isAdmin ? 'approved' : 'pending',
         가입시각: Date.now()
-      });
+      };
+      // 관리자 본인 확인용으로 실명은 '승인 전까지만' 임시 저장(승인/거절 시 삭제). 관리자 자동승인이면 저장하지 않음.
+      if(!isAdmin) 데이터.실명 = 실명;
+      await setDoc(doc(db,'users',cred.user.uid), 데이터);
       try{ await sendEmailVerification(cred.user); }catch(_){}  // 인증 메일 발송
       회원가입중 = false;
       await 사용자라우팅(cred.user);
@@ -1938,9 +1991,10 @@ async function 사용자라우팅(user){
   앱표시();
   권한UI적용();
   데이터구독시작();
+  if(관리자인가()) 실명데이터정리();   // 기존 실명 데이터 → 닉네임 자동 정리(1회)
   // 일반 회원은 기록 입력 이름을 본인으로 고정
   const inName = document.getElementById('inName');
-  if(!관리자인가()){ inName.value = 현재유저.이름; inName.disabled = true; }
+  if(!관리자인가()){ inName.innerHTML = `<option>${escHtml(현재유저.이름)}</option>`; inName.value = 현재유저.이름; inName.disabled = true; }
   else { inName.disabled = false; }
 }
 
@@ -1967,7 +2021,7 @@ function 관리자화면그리기(){
   pendingEl.innerHTML = 대기.length ? 대기.map(u=>`
     <div class="admin-card">
       <div class="ac-info">
-        <div class="ac-name">${escHtml(u.이름)}</div>
+        <div class="ac-name">${escHtml(u.이름)}${u.실명?` <span class="ac-real">실명: ${escHtml(u.실명)}</span>`:''}</div>
         <div class="ac-email">${escHtml(u.email||'')}</div>
       </div>
       <div class="ac-btns">
@@ -1989,7 +2043,8 @@ function 관리자화면그리기(){
 }
 
 window.승인회원 = async function(uid){
-  try{ await setDoc(doc(db,'users',uid), { status:'approved' }, { merge:true }); }
+  // 승인과 동시에 실명 데이터를 영구 삭제(어디에도 남지 않도록)
+  try{ await setDoc(doc(db,'users',uid), { status:'approved', 실명: deleteField() }, { merge:true }); }
   catch(e){ alert('승인 실패: ' + (e.code||e.message)); }
 };
 window.거절회원 = async function(uid, 이름){
@@ -2011,6 +2066,25 @@ window.추방회원 = async function(uid, 이름){
   }catch(e){ alert('탈퇴 처리 실패: ' + (e.code||e.message)); }
 };
 
+// 기존 DB에 남아있는 실명 데이터를 닉네임으로 일괄 변환(관리자 로그인 시 1회, 멱등)
+let 실명정리실행중 = false;
+async function 실명데이터정리(){
+  if(실명정리실행중 || !관리자인가()) return;
+  실명정리실행중 = true;
+  try{
+    for(const 실명 in 실명닉네임맵){
+      const 닉 = 실명닉네임맵[실명];
+      const rs = await getDocs(query(recordsCol, where('이름','==',실명)));
+      for(const d of rs.docs){ await setDoc(doc(db,'records',d.id), { 이름: 닉 }, { merge:true }); }
+      const ts = await getDocs(query(trainingCol, where('이름','==',실명)));
+      for(const d of ts.docs){ await setDoc(doc(db,'training',d.id), { 이름: 닉 }, { merge:true }); }
+      try{ const q = await getDoc(doc(db,'quotes',실명)); if(q.exists()){ await setDoc(doc(db,'quotes',닉), q.data()); await deleteDoc(doc(db,'quotes',실명)); } }catch(_){}
+      const us = await getDocs(query(usersCol, where('이름','==',실명)));
+      for(const d of us.docs){ await setDoc(doc(db,'users',d.id), { 이름: 닉, 실명: deleteField() }, { merge:true }); }
+    }
+  }catch(e){ console.warn('실명 데이터 정리 오류:', e); }
+}
+
 // ── 계정 탭 ──
 function 계정화면그리기(){
   if(!현재유저) return;
@@ -2025,8 +2099,8 @@ function 계정화면그리기(){
   if(accLogout) accLogout.textContent = guest ? '나가기' : '로그아웃';
   if(guest) return;
   // 입력칸/메시지 초기화
-  ['curPw','newPw','newPw2','delPw'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['pwMsg','resetMsg','delMsg'].forEach(id=>acctMsg(id,''));
+  ['curPw','newPw','newPw2','delPw','newNick'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['pwMsg','resetMsg','delMsg','nickMsg'].forEach(id=>acctMsg(id,''));
   // 관리자만 회원 관리 섹션 표시
   document.getElementById('accountAdmin').style.display = 관리자인가() ? 'block' : 'none';
   if(관리자인가()) 관리자화면그리기();
@@ -2036,6 +2110,42 @@ function acctMsg(id, text, ok){
   if(!el) return;
   el.textContent = text || ''; el.classList.toggle('ok', !!ok);
 }
+
+// 닉네임 변경 (본인 기록/운동일지/명언도 새 닉네임으로 함께 이전)
+window.닉네임변경 = async function(){
+  if(!현재유저 || 게스트인가()) return;
+  const 새닉 = document.getElementById('newNick').value.trim().replace(/\s+/g,'');
+  const 옛닉 = 현재유저.이름;
+  if(새닉.length < 2){ acctMsg('nickMsg','새 닉네임을 입력해주세요.'); return; }
+  if(새닉.length > 16){ acctMsg('nickMsg','닉네임이 너무 깁니다.'); return; }
+  if(새닉 === 옛닉){ acctMsg('nickMsg','현재 닉네임과 같습니다.'); return; }
+  // 실명 의심 차단: 한글만으로 이루어진 2~4글자(이니셜/구분점 없음)는 실명일 가능성이 높음
+  if(/^[가-힣]{2,4}$/.test(새닉)){ acctMsg('nickMsg','실명으로 보이는 닉네임은 사용할 수 없어요. 이름+성 이니셜(예: 길동.H) 형태로 적어주세요.'); return; }
+  acctMsg('nickMsg','변경 중...', true);
+  try{
+    // 닉네임 중복 확인
+    const dup = await getDocs(query(usersCol, where('이름','==',새닉)));
+    if(!dup.empty){ acctMsg('nickMsg','이미 사용 중인 닉네임입니다.'); return; }
+    // 1) 본인 명언 내용 미리 읽기(있으면)
+    let 명언내용 = null;
+    try{ const q = await getDoc(doc(db,'quotes',옛닉)); if(q.exists()) 명언내용 = q.data(); }catch(_){}
+    // 2) 기록/운동일지의 이름 필드를 새 닉네임으로 변경 (기존 이름==내이름 이므로 허용됨)
+    const rs = await getDocs(query(recordsCol, where('이름','==',옛닉)));
+    for(const d of rs.docs){ await setDoc(doc(db,'records',d.id), { 이름: 새닉 }, { merge:true }); }
+    const ts = await getDocs(query(trainingCol, where('이름','==',옛닉)));
+    for(const d of ts.docs){ await setDoc(doc(db,'training',d.id), { 이름: 새닉 }, { merge:true }); }
+    // 3) 옛 명언 문서 삭제(아직 내이름==옛닉 이라 허용)
+    if(명언내용!==null){ try{ await deleteDoc(doc(db,'quotes',옛닉)); }catch(_){} }
+    // 4) 회원 문서의 닉네임 변경
+    await setDoc(doc(db,'users',현재유저.uid), { 이름: 새닉 }, { merge:true });
+    현재유저.이름 = 새닉;  // 이후 단계의 권한 검사를 위해 즉시 반영
+    // 5) 새 닉네임으로 명언 문서 재생성
+    if(명언내용!==null){ try{ await setDoc(doc(db,'quotes',새닉), 명언내용); }catch(_){} }
+    acctMsg('nickMsg','✅ 닉네임이 "' + 새닉 + '"(으)로 변경되었습니다.', true);
+    document.getElementById('newNick').value='';
+    권한UI적용();
+  }catch(e){ acctMsg('nickMsg', '변경 실패: ' + (e.code||e.message)); }
+};
 
 window.비밀번호변경 = async function(){
   const cur = document.getElementById('curPw').value;
