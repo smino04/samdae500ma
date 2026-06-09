@@ -754,7 +754,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.47";
+const APP_VERSION = "2026.06.06.48";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2372,9 +2372,22 @@ window.ai코치조언받기 = async function(){
     try{ await setDoc(doc(db,'daily_logs',id), { ai응답: md }, { merge:true }); }catch(e){ console.warn('AI 응답 저장 실패', e); }
   }catch(e){
     const code = e && (e.message||e.code) || '';
+    const msg = String(code);
     if(code==='NO_API_KEY'){ area.style.display='none'; aiMsg('API 키가 없습니다. 키를 저장해주세요.'); const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true; }
+    else if(/quota|RESOURCE_EXHAUSTED|429|limit: 0/i.test(msg)){
+      area.innerHTML = `<div class="ai-feedback-meta" style="color:#ffc83d;">⏳ 사용량 한도에 걸렸어요.</div>
+        <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">무료 사용량을 초과했거나, 이 키로는 사용할 수 있는 모델 한도가 0이에요.<br>
+        • <b>잠시 후(약 30초~1분) 다시 시도</b>하거나<br>
+        • <b>새 API 키</b>를 발급해 바꿔보거나(aistudio.google.com/apikey)<br>
+        • 하루 한도 초과라면 내일 다시 시도해주세요.</p>`;
+    }
+    else if(/API_KEY_INVALID|API key not valid|PERMISSION_DENIED|401|403/i.test(msg)){
+      area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">🔑 키가 올바르지 않아요.</div>
+        <p style="color:var(--text-dim);font-size:13px;">API 키를 다시 확인해 저장해주세요. (aistudio.google.com/apikey에서 새로 발급 가능)</p>`;
+      const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true;
+    }
     else{
-      area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">⚠️ AI 호출에 실패했어요.</div><p style="color:var(--text-dim);font-size:13px;">${escHtml(String(code))}<br>키가 올바른지, 또는 잠시 후 다시 시도해주세요.</p>`;
+      area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">⚠️ AI 호출에 실패했어요.</div><p style="color:var(--text-dim);font-size:13px;">${escHtml(msg)}<br>잠시 후 다시 시도해주세요.</p>`;
     }
   }
   btn.disabled = false;
