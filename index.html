@@ -754,7 +754,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.48";
+const APP_VERSION = "2026.06.06.49";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2375,11 +2375,11 @@ window.ai코치조언받기 = async function(){
     const msg = String(code);
     if(code==='NO_API_KEY'){ area.style.display='none'; aiMsg('API 키가 없습니다. 키를 저장해주세요.'); const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true; }
     else if(/quota|RESOURCE_EXHAUSTED|429|limit: 0/i.test(msg)){
-      area.innerHTML = `<div class="ai-feedback-meta" style="color:#ffc83d;">⏳ 사용량 한도에 걸렸어요.</div>
-        <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">무료 사용량을 초과했거나, 이 키로는 사용할 수 있는 모델 한도가 0이에요.<br>
-        • <b>잠시 후(약 30초~1분) 다시 시도</b>하거나<br>
-        • <b>새 API 키</b>를 발급해 바꿔보거나(aistudio.google.com/apikey)<br>
-        • 하루 한도 초과라면 내일 다시 시도해주세요.</p>`;
+      area.innerHTML = `<div class="ai-feedback-meta" style="color:#ffc83d;">⏳ 사용량 한도(quota)에 막혔어요.</div>
+        <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">모든 모델에서 막힌다면 보통 <b>그 키의 프로젝트에 무료 한도가 0</b>으로 잡힌 경우예요. 다음을 시도해보세요:<br>
+        ① <b>새 프로젝트로 키 재발급</b> — aistudio.google.com/apikey → "Create API key" 시 <b>새 프로젝트</b> 선택<br>
+        ② 그래도 안 되면 <b>결제(billing) 사용 설정</b> — Flash 모델은 매우 저렴해 실사용 비용은 거의 0이에요<br>
+        ③ 분당 한도였다면 <b>30초~1분 뒤 재시도</b></p>`;
     }
     else if(/API_KEY_INVALID|API key not valid|PERMISSION_DENIED|401|403/i.test(msg)){
       area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">🔑 키가 올바르지 않아요.</div>
