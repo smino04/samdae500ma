@@ -509,7 +509,7 @@
   <div id="aiCoachView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
       <h1 class="title-main">🤖 AI 코치</h1>
-      <div class="title-sub">컨디션·식단 기반 맞춤 코칭</div>
+      <div class="title-sub">끝낸 운동·식단 피드백 코칭</div>
       <div class="header-divider"></div>
     </header>
 
@@ -545,11 +545,11 @@
           <option value="유지">유지</option>
         </select>
       </div>
-      <div class="field"><label>오늘 운동 루틴</label><textarea id="aiRoutine" class="ai-textarea" placeholder="예: 가슴·삼두 / 벤치 80kg 5x5, 인클라인 덤벨 ..."></textarea></div>
+      <div class="field"><label>오늘 완료한 운동</label><textarea id="aiRoutine" class="ai-textarea" placeholder="오늘 끝낸 운동을 적어줘 (예: 가슴·삼두 / 벤치 80kg 5x5, 인클라인 덤벨 12x3 ...)"></textarea></div>
       <div class="field"><label>식단 (오늘 먹은 것)</label><textarea id="aiDiet" class="ai-textarea" placeholder="예: 아침 닭가슴살+고구마, 점심 ..."></textarea></div>
       <div class="field"><label>급식표 (오늘 부대 메뉴)</label><textarea id="aiMeal" class="ai-textarea" placeholder="예: 쌀밥, 된장국, 제육볶음, 계란말이, 김치"></textarea></div>
       <div class="acct-msg" id="aiMsg"></div>
-      <button class="acct-btn" id="aiSubmitBtn" onclick="ai코치조언받기()">🤖 AI 코치에게 조언받기</button>
+      <button class="acct-btn" id="aiSubmitBtn" onclick="ai코치조언받기()">🤖 오늘 운동·식단 피드백 받기</button>
     </div>
 
     <div id="ai-feedback-area" class="ai-feedback" style="display:none;"></div>
@@ -754,7 +754,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.49";
+const APP_VERSION = "2026.06.06.50";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2357,11 +2357,12 @@ window.ai코치조언받기 = async function(){
 목표: ${목표}
 체중: ${체중||'(미입력)'}kg
 컨디션(1-5): ${컨디션||'(미입력)'}
-오늘 운동 루틴: ${운동루틴||'(미입력)'}
+오늘 '완료한' 운동 루틴: ${운동루틴||'(미입력)'}
 오늘 식단: ${식단||'(미입력)'}
 오늘 부대 급식표: ${급식표||'(미입력)'}
 
-위 정보를 바탕으로 오늘의 코칭을 해줘. 급식표 기준 '식판 전략'(양 조절), 부족 영양소 PX 추천, 컨디션에 따른 운동 강도 조절을 꼭 포함해줘.`;
+운동은 이미 끝낸 상태야. 운동에 대해서는 '어떻게 했어야 하는지'가 아니라 수행 결과 피드백(잘한 점 / 아쉽거나 문제로 보이는 점 / 다음에 개선할 점)을 컨디션과 함께 평가해줘.
+식단·급식표는 목표에 맞춰 '식판 전략'(양 조절)과 부족 영양소 PX 추천을 해줘.`;
 
   try{
     const mod = await import('./geminiService.js');
