@@ -6,7 +6,7 @@ import { GoogleGenAI } from "https://esm.run/@google/genai";
 
 // 무료 티어에서 한도가 0인 모델이 있어, 여러 모델을 순서대로 시도(폴백)한다.
 // (앞쪽일수록 우선) — 한 모델이 quota(429)/없음(404)이면 다음 모델로 넘어감.
-const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-1.5-flash"];
+const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-flash-latest", "gemini-1.5-flash"];
 
 // 시스템 프롬프트(코치 페르소나) — 실명 사용 금지 등 보안 지침 포함
 const SYSTEM_INSTRUCTION = `너는 군부대 맞춤형 AI 보디빌딩 코치야. 유저를 '은수.S' 같은 닉네임으로만 부르고 실명은 절대 쓰지 마.
