@@ -325,6 +325,16 @@
   .meal-edit{background:none;border:none;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0;}
   .meal-form input{margin-bottom:7px;}
   .meal-empty{font-size:12px;color:var(--text-dim);margin-bottom:7px;}
+  /* 목표 요약 */
+  .goal-summary{background:linear-gradient(100deg,rgba(96,165,250,0.16),var(--panel) 70%);border:1px solid var(--blue-bright);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px;font-weight:700;color:var(--text);line-height:1.5;}
+  .goal-summary .gs-sub{font-size:12px;font-weight:400;color:var(--text-dim);margin-top:3px;}
+  /* 급식 달력 일괄 입력 */
+  .meal-cal-row{border:1px solid var(--line);border-radius:9px;padding:9px 10px;margin-bottom:8px;background:var(--bg);}
+  .meal-cal-row .mc-date{font-size:13px;font-weight:700;color:var(--blue-bright);margin-bottom:6px;}
+  .meal-cal-row .mc-date.mc-today{color:var(--gold);}
+  .meal-cal-row input{width:100%;box-sizing:border-box;padding:8px 10px;margin-bottom:5px;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--text);font-family:'Noto Sans KR';font-size:13px;}
+  .meal-cal-row input:last-child{margin-bottom:0;}
+  .meal-cal-row input:focus{outline:none;border-color:var(--blue-bright);}
   .acct-input{width:100%;box-sizing:border-box;padding:12px;margin-bottom:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;}
   .acct-input:focus{outline:none;border-color:var(--blue-bright);}
   .acct-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin:0 0 12px;}
@@ -533,6 +543,22 @@
       </div>
     </details>
 
+    <!-- 목표 설정 -->
+    <div id="goalSummary" class="goal-summary" style="display:none;"></div>
+    <details class="why-toggle" id="goalBox" style="margin-bottom:14px;">
+      <summary>🎯 목표 입력하기 (현재·목표 체중·기한) <span class="why-arrow">▼</span></summary>
+      <div class="why-content">
+        <div class="grid2">
+          <div class="field"><label>현재 체중 (kg)</label><input type="number" id="goalCurWeight" inputmode="decimal" placeholder="예: 72"></div>
+          <div class="field"><label>목표 체중 (kg)</label><input type="number" id="goalTargetWeight" inputmode="decimal" placeholder="예: 68"></div>
+        </div>
+        <div class="field"><label>목표 기한</label><input type="date" id="goalDeadline" class="acct-input"></div>
+        <div class="acct-msg" id="goalMsg"></div>
+        <button class="acct-btn" onclick="목표저장()">목표 저장</button>
+        <p class="acct-desc" style="margin-top:8px;">코칭 받을 때 입력한 체중이 '현재 체중'으로 <b>자동 갱신</b>돼요.</p>
+      </div>
+    </details>
+
     <!-- 부대 공유 급식표 -->
     <div class="section-label">🍱 부대 급식표 (공유)</div>
     <div class="acct-box">
@@ -540,7 +566,8 @@
       <div id="mealTodayBox"></div>
       <div class="meal-day-label" style="margin-top:14px;">📅 내일</div>
       <div id="mealTomorrowBox"></div>
-      <p class="acct-desc" style="margin-top:10px;">한 명이 등록하면 <b>부대원 전체가 공유</b>해요. 내일 급식표를 등록하면 '내일 식판 전략'이 더 정확해집니다.</p>
+      <button class="acct-btn acct-btn-sub" style="margin-top:12px;" onclick="급식달력열기()">📅 급식표 한번에 입력하기</button>
+      <p class="acct-desc" style="margin-top:10px;">한 명이 등록하면 <b>부대원 전체가 공유</b>해요. 앞으로의 급식표를 달력에서 한 번에 입력할 수 있어요.</p>
     </div>
 
     <!-- 개인 입력 -->
@@ -764,6 +791,20 @@
   </div>
 </div>
 
+<!-- 급식표 달력(일괄 입력) 모달 -->
+<div class="modal-bg" id="mealModalBg">
+  <div class="modal" style="max-width:540px;">
+    <h2 id="modalTitle2">📅 급식표 한번에 입력</h2>
+    <div class="sub">앞으로의 부대 급식표를 날짜별로 입력하세요. 입력한 날만 저장되고 <b>부대원 전체가 공유</b>합니다.</div>
+    <div id="mealCalList"></div>
+    <div class="acct-msg" id="mealCalMsg"></div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="급식달력닫기()">닫기</button>
+      <button class="btn btn-save" id="mealSaveBtn" onclick="급식일괄저장()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -775,7 +816,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.51";
+const APP_VERSION = "2026.06.06.52";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2364,6 +2405,60 @@ window.급식표등록 = async function(which){
     await 급식표섹션그리기(which);
   }catch(e){ alert('급식표 등록 실패: ' + (e.code||e.message)); }
 };
+
+// ── 급식표 달력 일괄 입력 ──
+const _요일 = ['일','월','화','수','목','금','토'];
+window.급식달력열기 = async function(){
+  if(게스트인가() || !현재유저){ alert('로그인 후 이용할 수 있어요.'); return; }
+  const list = document.getElementById('mealCalList');
+  document.getElementById('mealCalMsg').textContent='';
+  list.innerHTML = '<div class="ai-loading">불러오는 중...</div>';
+  document.getElementById('mealModalBg').classList.add('show');
+  const N = 14;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const rows = [];
+  for(let i=0;i<N;i++){
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    const ds = _fmt날짜(d);
+    let m=null; try{ const s=await getDoc(doc(db,'meals',ds)); if(s.exists()) m=s.data(); }catch(_){}
+    const label = `${d.getMonth()+1}/${d.getDate()} (${_요일[d.getDay()]})${i===0?' · 오늘':i===1?' · 내일':''}`;
+    const v=(k)=> m && m[k] ? escHtml(m[k]) : '';
+    rows.push(`<div class="meal-cal-row">
+      <div class="mc-date ${i===0?'mc-today':''}">${label}</div>
+      <input data-date="${ds}" data-k="breakfast" placeholder="아침" value="${v('breakfast')}">
+      <input data-date="${ds}" data-k="lunch" placeholder="점심" value="${v('lunch')}">
+      <input data-date="${ds}" data-k="dinner" placeholder="저녁" value="${v('dinner')}">
+    </div>`);
+  }
+  list.innerHTML = rows.join('');
+};
+window.급식달력닫기 = function(){ document.getElementById('mealModalBg').classList.remove('show'); };
+window.급식일괄저장 = async function(){
+  if(게스트인가() || !현재유저) return;
+  const inputs = document.querySelectorAll('#mealCalList input');
+  const byDate = {};
+  inputs.forEach(inp=>{
+    const ds=inp.dataset.date, k=inp.dataset.k, val=(inp.value||'').trim();
+    (byDate[ds] = byDate[ds] || {})[k] = val;
+  });
+  const btn = document.getElementById('mealSaveBtn'); btn.disabled=true;
+  const msgEl = document.getElementById('mealCalMsg'); msgEl.textContent='저장 중...';
+  let cnt=0;
+  try{
+    for(const ds in byDate){
+      const m = byDate[ds];
+      if(m.breakfast || m.lunch || m.dinner){
+        await setDoc(doc(db,'meals',ds), { breakfast:m.breakfast||'', lunch:m.lunch||'', dinner:m.dinner||'', registeredBy:현재유저.이름, 등록시각:Date.now() }, { merge:true });
+        cnt++;
+      }
+    }
+    msgEl.textContent = `✅ ${cnt}일치 저장 완료!`;
+    급식표섹션그리기('today'); 급식표섹션그리기('tomorrow');
+    setTimeout(급식달력닫기, 900);
+  }catch(e){ msgEl.textContent = '저장 실패: ' + (e.code||e.message); }
+  btn.disabled=false;
+};
+
 function 마크다운렌더(md){
   try{ if(window.marked && marked.parse) return marked.parse(md); }catch(_){}
   // marked 미로딩 시 최소 폴백(escape + 줄바꿈)
@@ -2375,21 +2470,72 @@ function aiMsg(text, ok){ const el=document.getElementById('aiMsg'); if(el){ el.
 function ai코치화면준비(){
   const box = document.getElementById('aiCoachView');
   const boxes = box.querySelectorAll('.acct-box');
+  const goalBoxEl=document.getElementById('goalBox'), goalSumEl=document.getElementById('goalSummary');
   if(게스트인가()){
     boxes.forEach(b=>b.style.display='none');
+    if(goalBoxEl) goalBoxEl.style.display='none';
+    if(goalSumEl) goalSumEl.style.display='none';
     return;
   }
   boxes.forEach(b=>b.style.display='block');
+  if(goalBoxEl) goalBoxEl.style.display='block';
   const keyInput = document.getElementById('aiApiKey');
   let key=''; try{ key = localStorage.getItem('gemini_api_key')||''; }catch(_){}
   if(keyInput) keyInput.value = key;
   const keyBox = document.getElementById('aiKeyBox');
   if(keyBox) keyBox.open = !key;   // 키 없으면 설정 펼침
   aiMsg('');
+  목표화면그리기();
   // 부대 공유 급식표(오늘/내일) 자동 로드
   급식표섹션그리기('today');
   급식표섹션그리기('tomorrow');
 }
+
+// ── 목표(현재/목표 체중·기한) ──
+function _디데이(기한){
+  if(!기한) return null;
+  const d = new Date(기한+'T00:00:00');
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((d - t)/86400000);
+}
+function 목표화면그리기(){
+  if(!현재유저) return;
+  const cur = 현재유저.현재체중, tgt = 현재유저.목표체중, due = 현재유저.목표기한;
+  document.getElementById('goalCurWeight').value = (cur!=null?cur:'');
+  document.getElementById('goalTargetWeight').value = (tgt!=null?tgt:'');
+  document.getElementById('goalDeadline').value = due || '';
+  acctMsg('goalMsg','');
+  const sum = document.getElementById('goalSummary');
+  if(tgt!=null && due){
+    const dday = _디데이(due);
+    const diff = (cur!=null) ? Math.round((tgt - cur)*10)/10 : null;
+    const 방향 = diff!=null ? (diff<0?`감량 ${Math.abs(diff)}kg`:(diff>0?`증량 ${diff}kg`:'유지')) : '';
+    const 주당 = (diff!=null && dday>0) ? Math.round(Math.abs(diff)/(dday/7)*100)/100 : null;
+    sum.style.display='block';
+    sum.innerHTML = `🎯 ${cur!=null?cur+'kg → ':''}${tgt}kg ${dday!=null?`· D-${dday>=0?dday:0}`:''}` +
+      `<div class="gs-sub">${방향}${주당!=null?` · 주당 약 ${주당}kg 페이스 권장`:''}</div>`;
+    const gb=document.getElementById('goalBox'); if(gb) gb.open=false;
+  } else {
+    sum.style.display='none';
+    const gb=document.getElementById('goalBox'); if(gb) gb.open=true;  // 목표 없으면 펼침
+  }
+}
+window.목표저장 = async function(){
+  if(게스트인가() || !현재유저) return;
+  const cur = parseFloat(document.getElementById('goalCurWeight').value);
+  const tgt = parseFloat(document.getElementById('goalTargetWeight').value);
+  const due = document.getElementById('goalDeadline').value;
+  if(isNaN(tgt) || !due){ acctMsg('goalMsg','목표 체중과 기한을 입력해주세요.'); return; }
+  acctMsg('goalMsg','저장 중...', true);
+  try{
+    const data = { 목표체중: tgt, 목표기한: due };
+    if(!isNaN(cur)) data.현재체중 = cur;
+    await setDoc(doc(db,'users',현재유저.uid), data, { merge:true });
+    Object.assign(현재유저, data);
+    acctMsg('goalMsg','✅ 목표가 저장되었습니다.', true);
+    목표화면그리기();
+  }catch(e){ acctMsg('goalMsg','저장 실패: ' + (e.code||e.message)); }
+};
 
 window.aiKey저장 = function(){
   const v = (document.getElementById('aiApiKey').value||'').trim();
@@ -2423,6 +2569,20 @@ window.ai코치조언받기 = async function(){
   try{ const s2=await getDoc(doc(db,'meals',내일날짜())); 급식캐시.tomorrow = s2.exists()?s2.data():null; }catch(_){}
   const 오늘급식 = 급식캐시.today, 내일급식 = 급식캐시.tomorrow;
 
+  // 현재 체중 자동 갱신(체중 입력했으면 목표의 '현재 체중'을 업데이트)
+  const 체중수치 = parseFloat(체중);
+  if(!isNaN(체중수치)){
+    현재유저.현재체중 = 체중수치;
+    try{ await setDoc(doc(db,'users',현재유저.uid), { 현재체중: 체중수치 }, { merge:true }); }catch(_){}
+    목표화면그리기();
+  }
+  // 목표 텍스트
+  const _cur=현재유저.현재체중, _tgt=현재유저.목표체중, _due=현재유저.목표기한;
+  const _dday = _디데이(_due);
+  const 목표텍스트 = (_tgt!=null && _due)
+    ? `현재 ${_cur!=null?_cur+'kg':'?'} → 목표 ${_tgt}kg · 기한 ${_due} (D-${_dday>=0?_dday:0})`
+    : '(목표 미설정)';
+
   const date = 오늘날짜();
   const id = 현재유저.이름 + '_' + date;   // 회원별·날짜별 1문서
   const 기본데이터 = { 이름:현재유저.이름, 날짜:date, 체중, 컨디션, 목표, 운동루틴, 식단, 내일운동,
@@ -2434,8 +2594,9 @@ window.ai코치조언받기 = async function(){
 
   // B. Gemini 호출
   const prompt = `유저 닉네임: ${현재유저.이름}
-목표: ${목표}
-체중: ${체중||'(미입력)'}kg
+목표 방향: ${목표}
+[체중 목표] ${목표텍스트}
+오늘 체중: ${체중||'(미입력)'}kg
 컨디션(1-5): ${컨디션||'(미입력)'}
 
 [오늘 — 이미 끝난 것, 피드백 대상]
@@ -2448,6 +2609,7 @@ window.ai코치조언받기 = async function(){
 내일 운동 예고: ${내일운동||'(미입력)'}
 
 지침:
+- [체중 목표]가 설정돼 있으면, 목표 기한까지 남은 기간과 목표 체중차를 고려해 '계획적으로'(주당 권장 증감 페이스, 현재 추세가 목표에 맞는지) 평가하고 그에 맞춰 오늘 피드백과 내일 전략을 연결해줘.
 - '오늘의 영양 반성' 섹션: 오늘 먹은 식단의 영양(단백질/탄수/지방) 분석과 잘한 점/아쉬운 점, 오늘 운동은 컨디션을 고려한 피드백(잘한 점/문제점/개선점).
 - '내일의 식판 예보' 섹션: 내일 부대 급식표를 기준으로 목표에 맞는 식판 전략(끼니별로 무엇을 더/덜 담을지)과 PX 추천을 제시하고, 오늘 부족했던 영양을 내일 어떻게 보충할지 오늘→내일을 연결해줘. 내일 운동 예고가 있으면 그에 맞춘 에너지 로딩/PX 섭취 타이밍 전략도 넣어줘.
 ${내일급식 ? '' : '- 내일 급식표가 아직 미등록이니, 일반 원칙으로 내일 전략을 주되 "내일 급식표를 먼저 등록하면 더 정확한 내일 전략을 짜드릴 수 있다"고 안내해줘.'}`;
