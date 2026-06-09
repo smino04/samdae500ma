@@ -170,6 +170,12 @@
   .why-content p{margin-top:10px;}
   .why-content p:first-child{margin-top:14px;}
   .why-content b{color:var(--text);}
+  .level-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+  .level-label{font-size:12px;font-weight:700;color:var(--text-dim);margin-right:2px;}
+  .level-btn{padding:6px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .level-btn.active{background:var(--blue);border-color:var(--blue-bright);color:#10141b;}
+  .level-hint{flex-basis:100%;font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .level-view{font-size:13px;font-weight:700;color:var(--blue-bright);}
   .train-input-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
   .train-exercise-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;}
   .train-exercise-tabs::-webkit-scrollbar{display:none;}
@@ -476,6 +482,7 @@
     </div>
     <div id="diaryContent">
       <div class="section-label">📒 주간 훈련 일지</div>
+      <div id="levelRow" class="level-row"></div>
       <div class="train-input-card">
         <div class="train-exercise-select">
           <select id="exerciseSelect" onchange="onExerciseSelectChange(this.value)"></select>
@@ -805,7 +812,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.53";
+const APP_VERSION = "2026.06.06.36";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -833,6 +840,7 @@ const auth = getAuth(app);
 const recordsCol = collection(db, "records");
 const trainingCol = collection(db, "training");  // 주간 훈련 일지
 const quotesCol = collection(db, "quotes");  // 멤버별 명언
+const levelsCol = collection(db, "levels");  // 멤버별 숙련도(초보/중급/고급)
 const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
 const dailyLogsCol = collection(db, "daily_logs");  // AI 코치 일일 기록
 const mealsCol = collection(db, "meals");  // 부대 공유 급식표(날짜별)
@@ -895,6 +903,7 @@ function 연도of(r){ return r.연도 || 시작연도; }
 let 기록목록 = [];   // Firebase에서 실시간으로 채워짐
 let 훈련목록 = [];   // 훈련 기록 [{이름,날짜,중량,횟수,...}]
 let 명언목록 = {};   // { 이름: 명언 } (없으면 "직접 입력하세요" 안내)
+let 레벨목록 = {};   // { 이름: '초보'|'중급'|'고급' } (기본 중급)
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 
@@ -946,6 +955,17 @@ function 데이터구독시작(){
         el.textContent = q || (내권한(현재상세이름) ? '+ 한마디를 입력하세요' : '');
         el.classList.toggle('empty', !q);
       }
+    }
+  }));
+  // 숙련도 실시간 수신 (문서 id = 멤버 이름)
+  구독함수들.push(onSnapshot(levelsCol, (snap)=>{
+    레벨목록 = {};
+    snap.forEach(d => { 레벨목록[d.id] = d.data().레벨; });
+    if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
+      훈련일지그리기(일지대상);
+    }
+    if(document.getElementById('analysisView').style.display!=='none' && 분석대상){
+      분석그리기();
     }
   }));
   // 회원 관리(관리자만 users 컬렉션 전체를 읽을 수 있음)
@@ -1248,6 +1268,20 @@ const 종목설정 = {
 };
 const 종목목록 = Object.keys(종목설정);
 const 기본종목설정 = { 목표회수:8, 증가:5, 시작회수:5 }; // 직접 입력 종목용 기본값
+// 숙련도별 설정 (초보는 높은 반복+작은 증량 → 가벼운 무게로 안전하게)
+function 멤버레벨(이름){ return 레벨목록[이름] || '중급'; }
+function 운동설정(이름, ex){
+  const lv = 멤버레벨(이름);
+  if(lv==='초보') return { 목표회수:12, 증가:2.5, 시작회수:10 };
+  if(lv==='고급') return { 목표회수:5,  증가:5,   시작회수:3  };
+  return 종목설정[ex] || 기본종목설정;  // 중급 = 기존 종목별 설정
+}
+window.setLevel = async function(L){
+  const 이름 = 일지대상 || 현재상세이름;
+  if(!내권한(이름)){ alert('본인 레벨만 변경할 수 있어요.'); return; }
+  try{ await setDoc(doc(db,'levels',이름), {이름, 레벨:L, 등록시각:Date.now()}); }
+  catch(e){ alert('레벨 저장 실패: '+e.message); }
+}
 const 직접입력값 = '__custom__';
 let 현재종목 = null;   // 운동 일지 진입 시 미선택 상태 → 사용자가 운동을 골라야 내용 표시
 let 직접입력모드 = false;
@@ -1318,9 +1352,9 @@ window.selectAnalysisMember = function(이름){
   분석그리기();
 }
 // 날짜순 정렬된 기록(recs)으로 다음 훈련 제안 문구 생성
-function 다음훈련제안(recs, ex){
+function 다음훈련제안(recs, ex, 이름){
   if(!recs || !recs.length) return '';
-  const 설정 = 종목설정[ex] || 기본종목설정;
+  const 설정 = 운동설정(이름, ex);
   const last = recs[recs.length-1];
   if(last.횟수 >= 설정.목표회수){
     return `다음 제안: <b>${last.중량+설정.증가}kg × ${설정.시작회수}회</b> (무게 올리기!) 🔥`;
@@ -1345,7 +1379,7 @@ function 분석그리기(){
         .sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
       return `<div class="chart-card"><div class="chart-title">${escHtml(ex)} · 예상 1RM (kg)</div>
         <div class="chart-wrap"><canvas id="anaChart${idx}"></canvas></div>
-        <div class="ana-suggest">${다음훈련제안(recs0, ex)}</div></div>`;
+        <div class="ana-suggest">${다음훈련제안(recs0, ex, 이름)}</div></div>`;
     }
     return `<div class="chart-card ana-empty"><div class="chart-title">${escHtml(ex)}</div>
       <p class="ana-empty-msg">아직 <b>${escHtml(ex)}</b> 기록이 없어요.<br>${자기자신?'어서 첫 기록을 남겨볼까요? 💪':'기록이 쌓이면 그래프가 나타나요.'}</p>
@@ -1401,6 +1435,19 @@ function 훈련일지그리기(이름){
   const tf = document.getElementById('trainFields'); if(tf) tf.style.display = 일지권한 ? 'flex' : 'none';
   if(!일지권한){ const t1 = document.getElementById('train1rm'); if(t1) t1.innerHTML=''; }
 
+  // 숙련도 선택 (본인/관리자만 변경 가능)
+  const levelEl = document.getElementById('levelRow');
+  if(levelEl){
+    const lv = 멤버레벨(이름);
+    if(일지권한){
+      levelEl.innerHTML = `<span class="level-label">내 레벨</span>`
+        + ['초보','중급','고급'].map(L=>`<button class="level-btn${lv===L?' active':''}" onclick="setLevel('${L}')">${L}</button>`).join('')
+        + `<span class="level-hint">${lv==='초보'?'목표 12회·+2.5kg (가볍게·안전)':lv==='고급'?'목표 5회·+5kg':'목표 5~8회·+5kg'}</span>`;
+    } else {
+      levelEl.innerHTML = `<span class="level-label">레벨</span><span class="level-view">${lv}</span>`;
+    }
+  }
+
   // 운동 미선택 상태: 안내만 보여주고 입력칸·그래프·기록목록은 숨김
   const 차트카드 = document.getElementById('trainChart')?.closest('.chart-card');
   if(!현재종목){
@@ -1421,7 +1468,7 @@ function 훈련일지그리기(이름){
   const 내훈련 = 훈련목록.filter(t=>t.이름===이름 && (t.종목||'벤치프레스')===현재종목)
     .sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
 
-  const 설정 = 종목설정[현재종목] || 기본종목설정;
+  const 설정 = 운동설정(이름, 현재종목);
 
   // 날짜 입력칸 기본값: 오늘
   const dateInput = document.getElementById('trainDate');
