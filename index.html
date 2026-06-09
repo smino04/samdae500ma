@@ -119,6 +119,15 @@
   .profile-name{font-family:'Black Han Sans',sans-serif;font-size:32px;letter-spacing:3px;word-spacing:2px;}
   .profile-rank{display:inline-block;margin-top:8px;padding:5px 16px;background:var(--blue);border-radius:8px;font-size:13px;font-weight:700;color:#10141b;box-shadow:0 0 14px var(--blue-glow);}
   .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
+  .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  .goal-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:var(--text);margin-bottom:9px;}
+  .goal-remain{color:var(--blue-bright);}
+  .goal-bar{height:10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .goal-fill{height:100%;border-radius:6px;transition:width 0.6s ease;}
+  .goal-fill.b300{background:var(--bronze);}
+  .goal-fill.b400{background:var(--silver);}
+  .goal-fill.b500{background:var(--gold);}
+  .goal-sub{font-size:11px;color:var(--text-dim);margin-top:6px;text-align:right;}
   .badge.b300{color:var(--bronze);border-color:var(--bronze);background:rgba(224,137,83,0.12);}
   .badge.b400{color:var(--silver);border-color:var(--silver);background:rgba(196,204,214,0.12);}
   .badge.b500{color:var(--gold);border-color:var(--gold);background:rgba(255,200,61,0.14);}
@@ -457,6 +466,7 @@
       <div class="profile-rank" id="pRank"></div>
     </div>
     <div class="stat-row" id="pStats"></div>
+    <div id="pGoal" class="goal-box"></div>
 
     <div id="paneOfficial">
       <div class="section-label">📈 삼대운동 추이</div>
@@ -812,7 +822,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.55";
+const APP_VERSION = "2026.06.06.56";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1013,6 +1023,14 @@ function 뱃지HTML(합계값){
   if(합계값>=300) return `<span class="badge b300"><span class="bhorse">🐎</span>삼백마</span>`;
   return '';
 }
+// 현재 합계 기준 다음 목표(뱃지) 자동 산정
+function 다음목표(합계값){
+  const tiers=[{t:300,c:'b300'},{t:400,c:'b400'},{t:500,c:'b500'}];
+  for(const x of tiers){
+    if(합계값 < x.t) return {target:x.t, cls:x.c, remaining:Math.round((x.t-합계값)*10)/10, pct:Math.max(0,Math.min(100,합계값/x.t*100)), done:false};
+  }
+  return {target:500, cls:'b500', remaining:0, pct:100, done:true};
+}
 // 전월 대비 삼대합계 증감 계산
 function 전월대비(member, 현재월){
   const idx = 월선택지.indexOf(현재월);
@@ -1124,6 +1142,21 @@ window.showDetail = function(이름){
     <div class="stat-box"><div class="label">삼대합계</div><div class="value">${합계(latest)}<small>kg</small></div></div>
     <div class="stat-box"><div class="label">골격근량</div><div class="value">${latest.골격근량==null?'-':latest.골격근량}<small>${latest.골격근량==null?'':'kg'}</small></div></div>
     <div class="stat-box"><div class="label">체지방률</div><div class="value">${latest.체지방률==null?'-':latest.체지방률}<small>${latest.체지방률==null?'':'%'}</small></div></div>`;
+  // 다음 목표 달성률 게이지
+  const goalTotal = ri>=0 ? 합계(list[ri].rec) : (latest ? 합계(latest) : 0);
+  const g = 다음목표(goalTotal);
+  const goalEl = document.getElementById('pGoal');
+  if(goalEl){
+    if(g.done){
+      goalEl.innerHTML = `<div class="goal-top"><span>🏆 <b>오백마 달성!</b> 👑</span></div>
+        <div class="goal-bar"><div class="goal-fill b500" style="width:100%"></div></div>
+        <div class="goal-sub">삼대합계 ${goalTotal}kg · 최고 등급!</div>`;
+    } else {
+      goalEl.innerHTML = `<div class="goal-top"><span>다음 목표 ${뱃지HTML(g.target)}</span><span class="goal-remain">${g.remaining}kg 남음</span></div>
+        <div class="goal-bar"><div class="goal-fill ${g.cls}" style="width:${g.pct.toFixed(1)}%"></div></div>
+        <div class="goal-sub">현재 ${goalTotal}kg / 목표 ${g.target}kg</div>`;
+    }
+  }
   document.getElementById('pEditLift').innerHTML = 권한 ?
     `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>` : '';
   document.getElementById('pEditBody').innerHTML = 권한 ?
