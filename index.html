@@ -498,6 +498,7 @@
           <select id="exerciseSelect" onchange="onExerciseSelectChange(this.value)"></select>
           <input type="text" id="customExerciseInput" placeholder="운동명을 직접 입력 (예: 오버헤드프레스)" maxlength="20" style="display:none;" oninput="onCustomExerciseInput(this.value)">
         </div>
+        <div id="exTypeRow" class="level-row" style="display:none;"></div>
         <div class="train-suggest" id="trainSuggest"></div>
         <div class="train-fields" id="trainFields">
           <input type="date" id="trainDate">
@@ -822,7 +823,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.56";
+const APP_VERSION = "2026.06.06.57";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -913,6 +914,7 @@ let 기록목록 = [];   // Firebase에서 실시간으로 채워짐
 let 훈련목록 = [];   // 훈련 기록 [{이름,날짜,중량,횟수,...}]
 let 명언목록 = {};   // { 이름: 명언 } (없으면 "직접 입력하세요" 안내)
 let 레벨목록 = {};   // { 이름: '초보'|'중급'|'고급' } (기본 중급)
+let 운동유형목록 = {};   // { 이름: { 운동명: '복합'|'고립' } } (직접 추가 운동 유형)
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 
@@ -956,7 +958,8 @@ function 데이터구독시작(){
   // 명언 실시간 수신 (문서 id = 멤버 이름)
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
     명언목록 = {}; 레벨목록 = {};
-    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; });
+    운동유형목록 = {};
+    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; });
     if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
       const q = 명언목록[현재상세이름];
       const el = document.getElementById('pQuote');
@@ -1298,17 +1301,37 @@ const 종목목록 = Object.keys(종목설정);
 const 기본종목설정 = { 목표회수:8, 증가:5, 시작회수:5 }; // 직접 입력 종목용 기본값
 // 숙련도별 설정 (초보는 높은 반복+작은 증량 → 가벼운 무게로 안전하게)
 function 멤버레벨(이름){ return 레벨목록[이름] || '중급'; }
+// 직접 추가 운동의 유형 (기본=복합)
+function 운동유형(이름, ex){ return (운동유형목록[이름]||{})[ex] || '복합'; }
+// 운동 자체의 기본 설정 (3대=고정 / 커스텀=유형별)
+function 운동베이스(이름, ex){
+  if(종목설정[ex]) return 종목설정[ex];
+  return 운동유형(이름, ex)==='고립'
+    ? { 목표회수:12, 증가:2.5, 시작회수:10 }   // 고립: 높은 반복·작은 증량
+    : { 목표회수:8,  증가:5,   시작회수:5  };  // 복합: 적당 반복·+5kg
+}
+// 최종 설정 = 운동 base에 숙련도(레벨)를 미세조정
 function 운동설정(이름, ex){
+  const b = 운동베이스(이름, ex);
   const lv = 멤버레벨(이름);
-  if(lv==='초보') return { 목표회수:12, 증가:2.5, 시작회수:10 };
-  if(lv==='고급') return { 목표회수:5,  증가:5,   시작회수:3  };
-  return 종목설정[ex] || 기본종목설정;  // 중급 = 기존 종목별 설정
+  if(lv==='초보') return { 목표회수: b.목표회수+4, 증가: Math.max(2.5, b.증가/2), 시작회수: b.목표회수 };
+  if(lv==='고급') return { 목표회수: Math.max(5, b.목표회수-3), 증가: b.증가, 시작회수: Math.max(3, b.시작회수-2) };
+  return b;  // 중급 = base 그대로
 }
 window.setLevel = async function(L){
   const 이름 = 일지대상 || 현재상세이름;
   if(!내권한(이름)){ alert('본인 레벨만 변경할 수 있어요.'); return; }
   try{ await setDoc(doc(db,'quotes',이름), { 레벨:L }, { merge:true }); }
   catch(e){ alert('레벨 저장 실패: '+e.message); }
+}
+// 직접 추가 운동의 유형(복합/고립) 저장
+window.setExType = async function(v){
+  const 이름 = 일지대상 || 현재상세이름;
+  if(!내권한(이름)){ alert('본인 운동만 설정할 수 있어요.'); return; }
+  const ex = 현재종목;
+  if(!ex || 종목목록.includes(ex)) return;   // 기본 3대는 고정
+  try{ await setDoc(doc(db,'quotes',이름), { 운동유형:{ [ex]: v } }, { merge:true }); }
+  catch(e){ alert('유형 저장 실패: '+e.message); }
 }
 const 직접입력값 = '__custom__';
 let 현재종목 = null;   // 운동 일지 진입 시 미선택 상태 → 사용자가 운동을 골라야 내용 표시
@@ -1470,9 +1493,24 @@ function 훈련일지그리기(이름){
     if(일지권한){
       levelEl.innerHTML = `<span class="level-label">내 레벨</span>`
         + ['초보','중급','고급'].map(L=>`<button class="level-btn${lv===L?' active':''}" onclick="setLevel('${L}')">${L}</button>`).join('')
-        + `<span class="level-hint">${lv==='초보'?'목표 12회·+2.5kg (가볍게·안전)':lv==='고급'?'목표 5회·+5kg':'목표 5~8회·+5kg'}</span>`;
+        + `<span class="level-hint">${lv==='초보'?'반복 많게·증량 작게 (가볍게·안전)':lv==='고급'?'반복 적게·고중량':'운동별 기본 설정'}</span>`;
     } else {
       levelEl.innerHTML = `<span class="level-label">레벨</span><span class="level-view">${lv}</span>`;
+    }
+  }
+
+  // 직접 추가 운동이면 유형(복합/고립) 선택 노출 (기본 3대는 고정)
+  const typeEl = document.getElementById('exTypeRow');
+  if(typeEl){
+    const isCustom = 현재종목 && !종목목록.includes(현재종목);
+    if(isCustom && 일지권한){
+      const ty = 운동유형(이름, 현재종목);
+      typeEl.style.display = 'flex';
+      typeEl.innerHTML = `<span class="level-label">운동 유형</span>`
+        + [['복합','🏋️ 복합'],['고립','💪 고립']].map(([v,l])=>`<button class="level-btn${ty===v?' active':''}" onclick="setExType('${v}')">${l}</button>`).join('')
+        + `<span class="level-hint">${ty==='고립'?'작은 운동: 높은 반복·+2.5kg':'큰 운동: 적당 반복·+5kg'}</span>`;
+    } else {
+      typeEl.style.display = 'none'; typeEl.innerHTML = '';
     }
   }
 
