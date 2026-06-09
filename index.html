@@ -562,12 +562,8 @@
     <!-- 부대 공유 급식표 -->
     <div class="section-label">🍱 부대 급식표 (공유)</div>
     <div class="acct-box">
-      <div class="meal-day-label">📅 오늘</div>
-      <div id="mealTodayBox"></div>
-      <div class="meal-day-label" style="margin-top:14px;">📅 내일</div>
-      <div id="mealTomorrowBox"></div>
-      <button class="acct-btn acct-btn-sub" style="margin-top:12px;" onclick="급식달력열기()">📅 급식표 한번에 입력하기</button>
-      <p class="acct-desc" style="margin-top:10px;">한 명이 등록하면 <b>부대원 전체가 공유</b>해요. 앞으로의 급식표를 달력에서 한 번에 입력할 수 있어요.</p>
+      <button class="acct-btn acct-btn-sub" onclick="급식달력열기()">📅 급식표 입력하기</button>
+      <p class="acct-desc" style="margin-top:10px;">한 명이 등록하면 <b>부대원 전체가 공유</b>해요. 달력에서 앞으로의 급식표를 한 번에 입력할 수 있어요.</p>
     </div>
 
     <!-- 개인 입력 -->
@@ -585,13 +581,6 @@
             <option value="5">5 · 매우 좋음</option>
           </select>
         </div>
-      </div>
-      <div class="field"><label>목표</label>
-        <select id="aiGoal">
-          <option value="벌크업">벌크업 (증량)</option>
-          <option value="커팅">커팅 (감량)</option>
-          <option value="유지">유지</option>
-        </select>
       </div>
       <div class="field"><label>오늘 완료한 운동</label><textarea id="aiRoutine" class="ai-textarea" placeholder="오늘 끝낸 운동을 적어줘 (예: 가슴·삼두 / 벤치 80kg 5x5 ...)"></textarea></div>
       <div class="field"><label>오늘 먹은 식단 (개인)</label><textarea id="aiDiet" class="ai-textarea" placeholder="오늘 실제로 먹은 것 (예: 아침 닭가슴살+고구마, 점심 ...)"></textarea></div>
@@ -816,7 +805,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.52";
+const APP_VERSION = "2026.06.06.53";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2552,7 +2541,6 @@ window.ai코치조언받기 = async function(){
 
   const 체중 = document.getElementById('aiWeight').value.trim();
   const 컨디션 = document.getElementById('aiCondition').value;
-  const 목표 = document.getElementById('aiGoal').value;
   const 운동루틴 = document.getElementById('aiRoutine').value.trim();
   const 식단 = document.getElementById('aiDiet').value.trim();
   const 내일운동 = document.getElementById('aiTomorrowWorkout').value.trim();
@@ -2576,12 +2564,15 @@ window.ai코치조언받기 = async function(){
     try{ await setDoc(doc(db,'users',현재유저.uid), { 현재체중: 체중수치 }, { merge:true }); }catch(_){}
     목표화면그리기();
   }
-  // 목표 텍스트
+  // 목표 텍스트 + 방향(체중 목표에서 자동 도출)
   const _cur=현재유저.현재체중, _tgt=현재유저.목표체중, _due=현재유저.목표기한;
   const _dday = _디데이(_due);
   const 목표텍스트 = (_tgt!=null && _due)
     ? `현재 ${_cur!=null?_cur+'kg':'?'} → 목표 ${_tgt}kg · 기한 ${_due} (D-${_dday>=0?_dday:0})`
     : '(목표 미설정)';
+  let 목표 = '유지';
+  if(_tgt!=null && _cur!=null){ 목표 = _tgt<_cur ? '커팅(감량)' : (_tgt>_cur ? '벌크업(증량)' : '유지'); }
+  else if(_tgt==null){ 목표 = '(미설정)'; }
 
   const date = 오늘날짜();
   const id = 현재유저.이름 + '_' + date;   // 회원별·날짜별 1문서
