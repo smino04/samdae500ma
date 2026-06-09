@@ -37,6 +37,7 @@
   })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
   :root{
@@ -292,6 +293,29 @@
   .acct-info-row:last-child{border-bottom:none;}
   .acct-info-row b{color:var(--text);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;}
   .acct-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:6px;}
+  /* AI 코치 */
+  .ai-textarea{width:100%;box-sizing:border-box;min-height:62px;padding:11px 12px;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;line-height:1.5;resize:vertical;}
+  .ai-textarea:focus{outline:none;border-color:var(--blue-bright);}
+  .ai-feedback{background:var(--panel);border:1px solid var(--blue-bright);border-radius:14px;padding:16px 18px;margin-top:14px;font-size:14px;line-height:1.7;color:var(--text);}
+  .ai-feedback h1,.ai-feedback h2,.ai-feedback h3{color:var(--blue-bright);margin:14px 0 8px;line-height:1.3;}
+  .ai-feedback h1{font-size:19px;}.ai-feedback h2{font-size:17px;}.ai-feedback h3{font-size:15px;}
+  .ai-feedback p{margin:8px 0;}
+  .ai-feedback ul,.ai-feedback ol{margin:8px 0;padding-left:20px;}
+  .ai-feedback li{margin:4px 0;}
+  .ai-feedback strong,.ai-feedback b{color:#fff;}
+  .ai-feedback code{background:var(--bg);padding:2px 6px;border-radius:5px;font-size:13px;}
+  .ai-feedback table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;}
+  .ai-feedback th,.ai-feedback td{border:1px solid var(--line);padding:6px 8px;text-align:left;}
+  .ai-feedback hr{border:none;border-top:1px solid var(--line);margin:12px 0;}
+  .ai-feedback-meta{font-size:12px;color:var(--text-dim);margin-bottom:8px;}
+  .ai-loading{color:var(--blue-bright);font-weight:700;font-size:14px;padding:6px 0;}
+  .ai-hist-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+  .ai-hist-card summary{cursor:pointer;padding:13px 15px;font-weight:700;font-size:14px;color:var(--text);list-style:none;}
+  .ai-hist-card summary::-webkit-details-marker{display:none;}
+  .ai-hist-card summary .ai-hist-date{color:var(--blue-bright);}
+  .ai-hist-body{padding:0 15px 14px;font-size:13px;line-height:1.6;color:var(--text-dim);}
+  .ai-hist-body .ai-hist-row{margin:5px 0;}
+  .ai-hist-body .ai-hist-row b{color:var(--text);}
   .acct-input{width:100%;box-sizing:border-box;padding:12px;margin-bottom:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;}
   .acct-input:focus{outline:none;border-color:var(--blue-bright);}
   .acct-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin:0 0 12px;}
@@ -481,6 +505,60 @@
     <div id="analysisContent"></div>
   </div>
 
+  <!-- AI 코치 뷰 -->
+  <div id="aiCoachView" style="display:none;">
+    <header style="padding:24px 0 16px;text-align:center;">
+      <h1 class="title-main">🤖 AI 코치</h1>
+      <div class="title-sub">컨디션·식단 기반 맞춤 코칭</div>
+      <div class="header-divider"></div>
+    </header>
+
+    <details class="why-toggle" id="aiKeyBox" style="margin-bottom:14px;">
+      <summary>🔑 Gemini API 키 설정 <span class="why-arrow">▼</span></summary>
+      <div class="why-content">
+        <p>AI 코치를 쓰려면 본인 <b>Gemini API 키</b>가 필요해요. 키는 <b>이 기기(브라우저)에만</b> 저장되고 서버로 전송되지 않습니다.</p>
+        <input type="password" id="aiApiKey" class="acct-input" placeholder="Gemini API 키 붙여넣기" autocomplete="off" style="margin-top:8px;">
+        <div class="acct-msg" id="aiKeyMsg"></div>
+        <button class="acct-btn" onclick="aiKey저장()">키 저장</button>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.5;">키 발급: <b>aistudio.google.com/apikey</b> 접속 → "Create API key" → 복사해서 붙여넣기</p>
+      </div>
+    </details>
+
+    <div class="acct-box">
+      <div class="grid2">
+        <div class="field"><label>체중 (kg)</label><input type="number" id="aiWeight" inputmode="decimal" placeholder="예: 72.5"></div>
+        <div class="field"><label>컨디션 (1~5)</label>
+          <select id="aiCondition">
+            <option value="">선택</option>
+            <option value="1">1 · 매우 나쁨</option>
+            <option value="2">2 · 나쁨</option>
+            <option value="3">3 · 보통</option>
+            <option value="4">4 · 좋음</option>
+            <option value="5">5 · 매우 좋음</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>목표</label>
+        <select id="aiGoal">
+          <option value="벌크업">벌크업 (증량)</option>
+          <option value="커팅">커팅 (감량)</option>
+          <option value="유지">유지</option>
+        </select>
+      </div>
+      <div class="field"><label>오늘 운동 루틴</label><textarea id="aiRoutine" class="ai-textarea" placeholder="예: 가슴·삼두 / 벤치 80kg 5x5, 인클라인 덤벨 ..."></textarea></div>
+      <div class="field"><label>식단 (오늘 먹은 것)</label><textarea id="aiDiet" class="ai-textarea" placeholder="예: 아침 닭가슴살+고구마, 점심 ..."></textarea></div>
+      <div class="field"><label>급식표 (오늘 부대 메뉴)</label><textarea id="aiMeal" class="ai-textarea" placeholder="예: 쌀밥, 된장국, 제육볶음, 계란말이, 김치"></textarea></div>
+      <div class="acct-msg" id="aiMsg"></div>
+      <button class="acct-btn" id="aiSubmitBtn" onclick="ai코치조언받기()">🤖 AI 코치에게 조언받기</button>
+    </div>
+
+    <div id="ai-feedback-area" class="ai-feedback" style="display:none;"></div>
+
+    <div class="section-label" style="margin-top:20px;">📅 과거 기록</div>
+    <button class="acct-btn acct-btn-sub" onclick="ai과거기록보기()">과거 기록 불러오기</button>
+    <div id="ai-history-area"></div>
+  </div>
+
   <!-- 프로필 뷰 -->
   <div id="accountView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
@@ -568,6 +646,9 @@
     </button>
     <button class="bottom-nav-btn" id="navAnalysis" onclick="switchMainTab('analysis')">
       <span class="nav-icon">📊</span><span class="nav-label">분석</span>
+    </button>
+    <button class="bottom-nav-btn" id="navAiCoach" onclick="switchMainTab('aicoach')">
+      <span class="nav-icon">🤖</span><span class="nav-label">AI코치</span>
     </button>
     <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
       <span class="nav-icon">👤</span><span class="nav-label">프로필</span>
@@ -673,7 +754,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.46";
+const APP_VERSION = "2026.06.06.47";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -702,6 +783,7 @@ const recordsCol = collection(db, "records");
 const trainingCol = collection(db, "training");  // 주간 훈련 일지
 const quotesCol = collection(db, "quotes");  // 멤버별 명언
 const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
+const dailyLogsCol = collection(db, "daily_logs");  // AI 코치 일일 기록
 
 /* =====================================================
    멤버 명단 — 실제 부원 이름으로 바꾸세요
@@ -1049,14 +1131,17 @@ window.switchMainTab = function(tab){
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
   const navAnalysis = document.getElementById('navAnalysis'); if(navAnalysis) navAnalysis.classList.toggle('active', tab==='analysis');
+  const navAiCoach = document.getElementById('navAiCoach'); if(navAiCoach) navAiCoach.classList.toggle('active', tab==='aicoach');
   const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
   document.getElementById('analysisView').style.display = tab==='analysis'?'block':'none';
+  document.getElementById('aiCoachView').style.display = tab==='aicoach'?'block':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
   if(tab==='account'){ 계정화면그리기(); }
+  if(tab==='aicoach'){ ai코치화면준비(); }
   if(tab==='analysis'){
     const sel = document.getElementById('analysisMemberSelect');
     if(!sel.innerHTML){
@@ -2198,6 +2283,129 @@ window.회원탈퇴 = async function(){
     alert('회원 탈퇴가 완료되었습니다.');
     location.reload();
   }catch(e){ acctMsg('delMsg', authError한글(e.code||e.message)); }
+};
+
+/* =====================================================
+   🤖 AI 코치 (Gemini 연동)
+   - 통신은 geminiService.js 모듈을 "동적 import"로 불러옴
+     (SDK CDN 실패 시에도 앱 전체는 정상 동작)
+===================================================== */
+function 오늘날짜(){
+  const t = new Date();
+  return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
+function 마크다운렌더(md){
+  try{ if(window.marked && marked.parse) return marked.parse(md); }catch(_){}
+  // marked 미로딩 시 최소 폴백(escape + 줄바꿈)
+  return escHtml(md).replace(/\n/g,'<br>');
+}
+function aiMsg(text, ok){ const el=document.getElementById('aiMsg'); if(el){ el.textContent=text||''; el.classList.toggle('ok', !!ok); } }
+
+// 탭 진입 시 준비: 게스트 차단 + 저장된 키 표시 + 키 없으면 설정창 펼치기
+function ai코치화면준비(){
+  const box = document.getElementById('aiCoachView');
+  if(게스트인가()){
+    box.querySelector('.acct-box').style.display='none';
+    return;
+  }
+  box.querySelector('.acct-box').style.display='block';
+  const keyInput = document.getElementById('aiApiKey');
+  let key=''; try{ key = localStorage.getItem('gemini_api_key')||''; }catch(_){}
+  if(keyInput) keyInput.value = key;
+  const keyBox = document.getElementById('aiKeyBox');
+  if(keyBox) keyBox.open = !key;   // 키 없으면 설정 펼침
+  aiMsg('');
+}
+
+window.aiKey저장 = function(){
+  const v = (document.getElementById('aiApiKey').value||'').trim();
+  if(!v){ acctMsg('aiKeyMsg','API 키를 입력해주세요.'); return; }
+  try{ localStorage.setItem('gemini_api_key', v); }catch(_){}
+  acctMsg('aiKeyMsg','✅ 키가 이 기기에 저장되었습니다.', true);
+  const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=false;
+};
+
+window.ai코치조언받기 = async function(){
+  if(게스트인가() || !현재유저){ alert('로그인 후 이용할 수 있어요.'); return; }
+  let key=''; try{ key = localStorage.getItem('gemini_api_key')||''; }catch(_){}
+  if(!key){ aiMsg('먼저 위의 🔑 Gemini API 키 설정에서 키를 저장해주세요.'); const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true; return; }
+
+  const 체중 = document.getElementById('aiWeight').value.trim();
+  const 컨디션 = document.getElementById('aiCondition').value;
+  const 목표 = document.getElementById('aiGoal').value;
+  const 운동루틴 = document.getElementById('aiRoutine').value.trim();
+  const 식단 = document.getElementById('aiDiet').value.trim();
+  const 급식표 = document.getElementById('aiMeal').value.trim();
+  if(!컨디션 && !운동루틴 && !식단 && !급식표){ aiMsg('컨디션·운동·식단·급식표 중 하나 이상은 입력해주세요.'); return; }
+
+  const btn = document.getElementById('aiSubmitBtn');
+  const area = document.getElementById('ai-feedback-area');
+  btn.disabled = true; aiMsg('');
+  area.style.display='block';
+  area.innerHTML = '<div class="ai-loading">🤖 AI 코치가 분석 중이에요...</div>';
+
+  const date = 오늘날짜();
+  const id = 현재유저.이름 + '_' + date;   // 회원별·날짜별 1문서
+  const 기본데이터 = { 이름:현재유저.이름, 날짜:date, 체중, 컨디션, 목표, 운동루틴, 식단, 급식표, 등록시각:Date.now() };
+
+  // A. 입력값 먼저 저장
+  try{ await setDoc(doc(db,'daily_logs',id), 기본데이터, { merge:true }); }
+  catch(e){ /* 저장 실패해도 코칭은 시도 */ console.warn('daily_logs 저장 실패', e); }
+
+  // B. Gemini 호출
+  const prompt = `유저 닉네임: ${현재유저.이름}
+목표: ${목표}
+체중: ${체중||'(미입력)'}kg
+컨디션(1-5): ${컨디션||'(미입력)'}
+오늘 운동 루틴: ${운동루틴||'(미입력)'}
+오늘 식단: ${식단||'(미입력)'}
+오늘 부대 급식표: ${급식표||'(미입력)'}
+
+위 정보를 바탕으로 오늘의 코칭을 해줘. 급식표 기준 '식판 전략'(양 조절), 부족 영양소 PX 추천, 컨디션에 따른 운동 강도 조절을 꼭 포함해줘.`;
+
+  try{
+    const mod = await import('./geminiService.js');
+    const md = await mod.getCoachFeedback(prompt);
+    // C. 렌더링
+    area.innerHTML = `<div class="ai-feedback-meta">📅 ${date} · 목표 ${목표}</div>` + 마크다운렌더(md);
+    // D. AI 답변도 저장
+    try{ await setDoc(doc(db,'daily_logs',id), { ai응답: md }, { merge:true }); }catch(e){ console.warn('AI 응답 저장 실패', e); }
+  }catch(e){
+    const code = e && (e.message||e.code) || '';
+    if(code==='NO_API_KEY'){ area.style.display='none'; aiMsg('API 키가 없습니다. 키를 저장해주세요.'); const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true; }
+    else{
+      area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">⚠️ AI 호출에 실패했어요.</div><p style="color:var(--text-dim);font-size:13px;">${escHtml(String(code))}<br>키가 올바른지, 또는 잠시 후 다시 시도해주세요.</p>`;
+    }
+  }
+  btn.disabled = false;
+};
+
+window.ai과거기록보기 = async function(){
+  if(게스트인가() || !현재유저){ alert('로그인 후 이용할 수 있어요.'); return; }
+  const wrap = document.getElementById('ai-history-area');
+  wrap.innerHTML = '<div class="ai-loading">불러오는 중...</div>';
+  try{
+    const snap = await getDocs(query(dailyLogsCol, where('이름','==',현재유저.이름)));
+    const 목록 = [];
+    snap.forEach(d=> 목록.push(d.data()));
+    목록.sort((a,b)=>(b.날짜||'').localeCompare(a.날짜||''));   // 최신순
+    if(목록.length===0){ wrap.innerHTML = '<div class="ac-empty">저장된 기록이 없어요. 오늘 기록을 남겨보세요!</div>'; return; }
+    wrap.innerHTML = 목록.map((r,i)=>{
+      const rows = [
+        r.체중 ? `<div class="ai-hist-row"><b>체중</b> ${escHtml(String(r.체중))}kg</div>`:'',
+        r.컨디션 ? `<div class="ai-hist-row"><b>컨디션</b> ${escHtml(String(r.컨디션))}/5</div>`:'',
+        r.목표 ? `<div class="ai-hist-row"><b>목표</b> ${escHtml(String(r.목표))}</div>`:'',
+        r.운동루틴 ? `<div class="ai-hist-row"><b>운동</b> ${escHtml(r.운동루틴)}</div>`:'',
+        r.식단 ? `<div class="ai-hist-row"><b>식단</b> ${escHtml(r.식단)}</div>`:'',
+        r.급식표 ? `<div class="ai-hist-row"><b>급식표</b> ${escHtml(r.급식표)}</div>`:'',
+        r.ai응답 ? `<div class="ai-hist-row" style="margin-top:8px;"><b>🤖 코치 피드백</b></div><div class="ai-feedback" style="margin-top:6px;">${마크다운렌더(r.ai응답)}</div>`:''
+      ].filter(Boolean).join('');
+      return `<details class="ai-hist-card" ${i===0?'open':''}>
+        <summary><span class="ai-hist-date">${escHtml(r.날짜||'')}</span> · 기록 보기</summary>
+        <div class="ai-hist-body">${rows}</div>
+      </details>`;
+    }).join('');
+  }catch(e){ wrap.innerHTML = `<div class="ac-empty">불러오기 실패: ${escHtml(String(e.code||e.message))}</div>`; }
 };
 
 </script>
