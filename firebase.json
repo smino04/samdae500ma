@@ -1,0 +1,26 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "**/.*",
+      "**/node_modules/**",
+      "2026.6.4.신은수",
+      "2026.6.4.신은수2",
+      "2026.6.4신은수3",
+      "2026.6.5이승민",
+      "26.06.04이승민"
+    ],
+    "headers": [
+      {
+        "source": "index.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      },
+      {
+        "source": "version.json",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      }
+    ]
+  }
+}
