@@ -213,6 +213,7 @@
   .train-log-info{display:flex;flex-direction:row;align-items:center;gap:12px;min-width:0;}
   .train-log .wk{font-weight:700;color:var(--blue-bright);font-size:13px;}
   .train-log .train-detail{font-size:16px;font-weight:700;color:var(--text);}
+  .pr-badge{display:inline-block;font-size:10px;font-weight:700;color:var(--gold);border:1px solid var(--gold);background:rgba(255,200,61,0.12);border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle;white-space:nowrap;}
   .train-log-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .train-log .rm{font-size:12px;color:var(--text-dim);}
   .train-log .del-x{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);color:#f87171;cursor:pointer;font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;font-family:'Noto Sans KR';flex-shrink:0;}
@@ -772,7 +773,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.2";
+const APP_VERSION = "2026.06.10.3";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1120,10 +1121,11 @@ window.editQuote = async function(){
   const 현재 = 명언목록[현재상세이름] || '';
   document.getElementById('quoteInput').value = 현재;
   document.getElementById('quoteModalBg').classList.add('show');
-  setTimeout(()=>document.getElementById('quoteInput').focus(), 50);
+  setTimeout(()=>document.getElementById('quoteInput').focus(), 350);  // 모달 애니메이션(0.3s) 후 포커스
 }
 window.quoteModalClose = function(){ document.getElementById('quoteModalBg').classList.remove('show'); }
 window.quoteModalSave = async function(){
+  if(!현재상세이름 || !내권한(현재상세이름)){ quoteModalClose(); return; }
   const 명언 = document.getElementById('quoteInput').value.trim();
   try{
     await setDoc(doc(db,"quotes",현재상세이름), { 명언 }, { merge:true });
@@ -1559,17 +1561,22 @@ function 훈련일지그리기(이름){
       scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:tys.min,max:tys.max,ticks:{color:textDim,stepSize:tys.step},grid:{color:line}}}},
     plugins:[점값플러그인]});
 
-  // 기록 목록 (최신순)
+  // 기록 목록 (최신순) — 역대 최고 1RM 기록엔 🔥 배지
   const listEl = document.getElementById('trainList');
+  const 최고1RM = Math.max(0, ...내훈련.filter(t=>(t.중량??t.weight)!=null && (t.횟수??t.reps)!=null)
+    .map(t=>추정1RM(t.중량??t.weight, t.횟수??t.reps)));
+  let 배지표시됨 = false;
   listEl.innerHTML = [...내훈련].reverse().map(t=>{
     const w = t.중량 ?? t.weight ?? null;
     const r = t.횟수 ?? t.reps ?? null;
     const 중량표시 = (w!=null && r!=null) ? `${w}kg × ${r}회` : '기록 정보 없음';
     const rm표시 = (w!=null && r!=null) ? `예상 1RM ${추정1RM(w,r)}kg` : '';
+    const 최고기록 = !배지표시됨 && w!=null && r!=null && 최고1RM>0 && 추정1RM(w,r)===최고1RM;
+    if(최고기록) 배지표시됨 = true;  // 동률이면 가장 최근 것에만
     return `<div class="train-log">
       <div class="train-log-info">
         <span class="wk">${(t.날짜||'').replaceAll('-','/')}</span>
-        <span class="train-detail">${중량표시}</span>
+        <span class="train-detail">${중량표시}${최고기록?' <span class="pr-badge">🔥 최고</span>':''}</span>
       </div>
       <div class="train-log-right">
         <span class="rm">${rm표시}</span>
@@ -1618,6 +1625,12 @@ window.saveTraining = async function(){
     if(btn){ btn.disabled = true; btn.textContent = '저장 중…'; }
     // 같은 사람+같은 날짜면 덮어쓰기
     const 기존 = 훈련목록.find(t=>t.이름===이름 && (t.종목||'벤치프레스')===종목 && t.날짜===날짜);
+    // 신기록 판정: 이 운동의 기존 최고 1RM(덮어쓸 날짜 제외)과 비교
+    const 새1RM = 추정1RM(중량, 횟수);
+    const 기존최고 = Math.max(0, ...훈련목록
+      .filter(t=>t.이름===이름 && (t.종목||'벤치프레스')===종목 && t.날짜!==날짜 && t.중량!=null && t.횟수!=null)
+      .map(t=>추정1RM(t.중량, t.횟수)));
+    const 신기록 = 기존최고>0 && 새1RM>기존최고;
     const 데이터 = {이름,종목,날짜,중량,횟수,등록시각:Date.now()};
     if(기존){
       await setDoc(doc(db,"training",기존._id), 데이터);
@@ -1627,7 +1640,8 @@ window.saveTraining = async function(){
     document.getElementById('trainWeight').value='';
     document.getElementById('trainReps').value='';
     document.getElementById('train1rm').innerHTML='';
-    토스트(기존 ? '✅ 저장 완료! (같은 날짜 덮어씀)' : '✅ 저장 완료!');
+    if(신기록) 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`);
+    else 토스트(기존 ? '✅ 저장 완료! (같은 날짜 덮어씀)' : '✅ 저장 완료!');
   }catch(e){ alert("저장 실패: "+e.message); }
   finally{ if(btn){ btn.disabled = false; btn.textContent = '기록'; } }
 }
@@ -1885,6 +1899,7 @@ window.deleteFromModal = async function(){
 window.editRecord = function(이름, 모드){
   if(!내권한(이름)){ alert('본인 기록만 수정할 수 있어요.'); return; }
   수정대상이름 = 이름;
+  resetAllLiftModes();  // 입력방식(직접/횟수)을 초기화해 기존 값이 가려지지 않게
   모달그룹설정(모드 || 'all');  // 삼대만 / 인바디만 / 전체
   document.getElementById("modalDeleteBtn").style.display = "block";
   // 지금 보고 있는 연도의 기록만 대상으로
