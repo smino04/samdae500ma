@@ -542,78 +542,6 @@
     <div id="analysisContent"></div>
   </div>
 
-  <!-- AI 코치 뷰 -->
-  <div id="aiCoachView" style="display:none;">
-    <header style="padding:24px 0 16px;text-align:center;">
-      <h1 class="title-main">🤖 AI 코치</h1>
-      <div class="title-sub">끝낸 운동·식단 피드백 코칭</div>
-      <div class="header-divider"></div>
-    </header>
-
-    <details class="why-toggle" id="aiKeyBox" style="margin-bottom:14px;">
-      <summary>🔑 Gemini API 키 설정 <span class="why-arrow">▼</span></summary>
-      <div class="why-content">
-        <p>AI 코치를 쓰려면 본인 <b>Gemini API 키</b>가 필요해요. 키는 <b>이 기기(브라우저)에만</b> 저장되고 서버로 전송되지 않습니다.</p>
-        <input type="password" id="aiApiKey" class="acct-input" placeholder="Gemini API 키 붙여넣기" autocomplete="off" style="margin-top:8px;">
-        <div class="acct-msg" id="aiKeyMsg"></div>
-        <button class="acct-btn" onclick="aiKey저장()">키 저장</button>
-        <p style="font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.5;">키 발급: <b>aistudio.google.com/apikey</b> 접속 → "Create API key" → 복사해서 붙여넣기</p>
-      </div>
-    </details>
-
-    <!-- 목표 설정 -->
-    <div id="goalSummary" class="goal-summary" style="display:none;"></div>
-    <details class="why-toggle" id="goalBox" style="margin-bottom:14px;">
-      <summary>🎯 목표 입력하기 (현재·목표 체중·기한) <span class="why-arrow">▼</span></summary>
-      <div class="why-content">
-        <div class="grid2">
-          <div class="field"><label>현재 체중 (kg)</label><input type="number" id="goalCurWeight" inputmode="decimal" placeholder="예: 72"></div>
-          <div class="field"><label>목표 체중 (kg)</label><input type="number" id="goalTargetWeight" inputmode="decimal" placeholder="예: 68"></div>
-        </div>
-        <div class="field"><label>목표 기한</label><input type="date" id="goalDeadline" class="acct-input"></div>
-        <div class="acct-msg" id="goalMsg"></div>
-        <button class="acct-btn" onclick="목표저장()">목표 저장</button>
-        <p class="acct-desc" style="margin-top:8px;">코칭 받을 때 입력한 체중이 '현재 체중'으로 <b>자동 갱신</b>돼요.</p>
-      </div>
-    </details>
-
-    <!-- 부대 공유 급식표 -->
-    <div class="section-label">🍱 부대 급식표 (공유)</div>
-    <div class="acct-box">
-      <button class="acct-btn acct-btn-sub" onclick="급식달력열기()">📅 급식표 입력하기</button>
-      <p class="acct-desc" style="margin-top:10px;">한 명이 등록하면 <b>부대원 전체가 공유</b>해요. 달력에서 앞으로의 급식표를 한 번에 입력할 수 있어요.</p>
-    </div>
-
-    <!-- 개인 입력 -->
-    <div class="section-label" style="margin-top:18px;">✍️ 오늘 나의 기록</div>
-    <div class="acct-box">
-      <div class="grid2">
-        <div class="field"><label>체중 (kg)</label><input type="number" id="aiWeight" inputmode="decimal" placeholder="예: 72.5"></div>
-        <div class="field"><label>컨디션 (1~5)</label>
-          <select id="aiCondition">
-            <option value="">선택</option>
-            <option value="1">1 · 매우 나쁨</option>
-            <option value="2">2 · 나쁨</option>
-            <option value="3">3 · 보통</option>
-            <option value="4">4 · 좋음</option>
-            <option value="5">5 · 매우 좋음</option>
-          </select>
-        </div>
-      </div>
-      <div class="field"><label>오늘 완료한 운동</label><textarea id="aiRoutine" class="ai-textarea" placeholder="오늘 끝낸 운동을 적어줘 (예: 가슴·삼두 / 벤치 80kg 5x5 ...)"></textarea></div>
-      <div class="field"><label>오늘 먹은 식단 (개인)</label><textarea id="aiDiet" class="ai-textarea" placeholder="오늘 실제로 먹은 것 (예: 아침 닭가슴살+고구마, 점심 ...)"></textarea></div>
-      <div class="field"><label>내일 운동 예고 (선택)</label><textarea id="aiTomorrowWorkout" class="ai-textarea" placeholder="예: 내일은 등 운동(데드리프트) 고중량 하는 날"></textarea></div>
-      <div class="acct-msg" id="aiMsg"></div>
-      <button class="acct-btn" id="aiSubmitBtn" onclick="ai코치조언받기()">🤖 오늘 피드백 + 내일 전략 받기</button>
-    </div>
-
-    <div id="ai-feedback-area" class="ai-feedback" style="display:none;"></div>
-
-    <div class="section-label" style="margin-top:20px;">📅 과거 기록</div>
-    <button class="acct-btn acct-btn-sub" onclick="ai과거기록보기()">과거 기록 불러오기</button>
-    <div id="ai-history-area"></div>
-  </div>
-
   <!-- 프로필 뷰 -->
   <div id="accountView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
@@ -701,9 +629,6 @@
     </button>
     <button class="bottom-nav-btn" id="navAnalysis" onclick="switchMainTab('analysis')">
       <span class="nav-icon">📊</span><span class="nav-label">분석</span>
-    </button>
-    <button class="bottom-nav-btn" id="navAiCoach" onclick="switchMainTab('aicoach')">
-      <span class="nav-icon">🤖</span><span class="nav-label">AI코치</span>
     </button>
     <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
       <span class="nav-icon">👤</span><span class="nav-label">프로필</span>
@@ -798,20 +723,6 @@
   </div>
 </div>
 
-<!-- 급식표 달력(일괄 입력) 모달 -->
-<div class="modal-bg" id="mealModalBg">
-  <div class="modal" style="max-width:540px;">
-    <h2 id="modalTitle2">📅 급식표 한번에 입력</h2>
-    <div class="sub">앞으로의 부대 급식표를 날짜별로 입력하세요. 입력한 날만 저장되고 <b>부대원 전체가 공유</b>합니다.</div>
-    <div id="mealCalList"></div>
-    <div class="acct-msg" id="mealCalMsg"></div>
-    <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="급식달력닫기()">닫기</button>
-      <button class="btn btn-save" id="mealSaveBtn" onclick="급식일괄저장()">저장</button>
-    </div>
-  </div>
-</div>
-
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -823,7 +734,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.57";
+const APP_VERSION = "2026.06.06.58";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -852,8 +763,6 @@ const recordsCol = collection(db, "records");
 const trainingCol = collection(db, "training");  // 주간 훈련 일지
 const quotesCol = collection(db, "quotes");  // 멤버별 명언
 const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
-const dailyLogsCol = collection(db, "daily_logs");  // AI 코치 일일 기록
-const mealsCol = collection(db, "meals");  // 부대 공유 급식표(날짜별)
 
 /* =====================================================
    멤버 명단 — 실제 부원 이름으로 바꾸세요
@@ -1234,17 +1143,14 @@ window.switchMainTab = function(tab){
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
   const navAnalysis = document.getElementById('navAnalysis'); if(navAnalysis) navAnalysis.classList.toggle('active', tab==='analysis');
-  const navAiCoach = document.getElementById('navAiCoach'); if(navAiCoach) navAiCoach.classList.toggle('active', tab==='aicoach');
   const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
   document.getElementById('analysisView').style.display = tab==='analysis'?'block':'none';
-  document.getElementById('aiCoachView').style.display = tab==='aicoach'?'block':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
   if(tab==='account'){ 계정화면그리기(); }
-  if(tab==='aicoach'){ ai코치화면준비(); }
   if(tab==='analysis'){
     const sel = document.getElementById('analysisMemberSelect');
     if(!sel.innerHTML){
@@ -2448,336 +2354,6 @@ window.회원탈퇴 = async function(){
     alert('회원 탈퇴가 완료되었습니다.');
     location.reload();
   }catch(e){ acctMsg('delMsg', authError한글(e.code||e.message)); }
-};
-
-/* =====================================================
-   🤖 AI 코치 (Gemini 연동)
-   - 통신은 geminiService.js 모듈을 "동적 import"로 불러옴
-     (SDK CDN 실패 시에도 앱 전체는 정상 동작)
-===================================================== */
-function _fmt날짜(t){ return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
-function 오늘날짜(){ return _fmt날짜(new Date()); }
-function 내일날짜(){ const t=new Date(); t.setDate(t.getDate()+1); return _fmt날짜(t); }
-
-// 부대 공유 급식표 캐시 { today:{breakfast,lunch,dinner,registeredBy}|null, tomorrow:... }
-const 급식캐시 = { today:null, tomorrow:null };
-function _급식문자열(m){
-  if(!m) return '(미등록)';
-  return `아침: ${m.breakfast||'-'} / 점심: ${m.lunch||'-'} / 저녁: ${m.dinner||'-'}`;
-}
-// 급식표 섹션(오늘/내일) 그리기 — 등록돼 있으면 미리보기, 없으면 입력폼
-async function 급식표섹션그리기(which, forceForm){
-  const date = which==='today' ? 오늘날짜() : 내일날짜();
-  const box = document.getElementById(which==='today' ? 'mealTodayBox' : 'mealTomorrowBox');
-  if(!box) return;
-  if(!forceForm){
-    box.innerHTML = '<div class="ai-loading">불러오는 중...</div>';
-    try{ const s = await getDoc(doc(db,'meals',date)); 급식캐시[which] = s.exists() ? s.data() : null; }
-    catch(_){ 급식캐시[which] = null; }
-  }
-  const m = 급식캐시[which];
-  if(m && !forceForm){
-    box.innerHTML = `<div class="meal-preview">
-      <div class="meal-row"><b>아침</b> ${escHtml(m.breakfast||'-')}</div>
-      <div class="meal-row"><b>점심</b> ${escHtml(m.lunch||'-')}</div>
-      <div class="meal-row"><b>저녁</b> ${escHtml(m.dinner||'-')}</div>
-      <div class="meal-by">📌 ${escHtml(m.registeredBy||'')}님이 등록함<button class="meal-edit" onclick="급식표수정('${which}')">수정</button></div>
-    </div>`;
-  } else {
-    const pv = (k)=> m && m[k] ? ` value="${escHtml(m[k])}"` : '';
-    box.innerHTML = `<div class="meal-form">
-      ${!m?'<div class="meal-empty">아직 등록 안 됨 — 입력하면 부대원 전체가 공유해요.</div>':''}
-      <input id="mealB_${which}" class="acct-input" placeholder="아침 메뉴"${pv('breakfast')}>
-      <input id="mealL_${which}" class="acct-input" placeholder="점심 메뉴"${pv('lunch')}>
-      <input id="mealD_${which}" class="acct-input" placeholder="저녁 메뉴"${pv('dinner')}>
-      <button class="acct-btn acct-btn-sub" onclick="급식표등록('${which}')">${which==='today'?'오늘':'내일'} 급식표 등록 (공유)</button>
-    </div>`;
-  }
-}
-window.급식표수정 = function(which){ 급식표섹션그리기(which, true); };
-window.급식표등록 = async function(which){
-  if(게스트인가() || !현재유저) return;
-  const date = which==='today' ? 오늘날짜() : 내일날짜();
-  const b=(document.getElementById('mealB_'+which).value||'').trim();
-  const l=(document.getElementById('mealL_'+which).value||'').trim();
-  const d=(document.getElementById('mealD_'+which).value||'').trim();
-  if(!b && !l && !d){ alert('메뉴를 한 끼라도 입력해주세요.'); return; }
-  try{
-    await setDoc(doc(db,'meals',date), { breakfast:b, lunch:l, dinner:d, registeredBy:현재유저.이름, 등록시각:Date.now() }, { merge:true });
-    await 급식표섹션그리기(which);
-  }catch(e){ alert('급식표 등록 실패: ' + (e.code||e.message)); }
-};
-
-// ── 급식표 달력 일괄 입력 ──
-const _요일 = ['일','월','화','수','목','금','토'];
-window.급식달력열기 = async function(){
-  if(게스트인가() || !현재유저){ alert('로그인 후 이용할 수 있어요.'); return; }
-  const list = document.getElementById('mealCalList');
-  document.getElementById('mealCalMsg').textContent='';
-  list.innerHTML = '<div class="ai-loading">불러오는 중...</div>';
-  document.getElementById('mealModalBg').classList.add('show');
-  const N = 14;
-  const today = new Date(); today.setHours(0,0,0,0);
-  const rows = [];
-  for(let i=0;i<N;i++){
-    const d = new Date(today); d.setDate(today.getDate()+i);
-    const ds = _fmt날짜(d);
-    let m=null; try{ const s=await getDoc(doc(db,'meals',ds)); if(s.exists()) m=s.data(); }catch(_){}
-    const label = `${d.getMonth()+1}/${d.getDate()} (${_요일[d.getDay()]})${i===0?' · 오늘':i===1?' · 내일':''}`;
-    const v=(k)=> m && m[k] ? escHtml(m[k]) : '';
-    rows.push(`<div class="meal-cal-row">
-      <div class="mc-date ${i===0?'mc-today':''}">${label}</div>
-      <input data-date="${ds}" data-k="breakfast" placeholder="아침" value="${v('breakfast')}">
-      <input data-date="${ds}" data-k="lunch" placeholder="점심" value="${v('lunch')}">
-      <input data-date="${ds}" data-k="dinner" placeholder="저녁" value="${v('dinner')}">
-    </div>`);
-  }
-  list.innerHTML = rows.join('');
-};
-window.급식달력닫기 = function(){ document.getElementById('mealModalBg').classList.remove('show'); };
-window.급식일괄저장 = async function(){
-  if(게스트인가() || !현재유저) return;
-  const inputs = document.querySelectorAll('#mealCalList input');
-  const byDate = {};
-  inputs.forEach(inp=>{
-    const ds=inp.dataset.date, k=inp.dataset.k, val=(inp.value||'').trim();
-    (byDate[ds] = byDate[ds] || {})[k] = val;
-  });
-  const btn = document.getElementById('mealSaveBtn'); btn.disabled=true;
-  const msgEl = document.getElementById('mealCalMsg'); msgEl.textContent='저장 중...';
-  let cnt=0;
-  try{
-    for(const ds in byDate){
-      const m = byDate[ds];
-      if(m.breakfast || m.lunch || m.dinner){
-        await setDoc(doc(db,'meals',ds), { breakfast:m.breakfast||'', lunch:m.lunch||'', dinner:m.dinner||'', registeredBy:현재유저.이름, 등록시각:Date.now() }, { merge:true });
-        cnt++;
-      }
-    }
-    msgEl.textContent = `✅ ${cnt}일치 저장 완료!`;
-    급식표섹션그리기('today'); 급식표섹션그리기('tomorrow');
-    setTimeout(급식달력닫기, 900);
-  }catch(e){ msgEl.textContent = '저장 실패: ' + (e.code||e.message); }
-  btn.disabled=false;
-};
-
-function 마크다운렌더(md){
-  try{ if(window.marked && marked.parse) return marked.parse(md); }catch(_){}
-  // marked 미로딩 시 최소 폴백(escape + 줄바꿈)
-  return escHtml(md).replace(/\n/g,'<br>');
-}
-function aiMsg(text, ok){ const el=document.getElementById('aiMsg'); if(el){ el.textContent=text||''; el.classList.toggle('ok', !!ok); } }
-
-// 탭 진입 시 준비: 게스트 차단 + 저장된 키 표시 + 키 없으면 설정창 펼치기
-function ai코치화면준비(){
-  const box = document.getElementById('aiCoachView');
-  const boxes = box.querySelectorAll('.acct-box');
-  const goalBoxEl=document.getElementById('goalBox'), goalSumEl=document.getElementById('goalSummary');
-  if(게스트인가()){
-    boxes.forEach(b=>b.style.display='none');
-    if(goalBoxEl) goalBoxEl.style.display='none';
-    if(goalSumEl) goalSumEl.style.display='none';
-    return;
-  }
-  boxes.forEach(b=>b.style.display='block');
-  if(goalBoxEl) goalBoxEl.style.display='block';
-  const keyInput = document.getElementById('aiApiKey');
-  let key=''; try{ key = localStorage.getItem('gemini_api_key')||''; }catch(_){}
-  if(keyInput) keyInput.value = key;
-  const keyBox = document.getElementById('aiKeyBox');
-  if(keyBox) keyBox.open = !key;   // 키 없으면 설정 펼침
-  aiMsg('');
-  목표화면그리기();
-  // 부대 공유 급식표(오늘/내일) 자동 로드
-  급식표섹션그리기('today');
-  급식표섹션그리기('tomorrow');
-}
-
-// ── 목표(현재/목표 체중·기한) ──
-function _디데이(기한){
-  if(!기한) return null;
-  const d = new Date(기한+'T00:00:00');
-  const t = new Date(); t.setHours(0,0,0,0);
-  return Math.round((d - t)/86400000);
-}
-function 목표화면그리기(){
-  if(!현재유저) return;
-  const cur = 현재유저.현재체중, tgt = 현재유저.목표체중, due = 현재유저.목표기한;
-  document.getElementById('goalCurWeight').value = (cur!=null?cur:'');
-  document.getElementById('goalTargetWeight').value = (tgt!=null?tgt:'');
-  document.getElementById('goalDeadline').value = due || '';
-  acctMsg('goalMsg','');
-  const sum = document.getElementById('goalSummary');
-  if(tgt!=null && due){
-    const dday = _디데이(due);
-    const diff = (cur!=null) ? Math.round((tgt - cur)*10)/10 : null;
-    const 방향 = diff!=null ? (diff<0?`감량 ${Math.abs(diff)}kg`:(diff>0?`증량 ${diff}kg`:'유지')) : '';
-    const 주당 = (diff!=null && dday>0) ? Math.round(Math.abs(diff)/(dday/7)*100)/100 : null;
-    sum.style.display='block';
-    sum.innerHTML = `🎯 ${cur!=null?cur+'kg → ':''}${tgt}kg ${dday!=null?`· D-${dday>=0?dday:0}`:''}` +
-      `<div class="gs-sub">${방향}${주당!=null?` · 주당 약 ${주당}kg 페이스 권장`:''}</div>`;
-    const gb=document.getElementById('goalBox'); if(gb) gb.open=false;
-  } else {
-    sum.style.display='none';
-    const gb=document.getElementById('goalBox'); if(gb) gb.open=true;  // 목표 없으면 펼침
-  }
-}
-window.목표저장 = async function(){
-  if(게스트인가() || !현재유저) return;
-  const cur = parseFloat(document.getElementById('goalCurWeight').value);
-  const tgt = parseFloat(document.getElementById('goalTargetWeight').value);
-  const due = document.getElementById('goalDeadline').value;
-  if(isNaN(tgt) || !due){ acctMsg('goalMsg','목표 체중과 기한을 입력해주세요.'); return; }
-  acctMsg('goalMsg','저장 중...', true);
-  try{
-    const data = { 목표체중: tgt, 목표기한: due };
-    if(!isNaN(cur)) data.현재체중 = cur;
-    await setDoc(doc(db,'users',현재유저.uid), data, { merge:true });
-    Object.assign(현재유저, data);
-    acctMsg('goalMsg','✅ 목표가 저장되었습니다.', true);
-    목표화면그리기();
-  }catch(e){ acctMsg('goalMsg','저장 실패: ' + (e.code||e.message)); }
-};
-
-window.aiKey저장 = function(){
-  const v = (document.getElementById('aiApiKey').value||'').trim();
-  if(!v){ acctMsg('aiKeyMsg','API 키를 입력해주세요.'); return; }
-  try{ localStorage.setItem('gemini_api_key', v); }catch(_){}
-  acctMsg('aiKeyMsg','✅ 키가 이 기기에 저장되었습니다.', true);
-  const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=false;
-};
-
-window.ai코치조언받기 = async function(){
-  if(게스트인가() || !현재유저){ alert('로그인 후 이용할 수 있어요.'); return; }
-  let key=''; try{ key = localStorage.getItem('gemini_api_key')||''; }catch(_){}
-  if(!key){ aiMsg('먼저 위의 🔑 Gemini API 키 설정에서 키를 저장해주세요.'); const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true; return; }
-
-  const 체중 = document.getElementById('aiWeight').value.trim();
-  const 컨디션 = document.getElementById('aiCondition').value;
-  const 운동루틴 = document.getElementById('aiRoutine').value.trim();
-  const 식단 = document.getElementById('aiDiet').value.trim();
-  const 내일운동 = document.getElementById('aiTomorrowWorkout').value.trim();
-  if(!컨디션 && !운동루틴 && !식단){ aiMsg('컨디션·오늘 운동·오늘 식단 중 하나 이상은 입력해주세요.'); return; }
-
-  const btn = document.getElementById('aiSubmitBtn');
-  const area = document.getElementById('ai-feedback-area');
-  btn.disabled = true; aiMsg('');
-  area.style.display='block';
-  area.innerHTML = '<div class="ai-loading">🤖 AI 코치가 분석 중이에요...</div>';
-
-  // 최신 공유 급식표(오늘/내일) 다시 가져오기
-  try{ const s1=await getDoc(doc(db,'meals',오늘날짜())); 급식캐시.today = s1.exists()?s1.data():null; }catch(_){}
-  try{ const s2=await getDoc(doc(db,'meals',내일날짜())); 급식캐시.tomorrow = s2.exists()?s2.data():null; }catch(_){}
-  const 오늘급식 = 급식캐시.today, 내일급식 = 급식캐시.tomorrow;
-
-  // 현재 체중 자동 갱신(체중 입력했으면 목표의 '현재 체중'을 업데이트)
-  const 체중수치 = parseFloat(체중);
-  if(!isNaN(체중수치)){
-    현재유저.현재체중 = 체중수치;
-    try{ await setDoc(doc(db,'users',현재유저.uid), { 현재체중: 체중수치 }, { merge:true }); }catch(_){}
-    목표화면그리기();
-  }
-  // 목표 텍스트 + 방향(체중 목표에서 자동 도출)
-  const _cur=현재유저.현재체중, _tgt=현재유저.목표체중, _due=현재유저.목표기한;
-  const _dday = _디데이(_due);
-  const 목표텍스트 = (_tgt!=null && _due)
-    ? `현재 ${_cur!=null?_cur+'kg':'?'} → 목표 ${_tgt}kg · 기한 ${_due} (D-${_dday>=0?_dday:0})`
-    : '(목표 미설정)';
-  let 목표 = '유지';
-  if(_tgt!=null && _cur!=null){ 목표 = _tgt<_cur ? '커팅(감량)' : (_tgt>_cur ? '벌크업(증량)' : '유지'); }
-  else if(_tgt==null){ 목표 = '(미설정)'; }
-
-  const date = 오늘날짜();
-  const id = 현재유저.이름 + '_' + date;   // 회원별·날짜별 1문서
-  const 기본데이터 = { 이름:현재유저.이름, 날짜:date, 체중, 컨디션, 목표, 운동루틴, 식단, 내일운동,
-    오늘급식:_급식문자열(오늘급식), 내일급식:_급식문자열(내일급식), 등록시각:Date.now() };
-
-  // A. 입력값 먼저 저장
-  try{ await setDoc(doc(db,'daily_logs',id), 기본데이터, { merge:true }); }
-  catch(e){ /* 저장 실패해도 코칭은 시도 */ console.warn('daily_logs 저장 실패', e); }
-
-  // B. Gemini 호출
-  const prompt = `유저 닉네임: ${현재유저.이름}
-목표 방향: ${목표}
-[체중 목표] ${목표텍스트}
-오늘 체중: ${체중||'(미입력)'}kg
-컨디션(1-5): ${컨디션||'(미입력)'}
-
-[오늘 — 이미 끝난 것, 피드백 대상]
-오늘 완료한 운동: ${운동루틴||'(미입력)'}
-오늘 먹은 식단(개인): ${식단||'(미입력)'}
-오늘 부대 급식표: ${_급식문자열(오늘급식)}
-
-[내일 — 전략 수립 대상]
-내일 부대 급식표: ${_급식문자열(내일급식)}
-내일 운동 예고: ${내일운동||'(미입력)'}
-
-지침:
-- [체중 목표]가 설정돼 있으면, 목표 기한까지 남은 기간과 목표 체중차를 고려해 '계획적으로'(주당 권장 증감 페이스, 현재 추세가 목표에 맞는지) 평가하고 그에 맞춰 오늘 피드백과 내일 전략을 연결해줘.
-- '오늘의 영양 반성' 섹션: 오늘 먹은 식단의 영양(단백질/탄수/지방) 분석과 잘한 점/아쉬운 점, 오늘 운동은 컨디션을 고려한 피드백(잘한 점/문제점/개선점).
-- '내일의 식판 예보' 섹션: 내일 부대 급식표를 기준으로 목표에 맞는 식판 전략(끼니별로 무엇을 더/덜 담을지)과 PX 추천을 제시하고, 오늘 부족했던 영양을 내일 어떻게 보충할지 오늘→내일을 연결해줘. 내일 운동 예고가 있으면 그에 맞춘 에너지 로딩/PX 섭취 타이밍 전략도 넣어줘.
-${내일급식 ? '' : '- 내일 급식표가 아직 미등록이니, 일반 원칙으로 내일 전략을 주되 "내일 급식표를 먼저 등록하면 더 정확한 내일 전략을 짜드릴 수 있다"고 안내해줘.'}`;
-
-  try{
-    const mod = await import('./geminiService.js');
-    const md = await mod.getCoachFeedback(prompt);
-    // C. 렌더링
-    const 안내 = 내일급식 ? '' : `<div class="meal-empty" style="margin-bottom:10px;color:#ffc83d;">💡 내일 급식표를 먼저 등록하면 더 정확한 내일 전략을 짜드릴 수 있어요.</div>`;
-    area.innerHTML = `<div class="ai-feedback-meta">📅 ${date} · 목표 ${목표}</div>` + 안내 + 마크다운렌더(md);
-    // D. AI 답변도 저장
-    try{ await setDoc(doc(db,'daily_logs',id), { ai응답: md }, { merge:true }); }catch(e){ console.warn('AI 응답 저장 실패', e); }
-  }catch(e){
-    const code = e && (e.message||e.code) || '';
-    const msg = String(code);
-    if(code==='NO_API_KEY'){ area.style.display='none'; aiMsg('API 키가 없습니다. 키를 저장해주세요.'); const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true; }
-    else if(/quota|RESOURCE_EXHAUSTED|429|limit: 0/i.test(msg)){
-      area.innerHTML = `<div class="ai-feedback-meta" style="color:#ffc83d;">⏳ 사용량 한도(quota)에 막혔어요.</div>
-        <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">모든 모델에서 막힌다면 보통 <b>그 키의 프로젝트에 무료 한도가 0</b>으로 잡힌 경우예요. 다음을 시도해보세요:<br>
-        ① <b>새 프로젝트로 키 재발급</b> — aistudio.google.com/apikey → "Create API key" 시 <b>새 프로젝트</b> 선택<br>
-        ② 그래도 안 되면 <b>결제(billing) 사용 설정</b> — Flash 모델은 매우 저렴해 실사용 비용은 거의 0이에요<br>
-        ③ 분당 한도였다면 <b>30초~1분 뒤 재시도</b></p>`;
-    }
-    else if(/API_KEY_INVALID|API key not valid|PERMISSION_DENIED|401|403/i.test(msg)){
-      area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">🔑 키가 올바르지 않아요.</div>
-        <p style="color:var(--text-dim);font-size:13px;">API 키를 다시 확인해 저장해주세요. (aistudio.google.com/apikey에서 새로 발급 가능)</p>`;
-      const kb=document.getElementById('aiKeyBox'); if(kb) kb.open=true;
-    }
-    else{
-      area.innerHTML = `<div class="ai-feedback-meta" style="color:#f87171;">⚠️ AI 호출에 실패했어요.</div><p style="color:var(--text-dim);font-size:13px;">${escHtml(msg)}<br>잠시 후 다시 시도해주세요.</p>`;
-    }
-  }
-  btn.disabled = false;
-};
-
-window.ai과거기록보기 = async function(){
-  if(게스트인가() || !현재유저){ alert('로그인 후 이용할 수 있어요.'); return; }
-  const wrap = document.getElementById('ai-history-area');
-  wrap.innerHTML = '<div class="ai-loading">불러오는 중...</div>';
-  try{
-    const snap = await getDocs(query(dailyLogsCol, where('이름','==',현재유저.이름)));
-    const 목록 = [];
-    snap.forEach(d=> 목록.push(d.data()));
-    목록.sort((a,b)=>(b.날짜||'').localeCompare(a.날짜||''));   // 최신순
-    if(목록.length===0){ wrap.innerHTML = '<div class="ac-empty">저장된 기록이 없어요. 오늘 기록을 남겨보세요!</div>'; return; }
-    wrap.innerHTML = 목록.map((r,i)=>{
-      const rows = [
-        r.체중 ? `<div class="ai-hist-row"><b>체중</b> ${escHtml(String(r.체중))}kg</div>`:'',
-        r.컨디션 ? `<div class="ai-hist-row"><b>컨디션</b> ${escHtml(String(r.컨디션))}/5</div>`:'',
-        r.목표 ? `<div class="ai-hist-row"><b>목표</b> ${escHtml(String(r.목표))}</div>`:'',
-        r.운동루틴 ? `<div class="ai-hist-row"><b>오늘운동</b> ${escHtml(r.운동루틴)}</div>`:'',
-        r.식단 ? `<div class="ai-hist-row"><b>오늘식단</b> ${escHtml(r.식단)}</div>`:'',
-        r.내일운동 ? `<div class="ai-hist-row"><b>내일운동</b> ${escHtml(r.내일운동)}</div>`:'',
-        (r.오늘급식 && r.오늘급식!=='(미등록)') ? `<div class="ai-hist-row"><b>오늘급식</b> ${escHtml(r.오늘급식)}</div>`:'',
-        (r.내일급식 && r.내일급식!=='(미등록)') ? `<div class="ai-hist-row"><b>내일급식</b> ${escHtml(r.내일급식)}</div>`:'',
-        (r.급식표) ? `<div class="ai-hist-row"><b>급식표</b> ${escHtml(r.급식표)}</div>`:'',
-        r.ai응답 ? `<div class="ai-hist-row" style="margin-top:8px;"><b>🤖 코치 피드백</b></div><div class="ai-feedback" style="margin-top:6px;">${마크다운렌더(r.ai응답)}</div>`:''
-      ].filter(Boolean).join('');
-      return `<details class="ai-hist-card" ${i===0?'open':''}>
-        <summary><span class="ai-hist-date">${escHtml(r.날짜||'')}</span> · 기록 보기</summary>
-        <div class="ai-hist-body">${rows}</div>
-      </details>`;
-    }).join('');
-  }catch(e){ wrap.innerHTML = `<div class="ac-empty">불러오기 실패: ${escHtml(String(e.code||e.message))}</div>`; }
 };
 
 </script>
