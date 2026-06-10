@@ -216,8 +216,15 @@
   .train-log .del-x:active{background:rgba(248,113,113,0.25);}
   /* 입력 모달 */
   .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;}
+  /* 토스트 (저장 완료 등 짧은 알림) */
+  #toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--panel-light);border:1px solid var(--blue-bright);color:var(--text);font-size:14px;font-weight:700;padding:11px 22px;border-radius:24px;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s,transform 0.25s;box-shadow:0 6px 24px rgba(0,0,0,0.5);white-space:nowrap;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .modal-bg.show{display:flex;}
   .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:420px;animation:slideIn 0.3s;}
+  .group-tag{font-size:13px;font-weight:700;color:var(--text);margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line);}
+  .group-tag small{font-size:11px;font-weight:700;margin-left:4px;}
+  .group-tag.must small{color:var(--gold);}
+  .group-tag.opt small{color:var(--text-dim);}
   .modal h2{font-family:'Black Han Sans',sans-serif;font-size:22px;margin-bottom:4px;}
   .modal .sub{font-size:12px;color:var(--text-dim);margin-bottom:20px;}
   .field{margin-bottom:14px;}
@@ -638,6 +645,21 @@
 </div>
 
 <!-- 입력 모달 -->
+<div id="toast"></div>
+
+<!-- 한마디(명언) 입력 모달 -->
+<div class="modal-bg" id="quoteModalBg">
+  <div class="modal">
+    <h2>💬 한마디 입력</h2>
+    <div class="sub">좌우명, 각오, 명언 등 자유롭게!</div>
+    <div class="field"><input type="text" id="quoteInput" maxlength="40" placeholder="예: 백절불굴" onkeydown="if(event.key==='Enter')quoteModalSave()"></div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="quoteModalClose()">취소</button>
+      <button class="btn btn-save" onclick="quoteModalSave()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2 id="modalTitle">기록 입력</h2>
@@ -649,6 +671,7 @@
     </div>
     <!-- 삼대 그룹 -->
     <div id="liftGroup">
+    <div class="group-tag must">🏋️ 삼대 기록 <small>필수</small></div>
     <div class="field"><label>체중 (kg)</label><input type="number" id="inWeight" inputmode="decimal" style="max-width:40%;"></div>
     <!-- 벤치프레스 -->
     <div class="lift-entry-block">
@@ -710,6 +733,7 @@
     </div><!-- /liftGroup -->
     <!-- 인바디 그룹 -->
     <div id="bodyGroup">
+    <div class="group-tag opt">📊 인바디 <small>선택 · 비워도 저장돼요 (삼대 기록이 있어야 입력 가능)</small></div>
     <div class="grid2">
       <div class="field"><label>골격근량 (kg)</label><input type="number" id="inMuscle" inputmode="decimal"></div>
       <div class="field"><label>체지방률 (%)</label><input type="number" id="inFat" inputmode="decimal"></div>
@@ -734,7 +758,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.06.58";
+const APP_VERSION = "2026.06.10.1";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1080,11 +1104,17 @@ window.editQuote = async function(){
   if(!현재상세이름) return;
   if(!내권한(현재상세이름)){ alert('본인 명언만 수정할 수 있어요.'); return; }
   const 현재 = 명언목록[현재상세이름] || '';
-  const 입력 = prompt(`${현재상세이름}님의 한마디를 입력하세요 💬\n(좌우명, 각오, 명언 등 자유롭게!)`, 현재);
-  if(입력===null) return;  // 취소
-  const 명언 = 입력.trim();
+  document.getElementById('quoteInput').value = 현재;
+  document.getElementById('quoteModalBg').classList.add('show');
+  setTimeout(()=>document.getElementById('quoteInput').focus(), 50);
+}
+window.quoteModalClose = function(){ document.getElementById('quoteModalBg').classList.remove('show'); }
+window.quoteModalSave = async function(){
+  const 명언 = document.getElementById('quoteInput').value.trim();
   try{
     await setDoc(doc(db,"quotes",현재상세이름), { 명언 }, { merge:true });
+    quoteModalClose();
+    토스트('✅ 저장 완료!');
   }catch(e){ alert("저장 실패: "+e.message); }
 }
 function 개인화면닫기(){
@@ -1227,6 +1257,9 @@ function 운동설정(이름, ex){
 window.setLevel = async function(L){
   const 이름 = 일지대상 || 현재상세이름;
   if(!내권한(이름)){ alert('본인 레벨만 변경할 수 있어요.'); return; }
+  레벨목록[이름] = L;                       // 즉시 화면 반영
+  if(일지대상) 훈련일지그리기(일지대상);
+  토스트(`레벨: ${L} ✅`);
   try{ await setDoc(doc(db,'quotes',이름), { 레벨:L }, { merge:true }); }
   catch(e){ alert('레벨 저장 실패: '+e.message); }
 }
@@ -1236,6 +1269,10 @@ window.setExType = async function(v){
   if(!내권한(이름)){ alert('본인 운동만 설정할 수 있어요.'); return; }
   const ex = 현재종목;
   if(!ex || 종목목록.includes(ex)) return;   // 기본 3대는 고정
+  if(!운동유형목록[이름]) 운동유형목록[이름] = {};
+  운동유형목록[이름][ex] = v;               // 즉시 화면 반영
+  if(일지대상) 훈련일지그리기(일지대상);
+  토스트(`${ex}: ${v} 운동으로 설정 ✅`);
   try{ await setDoc(doc(db,'quotes',이름), { 운동유형:{ [ex]: v } }, { merge:true }); }
   catch(e){ alert('유형 저장 실패: '+e.message); }
 }
@@ -1245,6 +1282,17 @@ let 직접입력모드 = false;
 let trainChartObj = null;
 
 function escHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// 짧은 알림 토스트 (저장 완료 등)
+let 토스트타이머 = null;
+function 토스트(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(토스트타이머);
+  토스트타이머 = setTimeout(()=>t.classList.remove('show'), 1800);
+}
 
 function 추정1RM(중량, 횟수){
   // 1회: 그대로 / 2~5회: 에플리 / 6회 이상: 웰던
@@ -1549,7 +1597,9 @@ window.saveTraining = async function(){
   if(!종목){ alert("운동 종목을 선택하거나 직접 입력해줘!"); return; }
   if(!날짜){ alert("날짜를 선택해줘!"); return; }
   if(isNaN(중량)||isNaN(횟수)||중량<=0||횟수<=0){ alert("중량과 횟수를 입력해줘!"); return; }
+  const btn = document.querySelector('.train-save');
   try{
+    if(btn){ btn.disabled = true; btn.textContent = '저장 중…'; }
     // 같은 사람+같은 날짜면 덮어쓰기
     const 기존 = 훈련목록.find(t=>t.이름===이름 && (t.종목||'벤치프레스')===종목 && t.날짜===날짜);
     const 데이터 = {이름,종목,날짜,중량,횟수,등록시각:Date.now()};
@@ -1561,7 +1611,9 @@ window.saveTraining = async function(){
     document.getElementById('trainWeight').value='';
     document.getElementById('trainReps').value='';
     document.getElementById('train1rm').innerHTML='';
+    토스트(기존 ? '✅ 저장 완료! (같은 날짜 덮어씀)' : '✅ 저장 완료!');
   }catch(e){ alert("저장 실패: "+e.message); }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = '기록'; } }
 }
 
 window.deleteTraining = async function(id){
