@@ -195,6 +195,9 @@
   .train-exercise-select input{width:100%;margin-top:8px;padding:11px 12px;background:var(--bg);border:1px solid var(--blue-bright);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;box-sizing:border-box;}
   .train-exercise-select input:focus{outline:none;}
   .train-suggest{font-size:13px;font-weight:700;color:var(--blue-bright);background:rgba(200,212,228,0.12);border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.5;}
+  .ex-select-row{display:flex;gap:8px;align-items:stretch;}
+  .ex-select-row select{flex:1;}
+  .ex-add-btn{flex-shrink:0;width:46px;background:var(--bg);border:1px solid var(--blue-bright);border-radius:8px;color:var(--blue-bright);font-size:20px;font-weight:700;cursor:pointer;line-height:1;}
   .train-fields{display:flex;align-items:center;gap:8px;}
   .train-fields select,.train-fields input{padding:11px 8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;min-width:0;}
   .train-fields input[type="date"]{background:var(--bg);color:var(--text);}
@@ -493,6 +496,10 @@
       <div class="title-sub">예상 1RM 추적</div>
       <div class="header-divider"></div>
     </header>
+    <div class="guest-banner" style="display:none;">
+      <div class="gb-text">👀 <b>게스트 모드</b> — 기록 입력은 회원만 가능해요. 둘러보기는 자유!</div>
+      <button class="gb-join" onclick="로그아웃()">회원가입</button>
+    </div>
     <div class="field" style="margin-bottom:16px;">
       <label>누구의 일지를 볼까요?</label>
       <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)"></select>
@@ -502,7 +509,10 @@
       <div id="levelRow" class="level-row"></div>
       <div class="train-input-card">
         <div class="train-exercise-select">
-          <select id="exerciseSelect" onchange="onExerciseSelectChange(this.value)"></select>
+          <div class="ex-select-row">
+            <select id="exerciseSelect" onchange="onExerciseSelectChange(this.value)"></select>
+            <button class="ex-add-btn" onclick="새운동추가()" title="새 운동 직접 추가">＋</button>
+          </div>
           <input type="text" id="customExerciseInput" placeholder="운동명을 직접 입력 (예: 오버헤드프레스)" maxlength="20" style="display:none;" oninput="onCustomExerciseInput(this.value)">
         </div>
         <div id="exTypeRow" class="level-row" style="display:none;"></div>
@@ -542,6 +552,10 @@
       <div class="title-sub">운동별 성장 그래프</div>
       <div class="header-divider"></div>
     </header>
+    <div class="guest-banner" style="display:none;">
+      <div class="gb-text">👀 <b>게스트 모드</b> — 회원가입하면 내 성장 그래프도 만들 수 있어요!</div>
+      <button class="gb-join" onclick="로그아웃()">회원가입</button>
+    </div>
     <div class="field" style="margin-bottom:16px;">
       <label>누구를 분석할까요?</label>
       <select id="analysisMemberSelect" onchange="selectAnalysisMember(this.value)"></select>
@@ -758,7 +772,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.1";
+const APP_VERSION = "2026.06.10.2";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1565,6 +1579,8 @@ function 훈련일지그리기(이름){
   }).join('');
 }
 
+// + 버튼: 직접 입력 모드로 바로 진입
+window.새운동추가 = function(){ onExerciseSelectChange(직접입력값); }
 window.onExerciseSelectChange = function(val){
   if(val === 직접입력값){
     직접입력모드 = true;
@@ -2122,7 +2138,7 @@ function 권한UI적용(){
   const logoutBtn = document.querySelector('.acct-bar .acct-logout');
   if(logoutBtn) logoutBtn.textContent = guest ? '나가기' : '로그아웃';
   // 게스트 배너 / 기록 입력 버튼
-  const banner = document.getElementById('guestBanner'); if(banner) banner.style.display = guest ? 'flex' : 'none';
+  document.querySelectorAll('.guest-banner').forEach(b=>{ b.style.display = guest ? 'flex' : 'none'; });
   const launch = document.querySelector('.input-launch'); if(launch) launch.style.display = guest ? 'none' : 'block';
 }
 
