@@ -184,6 +184,7 @@
   .level-btn{padding:6px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
   .level-btn.active{background:var(--blue);border-color:var(--blue-bright);color:#10141b;}
   .level-hint{flex-basis:100%;font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .level-auto{font-size:10px;font-weight:700;color:var(--gold);border:1px solid var(--gold);background:rgba(255,200,61,0.12);border-radius:5px;padding:1px 6px;margin-left:4px;}
   .level-view{font-size:13px;font-weight:700;color:var(--blue-bright);}
   .train-input-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
   .train-exercise-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;}
@@ -773,7 +774,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.3";
+const APP_VERSION = "2026.06.10.4";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1252,7 +1253,29 @@ const 종목설정 = {
 const 종목목록 = Object.keys(종목설정);
 const 기본종목설정 = { 목표회수:8, 증가:5, 시작회수:5 }; // 직접 입력 종목용 기본값
 // 숙련도별 설정 (초보는 높은 반복+작은 증량 → 가벼운 무게로 안전하게)
-function 멤버레벨(이름){ return 레벨목록[이름] || '중급'; }
+// 표시용 라벨/설명 (내부 저장값은 초보/중급/고급 유지)
+const 레벨표시 = { '초보':'🔰 입문', '중급':'🔵 일반', '고급':'🔴 고중량' };
+const 레벨설명 = {
+  '초보':'가벼운 무게로 반복 많게, 폼부터 (3대 300 미만 추천)',
+  '중급':'표준 5~8회 (3대 300~400)',
+  '고급':'저반복 고중량 5회 (3대 400+)'
+};
+// 이 사람의 역대 최고 삼대합계
+function 멤버삼대최고(이름){
+  const recs = 기록목록.filter(r=>r.이름===이름 && r.스쿼트!=null && r.벤치!=null && r.데드!=null);
+  return recs.length ? Math.max(...recs.map(합계)) : null;
+}
+// 삼대 기록 기준 자동 추천 레벨
+function 추천레벨(이름){
+  const t = 멤버삼대최고(이름);
+  if(t==null) return '초보';   // 기록 없으면 입문(가장 안전)
+  if(t>=400) return '고급';
+  if(t>=300) return '중급';
+  return '초보';
+}
+// 직접 설정했으면 그 값, 아니면 기록 기준 자동 추천
+function 멤버레벨(이름){ return 레벨목록[이름] || 추천레벨(이름); }
+function 레벨수동설정여부(이름){ return !!레벨목록[이름]; }
 // 직접 추가 운동의 유형 (기본=복합)
 function 운동유형(이름, ex){ return (운동유형목록[이름]||{})[ex] || '복합'; }
 // 운동 자체의 기본 설정 (3대=고정 / 커스텀=유형별)
@@ -1275,7 +1298,7 @@ window.setLevel = async function(L){
   if(!내권한(이름)){ alert('본인 레벨만 변경할 수 있어요.'); return; }
   레벨목록[이름] = L;                       // 즉시 화면 반영
   if(일지대상) 훈련일지그리기(일지대상);
-  토스트(`레벨: ${L} ✅`);
+  토스트(`${레벨표시[L]} 선택 ✅`);
   try{ await setDoc(doc(db,'quotes',이름), { 레벨:L }, { merge:true }); }
   catch(e){ alert('레벨 저장 실패: '+e.message); }
 }
@@ -1456,16 +1479,17 @@ function 훈련일지그리기(이름){
   const tf = document.getElementById('trainFields'); if(tf) tf.style.display = 일지권한 ? 'flex' : 'none';
   if(!일지권한){ const t1 = document.getElementById('train1rm'); if(t1) t1.innerHTML=''; }
 
-  // 숙련도 선택 (본인/관리자만 변경 가능)
+  // 훈련 스타일 선택 (본인/관리자만 변경 가능, 기본은 삼대 기록 기준 자동 추천)
   const levelEl = document.getElementById('levelRow');
   if(levelEl){
     const lv = 멤버레벨(이름);
+    const 자동 = !레벨수동설정여부(이름);
     if(일지권한){
-      levelEl.innerHTML = `<span class="level-label">내 레벨</span>`
-        + ['초보','중급','고급'].map(L=>`<button class="level-btn${lv===L?' active':''}" onclick="setLevel('${L}')">${L}</button>`).join('')
-        + `<span class="level-hint">${lv==='초보'?'반복 많게·증량 작게 (가볍게·안전)':lv==='고급'?'반복 적게·고중량':'운동별 기본 설정'}</span>`;
+      levelEl.innerHTML = `<span class="level-label">훈련 스타일${자동?' <span class="level-auto">기록 기준 자동 추천</span>':''}</span>`
+        + ['초보','중급','고급'].map(L=>`<button class="level-btn${lv===L?' active':''}" onclick="setLevel('${L}')">${레벨표시[L]}</button>`).join('')
+        + `<span class="level-hint">${레벨설명[lv]}</span>`;
     } else {
-      levelEl.innerHTML = `<span class="level-label">레벨</span><span class="level-view">${lv}</span>`;
+      levelEl.innerHTML = `<span class="level-label">훈련 스타일</span><span class="level-view">${레벨표시[lv]}</span>`;
     }
   }
 
