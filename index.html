@@ -774,7 +774,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.4";
+const APP_VERSION = "2026.06.10.5";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1253,28 +1253,25 @@ const 종목설정 = {
 const 종목목록 = Object.keys(종목설정);
 const 기본종목설정 = { 목표회수:8, 증가:5, 시작회수:5 }; // 직접 입력 종목용 기본값
 // 숙련도별 설정 (초보는 높은 반복+작은 증량 → 가벼운 무게로 안전하게)
-// 표시용 라벨/설명 (내부 저장값은 초보/중급/고급 유지)
-const 레벨표시 = { '초보':'🔰 입문', '중급':'🔵 일반', '고급':'🔴 고중량' };
+// 표시용 라벨/설명 (내부 저장값은 초보/중급, 2단계)
+const 레벨표시 = { '초보':'🔰 입문', '중급':'🔵 일반' };
 const 레벨설명 = {
   '초보':'가벼운 무게로 반복 많게, 폼부터 (3대 300 미만 추천)',
-  '중급':'표준 5~8회 (3대 300~400)',
-  '고급':'저반복 고중량 5회 (3대 400+)'
+  '중급':'표준 5~8회 (3대 300 이상)'
 };
 // 이 사람의 역대 최고 삼대합계
 function 멤버삼대최고(이름){
   const recs = 기록목록.filter(r=>r.이름===이름 && r.스쿼트!=null && r.벤치!=null && r.데드!=null);
   return recs.length ? Math.max(...recs.map(합계)) : null;
 }
-// 삼대 기록 기준 자동 추천 레벨
+// 삼대 기록 기준 자동 추천 레벨 (입문/일반 2단계)
 function 추천레벨(이름){
   const t = 멤버삼대최고(이름);
   if(t==null) return '초보';   // 기록 없으면 입문(가장 안전)
-  if(t>=400) return '고급';
-  if(t>=300) return '중급';
-  return '초보';
+  return t>=300 ? '중급' : '초보';
 }
-// 직접 설정했으면 그 값, 아니면 기록 기준 자동 추천
-function 멤버레벨(이름){ return 레벨목록[이름] || 추천레벨(이름); }
+// 직접 설정했으면 그 값, 아니면 기록 기준 자동 추천 (옛 '고급'은 '일반'으로 흡수)
+function 멤버레벨(이름){ const v = 레벨목록[이름] || 추천레벨(이름); return v==='고급' ? '중급' : v; }
 function 레벨수동설정여부(이름){ return !!레벨목록[이름]; }
 // 직접 추가 운동의 유형 (기본=복합)
 function 운동유형(이름, ex){ return (운동유형목록[이름]||{})[ex] || '복합'; }
@@ -1486,7 +1483,7 @@ function 훈련일지그리기(이름){
     const 자동 = !레벨수동설정여부(이름);
     if(일지권한){
       levelEl.innerHTML = `<span class="level-label">훈련 스타일${자동?' <span class="level-auto">기록 기준 자동 추천</span>':''}</span>`
-        + ['초보','중급','고급'].map(L=>`<button class="level-btn${lv===L?' active':''}" onclick="setLevel('${L}')">${레벨표시[L]}</button>`).join('')
+        + ['초보','중급'].map(L=>`<button class="level-btn${lv===L?' active':''}" onclick="setLevel('${L}')">${레벨표시[L]}</button>`).join('')
         + `<span class="level-hint">${레벨설명[lv]}</span>`;
     } else {
       levelEl.innerHTML = `<span class="level-label">훈련 스타일</span><span class="level-view">${레벨표시[lv]}</span>`;
