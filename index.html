@@ -774,7 +774,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.5";
+const APP_VERSION = "2026.06.10.6";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -810,6 +810,15 @@ const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
 ===================================================== */
 // 보안: 실명 대신 [이름 + 성 이니셜] 닉네임을 사용한다.
 const 멤버명단 = ["재헌.N","승민.L","상훈.J","태규.K","동희.L","시현.L","승제.K","윤호.N","유찬.S","재희.H","서진.A","성욱.J","익태.C","은수.S","예권.H","test"];
+// 드롭다운용 전체 멤버 목록: 기본명단 + 가입자(관리자만 채워짐) + 기록/일지에 등장한 이름 + 본인
+function 전체멤버목록(){
+  const s = new Set(멤버명단);
+  try{ 회원목록.forEach(u=>{ if(u.이름 && u.status!=='rejected') s.add(u.이름); }); }catch(_){}
+  try{ 기록목록.forEach(r=>{ if(r.이름) s.add(r.이름); }); }catch(_){}
+  try{ 훈련목록.forEach(t=>{ if(t.이름) s.add(t.이름); }); }catch(_){}
+  if(현재유저 && 현재유저.이름) s.add(현재유저.이름);
+  return [...s].sort((a,b)=>a.localeCompare(b,'ko'));
+}
 // 기존 DB의 실명 → 닉네임 변환표 (마이그레이션 및 자동 정리에 사용)
 const 실명닉네임맵 = {
   '노재헌':'재헌.N','이승민':'승민.L','장상훈':'상훈.J','김태규':'태규.K','이동희':'동희.L',
@@ -1200,21 +1209,17 @@ window.switchMainTab = function(tab){
   if(tab==='account'){ 계정화면그리기(); }
   if(tab==='analysis'){
     const sel = document.getElementById('analysisMemberSelect');
-    if(!sel.innerHTML){
-      sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
-        [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option value="${n}">${n}</option>`).join('');
-    }
+    sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
+      전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
     if(!분석대상 && 현재유저){ 분석대상 = 현재유저.이름; }  // 처음엔 본인 분석
     sel.value = 분석대상 || '';
     분석그리기();
   }
   if(tab==='diary'){
-    // 멤버 드롭다운 채우기 (맨 위에 안내 옵션)
+    // 멤버 드롭다운 채우기 (가입자 자동 반영, 맨 위에 안내 옵션)
     const sel = document.getElementById('diaryMemberSelect');
-    if(!sel.innerHTML){
-      sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
-        [...멤버명단].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>`<option value="${n}">${n}</option>`).join('');
-    }
+    sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
+      전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
     // 처음 들어오면 본인 일지를 기본으로 보여줌
     if(!일지대상 && 현재유저 && !게스트인가()){ 일지대상 = 현재유저.이름; }
     if(!일지대상){
@@ -1759,7 +1764,7 @@ window.openNewModal = function(){
   // 일반 회원은 본인 이름으로 고정, 관리자는 자유 선택
   const inName = document.getElementById('inName');
   if(현재유저 && !관리자인가()){ inName.innerHTML = `<option>${escHtml(현재유저.이름)}</option>`; inName.value = 현재유저.이름; inName.disabled = true; }
-  else { inName.disabled = false; }
+  else { inName.innerHTML = 전체멤버목록().map(n=>`<option>${escHtml(n)}</option>`).join(''); inName.disabled = false; }
   document.getElementById('inMonth').onchange = null;
   document.getElementById('inYear').onchange = null;
   document.getElementById('inMonth').value = (new Date().getMonth()+1)+"월";
