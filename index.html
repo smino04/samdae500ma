@@ -227,6 +227,12 @@
   .modal-bg.show{display:flex;}
   .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:420px;animation:slideIn 0.3s;}
   .month-warn{font-size:12px;font-weight:700;color:var(--gold);background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.4);border-radius:8px;padding:8px 12px;margin:-2px 0 4px;line-height:1.4;}
+  .role-note{font-size:12px;color:var(--text-dim);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:12px;line-height:1.5;text-align:center;}
+  .role-note b{color:var(--text);}
+  .intro-row{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;}
+  .intro-ic{font-size:30px;line-height:1;flex-shrink:0;}
+  .intro-tx{font-size:13px;line-height:1.5;color:var(--text-dim);}
+  .intro-tx b{color:var(--text);}
   .group-tag{font-size:13px;font-weight:700;color:var(--text);margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line);}
   .group-tag small{font-size:11px;font-weight:700;margin-left:4px;}
   .group-tag.must small{color:var(--gold);}
@@ -467,6 +473,7 @@
       <select class="period-select" id="yearSelect" onchange="selectYear(parseInt(this.value))"></select>
       <select class="period-select" id="monthSelect" onchange="selectMonth(this.value)"></select>
     </div>
+    <div class="role-note">🏆 <b>월 1회 공식 측정</b> 기록 · 랭킹·뱃지에 반영돼요</div>
     <div id="rankList"><div class="status">기록을 불러오는 중...</div></div>
   </div>
 
@@ -482,7 +489,7 @@
 
     <div id="paneOfficial">
       <div class="section-label">📈 삼대운동 추이</div>
-      <div class="chart-card"><div class="chart-title">월별 삼대 기록 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
       <div class="edit-row" id="pEditLift"></div>
       <div class="section-label">📊 인바디 추이</div>
       <div class="chart-card"><div class="chart-title">골격근량 (kg)</div><div class="chart-wrap"><canvas id="muscleChart"></canvas></div></div>
@@ -495,7 +502,7 @@
   <div id="diaryView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
       <h1 class="title-main">📒 훈련 일지</h1>
-      <div class="title-sub">예상 1RM 추적</div>
+      <div class="title-sub">매 운동 기록 · 다음 무게 추천</div>
       <div class="header-divider"></div>
     </header>
     <div class="guest-banner" style="display:none;">
@@ -508,6 +515,7 @@
     </div>
     <div id="diaryContent">
       <div class="section-label">📒 주간 훈련 일지</div>
+      <div class="role-note">💡 여긴 <b>일상 훈련</b> 기록! 매달 측정일엔 🏆<b>랭킹 탭(공식 기록)</b>에 따로 남겨주세요</div>
       <div id="levelRow" class="level-row"></div>
       <div class="train-input-card">
         <div class="train-exercise-select">
@@ -528,7 +536,7 @@
         </div>
         <div class="train-1rm" id="train1rm"></div>
       </div>
-      <div class="chart-card"><div class="chart-title">예상 1RM 추이 (kg)</div><div class="chart-wrap"><canvas id="trainChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">훈련 예상 1RM 추이 (kg)</div><div class="chart-wrap"><canvas id="trainChart"></canvas></div></div>
       <div id="trainList"></div>
       <details class="why-toggle" id="whyToggle">
         <summary>💡 어떻게 사용하나요? <span class="why-arrow">▼</span></summary>
@@ -664,6 +672,23 @@
 <!-- 입력 모달 -->
 <div id="toast"></div>
 
+<!-- 첫 진입 안내 (공식 기록 vs 훈련일지) -->
+<div class="modal-bg" id="introModalBg">
+  <div class="modal">
+    <h2>👋 두 가지로 기록해요</h2>
+    <div class="sub">처음이라면 이것만 알아두세요!</div>
+    <div class="intro-row">
+      <div class="intro-ic">🏆</div>
+      <div class="intro-tx"><b>공식 기록 (랭킹 탭)</b><br><span>월 1회 측정 → 랭킹·뱃지·동아리 실적<br>= <b>월말고사 성적표</b> 📝</span></div>
+    </div>
+    <div class="intro-row">
+      <div class="intro-ic">📒</div>
+      <div class="intro-tx"><b>훈련 일지 (훈련일지 탭)</b><br><span>운동할 때마다 탑세트 기록 → 다음 무게 추천<br>= <b>매일 연습일기</b> ✏️</span></div>
+    </div>
+    <button class="btn btn-save" style="width:100%;margin-top:6px;" onclick="introClose()">알겠어요! 👍</button>
+  </div>
+</div>
+
 <!-- 한마디(명언) 입력 모달 -->
 <div class="modal-bg" id="quoteModalBg">
   <div class="modal">
@@ -680,7 +705,7 @@
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2 id="modalTitle">기록 입력</h2>
-    <div class="sub" id="modalSub">측정한 기록을 입력하면 랭킹에 바로 반영됩니다.</div>
+    <div class="sub" id="modalSub">🏆 월 1회 공식 측정 기록이에요. 랭킹·뱃지에 반영됩니다.</div>
     <div class="field"><label>이름</label><select id="inName"></select></div>
     <div class="grid2">
       <div class="field"><label>연도</label><select id="inYear"></select></div>
@@ -776,7 +801,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.12";
+const APP_VERSION = "2026.06.10.13";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2200,6 +2225,16 @@ function 앱표시(){
   document.getElementById('authView').style.display = 'none';
   document.getElementById('appRoot').style.display = 'flex';
   switchMainTab('ranking');  // 시작 화면을 랭킹으로
+  introShow();  // 처음 1회 공식기록 vs 훈련일지 안내
+}
+// 첫 진입 안내 (기기당 1회)
+function introShow(){
+  if(localStorage.getItem('introSeen_v1')) return;
+  setTimeout(()=>{ const m=document.getElementById('introModalBg'); if(m) m.classList.add('show'); }, 2600);
+}
+window.introClose = function(){
+  localStorage.setItem('introSeen_v1','1');
+  const m=document.getElementById('introModalBg'); if(m) m.classList.remove('show');
 }
 function 권한UI적용(){
   const guest = 게스트인가();
