@@ -774,7 +774,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.8";
+const APP_VERSION = "2026.06.10.9";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -902,6 +902,10 @@ function 데이터구독시작(){
     기록목록 = [];
     snap.forEach(d => 기록목록.push({ ...d.data(), _id:d.id }));
     화면갱신();
+    // 개인 페이지가 열려있으면 실시간으로 다시 그리기 (삼대/인바디 수정 즉시 반영)
+    if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
+      showDetail(현재상세이름);
+    }
   }));
   // 주간 훈련 일지 실시간 수신
   구독함수들.push(onSnapshot(trainingCol, (snap)=>{
