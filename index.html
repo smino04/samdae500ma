@@ -467,7 +467,6 @@
       <select class="period-select" id="monthSelect" onchange="selectMonth(this.value)"></select>
     </div>
     <div id="rankList"><div class="status">기록을 불러오는 중...</div></div>
-    <button class="input-launch" onclick="openNewModal()">＋ 내 기록 입력하기</button>
   </div>
 
   <div id="detailView" class="detail">
@@ -578,6 +577,7 @@
       <div class="acct-info-row"><span>이메일</span><b id="accEmail">-</b></div>
       <div class="acct-info-row"><span>역할</span><b id="accRole">-</b></div>
     </div>
+    <button class="acct-btn" id="accRecordBtn" onclick="openNewModal()" style="margin-bottom:10px;">📊 내 삼대·인바디 기록 입력</button>
     <button class="acct-btn acct-btn-sub" id="accLogout" onclick="로그아웃버튼()">로그아웃</button>
 
     <!-- 게스트 전용 가입 유도 -->
@@ -774,7 +774,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.9";
+const APP_VERSION = "2026.06.10.10";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -976,7 +976,8 @@ function 데이터연도목록(){
 }
 function 월목록(){
   const s=new Set();
-  기록목록.forEach(r=>{ if(r.월 && 연도of(r)===현재연도) s.add(r.월); });
+  // 삼대(공식 측정)가 있는 달만 → 이번 달 미측정이면 자동으로 전달이 기본으로 잡힘
+  기록목록.forEach(r=>{ if(r.월 && 연도of(r)===현재연도 && 삼대유효(r)) s.add(r.월); });
   return [...s].filter(m=>m && 월선택지.includes(m)).sort((a,b)=>월선택지.indexOf(a)-월선택지.indexOf(b));
 }
 function 해당월기록(m,월){ return m.기록.find(r=>r.월===월); }
@@ -1018,7 +1019,7 @@ function 화면갱신(){
   const years = 데이터연도목록();
   // 기록이 하나도 없을 때
   if(years.length===0){
-    document.getElementById('rankList').innerHTML='<div class="status">아직 기록이 없습니다.<br>아래 버튼으로 첫 기록을 입력해보세요!</div>';
+    document.getElementById('rankList').innerHTML='<div class="status">아직 기록이 없습니다.<br>프로필 탭에서 첫 기록을 입력해보세요!</div>';
     document.getElementById('yearSelect').innerHTML='';
     document.getElementById('monthSelect').innerHTML='';
     return;
@@ -2206,9 +2207,9 @@ function 권한UI적용(){
   // 로그아웃 버튼: 게스트면 '나가기'
   const logoutBtn = document.querySelector('.acct-bar .acct-logout');
   if(logoutBtn) logoutBtn.textContent = guest ? '나가기' : '로그아웃';
-  // 게스트 배너 / 기록 입력 버튼
+  // 게스트 배너 / 기록 입력 버튼 (게스트는 입력 불가)
   document.querySelectorAll('.guest-banner').forEach(b=>{ b.style.display = guest ? 'flex' : 'none'; });
-  const launch = document.querySelector('.input-launch'); if(launch) launch.style.display = guest ? 'none' : 'block';
+  const recBtn = document.getElementById('accRecordBtn'); if(recBtn) recBtn.style.display = guest ? 'none' : 'block';
 }
 
 window.게스트로그인 = async function(){
