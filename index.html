@@ -687,7 +687,7 @@
     </div>
     <!-- 삼대 그룹 -->
     <div id="liftGroup">
-    <div class="group-tag must">🏋️ 삼대 기록 <small>필수</small></div>
+    <div class="group-tag must">🏋️ 삼대 기록 <small>입력하려면 체중·스쿼트·벤치·데드 모두</small></div>
     <div class="field"><label>체중 (kg)</label><input type="number" id="inWeight" inputmode="decimal" style="max-width:40%;"></div>
     <!-- 벤치프레스 -->
     <div class="lift-entry-block">
@@ -749,7 +749,7 @@
     </div><!-- /liftGroup -->
     <!-- 인바디 그룹 -->
     <div id="bodyGroup">
-    <div class="group-tag opt">📊 인바디 <small>선택 · 비워도 저장돼요 (삼대 기록이 있어야 입력 가능)</small></div>
+    <div class="group-tag opt">📊 인바디 <small>삼대 없이 따로 기록해도 OK</small></div>
     <div class="grid2">
       <div class="field"><label>골격근량 (kg)</label><input type="number" id="inMuscle" inputmode="decimal"></div>
       <div class="field"><label>체지방률 (%)</label><input type="number" id="inFat" inputmode="decimal"></div>
@@ -774,7 +774,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.7";
+const APP_VERSION = "2026.06.10.8";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -978,6 +978,8 @@ function 월목록(){
 function 해당월기록(m,월){ return m.기록.find(r=>r.월===월); }
 function 합계(r){ return r.스쿼트+r.벤치+r.데드; }
 function 상대점수(r){ return 합계(r)/r.체중; }
+// 삼대(체중·스쿼트·벤치·데드)가 모두 들어있는 기록인지 (인바디만 기록 제외용)
+function 삼대유효(r){ return !!(r && r.스쿼트!=null && r.벤치!=null && r.데드!=null && r.체중!=null && r.체중>0 && !isNaN(r.스쿼트+r.벤치+r.데드)); }
 // 삼대합계 마일스톤 뱃지 (300/400/500)
 function 뱃지HTML(합계값){
   if(합계값>=500) return `<span class="badge b500"><span class="bhorse">🐎</span>오백마</span>`;
@@ -996,12 +998,12 @@ function 다음목표(합계값){
 // 전월 대비 삼대합계 증감 계산
 function 전월대비(member, 현재월){
   const idx = 월선택지.indexOf(현재월);
-  const cur = member.기록.find(r=>r.월===현재월);
+  const cur = member.기록.find(r=>r.월===현재월 && 삼대유효(r));
   if(!cur) return null;
-  // 현재월보다 앞선 달 중 가장 최근 기록 찾기
+  // 현재월보다 앞선 달 중 가장 최근 (삼대 있는) 기록 찾기
   let prev = null;
   for(let i=idx-1; i>=0; i--){
-    const f = member.기록.find(r=>r.월===월선택지[i]);
+    const f = member.기록.find(r=>r.월===월선택지[i] && 삼대유효(r));
     if(f){ prev = f; break; }
   }
   if(!prev) return null;
@@ -1050,7 +1052,7 @@ window.setSort = function(s){
 }
 function 랭킹그리기(){
   const members = 멤버별데이터();
-  let list = members.map(m=>({member:m,rec:해당월기록(m,현재월)})).filter(x=>x.rec);
+  let list = members.map(m=>({member:m,rec:해당월기록(m,현재월)})).filter(x=>x.rec && 삼대유효(x.rec));
   list.sort((a,b)=>현재정렬==='total'?합계(b.rec)-합계(a.rec):상대점수(b.rec)-상대점수(a.rec));
   if(list.length===0){ document.getElementById('rankList').innerHTML='<div class="status">이 달 기록이 없습니다.</div>'; return; }
   document.getElementById('rankList').innerHTML = list.map((x,i)=>{
@@ -1094,22 +1096,28 @@ window.showDetail = function(이름){
   qEl.textContent = 내명언 || (권한 ? '+ 한마디를 입력하세요' : '');
   qEl.classList.toggle('empty', !내명언);
   qEl.style.cursor = 권한 ? 'pointer' : 'default';
-  let list=members.map(m=>({m,rec:해당월기록(m,현재월)})).filter(x=>x.rec).sort((a,b)=>합계(b.rec)-합계(a.rec));
+  let list=members.map(m=>({m,rec:해당월기록(m,현재월)})).filter(x=>x.rec && 삼대유효(x.rec)).sort((a,b)=>합계(b.rec)-합계(a.rec));
   const ri=list.findIndex(x=>x.m.이름===이름);
   document.getElementById('pRank').textContent = ri>=0?`${현재월} ${ri+1}위`:'기록 없음';
-  // 이름 옆에 마일스톤 뱃지 표시
-  document.getElementById('pName').innerHTML = 이름 + (ri>=0 ? 뱃지HTML(합계(list[ri].rec)) : '');
-  const latest=member.기록[member.기록.length-1];
+  // 삼대 있는 가장 최근 기록 / 인바디 있는 가장 최근 기록 (인바디만 기록 대응)
+  const 삼대기록 = member.기록.filter(삼대유효);
+  const 삼대latest = 삼대기록.length ? 삼대기록[삼대기록.length-1] : null;
+  const 근육latest = [...member.기록].reverse().find(r=>r.골격근량!=null) || null;
+  const 지방latest = [...member.기록].reverse().find(r=>r.체지방률!=null) || null;
+  // 이름 옆에 마일스톤 뱃지 표시 (삼대 기준)
+  document.getElementById('pName').innerHTML = 이름 + (삼대latest ? 뱃지HTML(합계(삼대latest)) : '');
   document.getElementById('pStats').innerHTML=`
-    <div class="stat-box"><div class="label">삼대합계</div><div class="value">${합계(latest)}<small>kg</small></div></div>
-    <div class="stat-box"><div class="label">골격근량</div><div class="value">${latest.골격근량==null?'-':latest.골격근량}<small>${latest.골격근량==null?'':'kg'}</small></div></div>
-    <div class="stat-box"><div class="label">체지방률</div><div class="value">${latest.체지방률==null?'-':latest.체지방률}<small>${latest.체지방률==null?'':'%'}</small></div></div>`;
-  // 다음 목표 달성률 게이지
-  const goalTotal = ri>=0 ? 합계(list[ri].rec) : (latest ? 합계(latest) : 0);
+    <div class="stat-box"><div class="label">삼대합계</div><div class="value">${삼대latest?합계(삼대latest):'-'}<small>${삼대latest?'kg':''}</small></div></div>
+    <div class="stat-box"><div class="label">골격근량</div><div class="value">${근육latest?근육latest.골격근량:'-'}<small>${근육latest?'kg':''}</small></div></div>
+    <div class="stat-box"><div class="label">체지방률</div><div class="value">${지방latest?지방latest.체지방률:'-'}<small>${지방latest?'%':''}</small></div></div>`;
+  // 다음 목표 달성률 게이지 (삼대 기준)
+  const goalTotal = ri>=0 ? 합계(list[ri].rec) : (삼대latest ? 합계(삼대latest) : 0);
   const g = 다음목표(goalTotal);
   const goalEl = document.getElementById('pGoal');
   if(goalEl){
-    if(g.done){
+    if(!삼대latest){
+      goalEl.innerHTML = `<div class="goal-sub" style="text-align:center;">삼대 기록을 입력하면 목표 달성률이 표시돼요 🎯</div>`;
+    } else if(g.done){
       goalEl.innerHTML = `<div class="goal-top"><span>🏆 <b>오백마 달성!</b> 👑</span></div>
         <div class="goal-bar"><div class="goal-fill b500" style="width:100%"></div></div>
         <div class="goal-sub">삼대합계 ${goalTotal}kg · 최고 등급!</div>`;
@@ -1695,10 +1703,10 @@ function 그래프그리기(member){
   if(liftChartObj)liftChartObj.destroy();
   liftChartObj=new Chart(document.getElementById('liftChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'삼대합계',data:member.기록.map(r=>합계(r)),borderColor:'#ff4d6d',backgroundColor:'#ff4d6d',tension:0.3,borderWidth:3,pointRadius:6,pointStyle:'circle'},
-      {label:'스쿼트',data:member.기록.map(r=>r.스쿼트),borderColor:'#34d399',backgroundColor:'#34d399',tension:0.3,borderWidth:2,pointRadius:3},
-      {label:'벤치',data:member.기록.map(r=>r.벤치),borderColor:gold,backgroundColor:gold,tension:0.3,borderWidth:2,pointRadius:3},
-      {label:'데드',data:member.기록.map(r=>r.데드),borderColor:silver,backgroundColor:silver,tension:0.3,borderWidth:2,pointRadius:3},
+      {label:'삼대합계',data:member.기록.map(r=>삼대유효(r)?합계(r):null),borderColor:'#ff4d6d',backgroundColor:'#ff4d6d',tension:0.3,borderWidth:3,pointRadius:6,pointStyle:'circle',spanGaps:true},
+      {label:'스쿼트',data:member.기록.map(r=>삼대유효(r)?r.스쿼트:null),borderColor:'#34d399',backgroundColor:'#34d399',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
+      {label:'벤치',data:member.기록.map(r=>삼대유효(r)?r.벤치:null),borderColor:gold,backgroundColor:gold,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
+      {label:'데드',data:member.기록.map(r=>삼대유효(r)?r.데드:null),borderColor:silver,backgroundColor:silver,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
     ]},options:opts});
   // 점 위에 숫자를 그려주는 플러그인
   const 숫자표시플러그인 = {
@@ -1845,19 +1853,29 @@ window.saveRecord = async function(){
   // 기존 기록 (인바디만/삼대만 수정 시 나머지는 기존값 유지)
   const 기존 = 기록목록.find(r=>r.이름===이름 && 연도of(r)===연도 && r.월===월);
 
+  // 삼대 입력칸이 전부 비었는지
+  const 삼대비었나 = (function(){
+    const wEmpty = document.getElementById('inWeight').value.trim()==='';
+    const liftEmpty = ['Bench','Squat','Dead'].every(l=>{
+      if(리프트모드[l]==='rep') return document.getElementById('rep'+l+'Kg').value.trim()==='' && document.getElementById('rep'+l+'Rep').value.trim()==='';
+      return document.getElementById('in'+l).value.trim()==='';
+    });
+    return wEmpty && liftEmpty;
+  })();
+
   let 체중, 벤치, 스쿼트, 데드;
-  if(삼대보임){
+  if(삼대보임 && !삼대비었나){
+    // 삼대를 입력한 경우 → 4개 모두 유효해야 함
     체중 = parseFloat(document.getElementById('inWeight').value);
     벤치 = getLiftVal('Bench','벤치프레스'); if(벤치===null) return;
     스쿼트 = getLiftVal('Squat','스쿼트'); if(스쿼트===null) return;
     데드 = getLiftVal('Dead','데드리프트'); if(데드===null) return;
     if([체중,스쿼트,벤치,데드].some(v=>isNaN(v))){
-      alert("체중·스쿼트·벤치·데드는 꼭 입력해주세요!"); return;
+      alert("삼대를 입력하려면 체중·스쿼트·벤치·데드를 모두 채워주세요!\n(인바디만 기록하려면 삼대 칸은 전부 비워두세요)"); return;
     }
   } else {
-    // 삼대 그룹 숨김(인바디만 수정) → 기존값 유지
-    if(!기존){ alert("먼저 삼대 기록을 입력해주세요!"); return; }
-    체중=기존.체중; 벤치=기존.벤치; 스쿼트=기존.스쿼트; 데드=기존.데드;
+    // 삼대 미입력(인바디만) → 기존값이 있으면 유지, 없으면 null
+    체중=기존?기존.체중:null; 벤치=기존?기존.벤치:null; 스쿼트=기존?기존.스쿼트:null; 데드=기존?기존.데드:null;
   }
 
   let 골격근량, 체지방률;
@@ -1871,6 +1889,11 @@ window.saveRecord = async function(){
     골격근량 = 기존 ? 기존.골격근량 : null;
     체지방률 = 기존 ? 기존.체지방률 : null;
   }
+
+  // 최소 하나는 입력돼야 저장 (삼대 또는 인바디)
+  const 삼대OK = [체중,스쿼트,벤치,데드].every(v=>v!=null && !isNaN(v));
+  const 인바디OK = (골격근량!=null && !isNaN(골격근량)) || (체지방률!=null && !isNaN(체지방률));
+  if(!삼대OK && !인바디OK){ alert('입력된 기록이 없어요!\n삼대 또는 인바디 중 하나는 입력해주세요.'); return; }
 
   const btn=document.getElementById('saveBtn');
   btn.textContent="저장 중..."; btn.disabled=true;
