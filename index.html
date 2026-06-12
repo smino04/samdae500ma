@@ -226,6 +226,7 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .modal-bg.show{display:flex;}
   .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:420px;animation:slideIn 0.3s;}
+  .month-warn{font-size:12px;font-weight:700;color:var(--gold);background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.4);border-radius:8px;padding:8px 12px;margin:-2px 0 4px;line-height:1.4;}
   .group-tag{font-size:13px;font-weight:700;color:var(--text);margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line);}
   .group-tag small{font-size:11px;font-weight:700;margin-left:4px;}
   .group-tag.must small{color:var(--gold);}
@@ -685,6 +686,7 @@
       <div class="field"><label>연도</label><select id="inYear"></select></div>
       <div class="field"><label>측정월</label><select id="inMonth"></select></div>
     </div>
+    <div class="month-warn">⚠️ <b>측정월</b>을 꼭 확인하세요! 엉뚱한 달에 저장될 수 있어요</div>
     <!-- 삼대 그룹 -->
     <div id="liftGroup">
     <div class="group-tag must">🏋️ 삼대 기록 <small>입력하려면 체중·스쿼트·벤치·데드 모두</small></div>
@@ -774,7 +776,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.11";
+const APP_VERSION = "2026.06.10.12";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
