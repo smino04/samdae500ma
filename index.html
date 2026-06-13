@@ -196,6 +196,9 @@
   .ana-q-1rm{font-size:13px;color:var(--text-dim);text-align:center;margin-top:8px;}
   .ana-q-1rm b{color:var(--text);font-size:15px;}
   .ana-q-hint{font-size:11px;color:var(--text-dim);text-align:center;margin-top:7px;}
+  .ana-q-main{font-size:12.5px;line-height:1.5;color:var(--text);background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.35);border-radius:8px;padding:8px 10px;margin-bottom:9px;}
+  .ana-q-main b{color:var(--gold,#ffc83d);}
+  .ana-q-x{color:var(--text-dim);}
   .ana-guide,.train-suggest{text-align:left;}
   .guide-lv{font-size:11px;font-weight:700;opacity:0.85;margin-left:4px;}
   .guide-tip{display:inline-block;margin-top:4px;font-size:12px;font-weight:500;color:var(--text-dim);}
@@ -560,7 +563,7 @@
       <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)"></select>
     </div>
     <div id="diaryContent">
-      <div class="role-note">💡 여긴 <b>일상 훈련</b> 기록! <b>그래프를 눌러 바로 기록</b>하세요. 매달 측정일엔 🏆<b>랭킹 탭(공식 기록)</b>에 따로 남겨주세요</div>
+      <div class="role-note">💡 여긴 <b>일상 훈련</b> 기록! 운동마다 <b>메인 세트(탑세트, 제일 무거운 1세트)만</b> 적으면 돼요 — 워밍업·백오프 X. 매달 측정일엔 🏆<b>랭킹 탭(공식 기록)</b>에</div>
       <div class="section-label" style="margin-top:8px;">📅 운동 달력</div>
       <div id="analysisCalendar"></div>
       <div class="section-label" style="margin-top:14px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
@@ -832,7 +835,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.23";
+const APP_VERSION = "2026.06.10.24";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1674,10 +1677,11 @@ function 분석그리기(){
   // 빠른입력 폼(권한 있을 때만) — 빈 카드/그래프 카드 공통
   const 빠른입력HTML = (idx)=> 권한 ? `<button class="ana-quick-btn" onclick="분석빠른입력토글(${idx})">✏️ 이 운동 기록하기</button>
         <div class="ana-quick" id="anaQuick${idx}" style="display:none">
+          <div class="ana-q-main">💪 <b>메인 세트(탑세트)</b> 하나만 기록! <span class="ana-q-x">워밍업·백오프는 빼세요</span></div>
           <div class="ana-quick-row">
             <input type="date" id="anaQDate${idx}">
-            <input type="number" id="anaQW${idx}" inputmode="decimal" placeholder="중량(kg)">
-            <input type="number" id="anaQR${idx}" inputmode="numeric" placeholder="횟수">
+            <input type="number" id="anaQW${idx}" inputmode="decimal" placeholder="탑세트 중량">
+            <input type="number" id="anaQR${idx}" inputmode="numeric" placeholder="탑세트 횟수">
             <button id="anaQBtn${idx}" class="ana-q-save" onclick="분석빠른저장(${idx})">기록</button>
           </div>
           <div class="ana-q-1rm" id="anaQ1rm${idx}"></div>
