@@ -149,6 +149,21 @@
   .chart-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
   .chart-title::before{content:'';width:4px;height:16px;background:var(--blue-bright);border-radius:2px;}
   .chart-wrap{position:relative;height:240px;}
+  /* 운동 달력 */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .cal-nav{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;width:40px;height:34px;font-size:14px;cursor:pointer;}
+  .cal-title{font-size:15px;font-weight:700;color:var(--text);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-dim);padding:4px 0;}
+  .cal-cell{min-height:54px;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:3px;display:flex;flex-direction:column;gap:2px;overflow:hidden;}
+  .cal-cell.empty{background:transparent;border:none;}
+  .cal-cell.has{border-color:var(--blue-bright);}
+  .cal-day{font-size:10px;color:var(--text-dim);font-weight:700;}
+  .cal-chip{font-size:9px;font-weight:700;color:#10141b;border-radius:4px;padding:1px 2px;text-align:center;line-height:1.35;}
+  .cal-legend{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:12px 0 18px;font-size:11px;color:var(--text-dim);}
+  .cal-legend span{display:flex;align-items:center;gap:4px;}
+  .cal-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .cal-empty-msg{font-size:13px;color:var(--text-dim);text-align:center;padding:16px 0;}
   .ana-suggest{font-size:13px;font-weight:700;color:var(--blue-bright);background:rgba(200,212,228,0.12);border-radius:8px;padding:10px 12px;margin-top:12px;line-height:1.5;text-align:center;}
   .ana-empty{text-align:center;}
   .ana-empty-msg{font-size:13px;color:var(--text-dim);line-height:1.6;margin:10px 0 14px;}
@@ -570,6 +585,8 @@
       <label>누구를 분석할까요?</label>
       <select id="analysisMemberSelect" onchange="selectAnalysisMember(this.value)"></select>
     </div>
+    <div class="section-label">📅 운동 달력 <span style="font-weight:400;color:var(--text-dim);">— 훈련일지 기준</span></div>
+    <div id="analysisCalendar"></div>
     <div id="analysisContent"></div>
   </div>
 
@@ -801,7 +818,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.14";
+const APP_VERSION = "2026.06.10.15";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1434,9 +1451,67 @@ const 점값플러그인 = {
 let 분석대상 = null;
 let 분석차트들 = [];
 let 현재분석종목들 = [];
+let 분석캘린더YM = null;   // {y, m(0-11)} — 보고 있는 달
 window.selectAnalysisMember = function(이름){
   분석대상 = 이름 || null;
+  분석캘린더YM = null;       // 사람 바뀌면 달력도 최신 달로 다시
   분석그리기();
+}
+// 운동명 → 부위 인식 (훈련일지에 입력한 종목 기반)
+function 부위(ex){
+  const 기본={'벤치프레스':'가슴','스쿼트':'하체','데드리프트':'등','오버헤드프레스':'어깨','OHP':'어깨'};
+  if(기본[ex]) return 기본[ex];
+  const 규칙=[
+    [/(레그프레스|스쿼트|런지|카프|힙스러스트|레그익스|레그컬|하체)/,'하체'],
+    [/(벤치|체스트|푸쉬업|푸시업|딥스|플라이|가슴|펙덱)/,'가슴'],
+    [/(데드|로우|풀업|랫|친업|풀다운|등)/,'등'],
+    [/(숄더|오버헤드|레터럴|사이드|밀리터리|업라이트|어깨)/,'어깨'],
+    [/(컬|트라이|이두|삼두|푸시다운|킥백|팔)/,'팔'],
+    [/(크런치|플랭크|복근|코어|레그레이즈|싯업)/,'코어'],
+  ];
+  for(const [re,p] of 규칙){ if(re.test(ex)) return p; }
+  return '기타';
+}
+function 부위색(p){
+  return ({'가슴':'#ff6b6b','등':'#4dabf7','어깨':'#ffd43b','하체':'#69db7c','팔':'#da77f2','코어':'#ff922b','기타':'#adb5bd'})[p] || '#adb5bd';
+}
+window.분석캘린더이동 = function(delta){
+  if(!분석캘린더YM) return;
+  let mm=분석캘린더YM.m+delta, yy=분석캘린더YM.y;
+  if(mm<0){ mm=11; yy--; } else if(mm>11){ mm=0; yy++; }
+  분석캘린더YM={y:yy,m:mm};
+  분석캘린더그리기(분석대상);
+}
+function 분석캘린더그리기(이름){
+  const el=document.getElementById('analysisCalendar');
+  if(!el) return;
+  if(!이름){ el.innerHTML=''; return; }
+  const recs=훈련목록.filter(t=>t.이름===이름 && t.날짜 && t.날짜.split('-').length===3);
+  if(!분석캘린더YM){
+    let base=new Date();
+    if(recs.length){ const p=recs.map(t=>t.날짜).sort().slice(-1)[0].split('-'); base=new Date(+p[0],+p[1]-1,1); }
+    분석캘린더YM={y:base.getFullYear(),m:base.getMonth()};
+  }
+  const {y,m}=분석캘린더YM;
+  const byDay={};
+  recs.forEach(t=>{ const p=t.날짜.split('-'); if(+p[0]===y && (+p[1]-1)===m){ (byDay[+p[2]]=byDay[+p[2]]||new Set()).add(부위(t.종목||'벤치프레스')); } });
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  let cells=['일','월','화','수','목','금','토'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++) cells+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const parts=byDay[d]?[...byDay[d]]:[];
+    const chips=parts.map(pp=>`<span class="cal-chip" style="background:${부위색(pp)}">${pp}</span>`).join('');
+    cells+=`<div class="cal-cell${parts.length?' has':''}"><div class="cal-day">${d}</div>${chips}</div>`;
+  }
+  const 운동일수=Object.keys(byDay).length;
+  el.innerHTML=`
+    <div class="cal-head">
+      <button class="cal-nav" onclick="분석캘린더이동(-1)">◀</button>
+      <span class="cal-title">${y}년 ${m+1}월 · ${운동일수}일 운동</span>
+      <button class="cal-nav" onclick="분석캘린더이동(1)">▶</button>
+    </div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-legend">${['가슴','등','어깨','하체','팔','코어'].map(pp=>`<span><i style="background:${부위색(pp)}"></i>${pp}</span>`).join('')}</div>`;
 }
 // 날짜순 정렬된 기록(recs)으로 다음 훈련 제안 문구 생성
 function 다음훈련제안(recs, ex, 이름){
@@ -1453,6 +1528,7 @@ function 분석그리기(){
   const cont = document.getElementById('analysisContent');
   if(!cont) return;
   const 이름 = 분석대상;
+  분석캘린더그리기(이름);   // 부위별 운동 달력
   if(!이름){ cont.innerHTML = '<div class="status">분석할 사람을 선택하세요.</div>'; return; }
   // 기본 종목(항상 표시) + 이 사람이 직접 추가한 종목
   const 커스텀 = [...new Set(훈련목록.filter(t=>t.이름===이름 && t.종목 && !종목목록.includes(t.종목)).map(t=>t.종목))];
