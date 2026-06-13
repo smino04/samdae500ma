@@ -167,6 +167,11 @@
   .cal-cell.editable{cursor:pointer;}
   .cal-cell.editable:active{transform:scale(0.96);}
   .cal-hint{font-size:11px;color:var(--text-dim);text-align:center;margin:-8px 0 16px;}
+  .calday-log{margin:12px 0;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .calday-log-t{font-size:12px;font-weight:700;color:var(--blue-bright);margin-bottom:6px;}
+  .calday-log-row{font-size:14px;color:var(--text);padding:3px 0;}
+  .calday-log-row b{font-weight:700;}
+  .calday-log-empty{font-size:13px;color:var(--text-dim);text-align:center;}
   .calpart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;}
   .calpart-btn{padding:12px 0;background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;}
   .ana-suggest{font-size:13px;font-weight:700;color:var(--blue-bright);background:rgba(200,212,228,0.12);border-radius:8px;padding:10px 12px;margin-top:12px;line-height:1.5;text-align:center;}
@@ -698,7 +703,8 @@
 <div class="modal-bg" id="calEditBg">
   <div class="modal">
     <h2 id="calEditTitle">운동 부위</h2>
-    <div class="sub">한 날에 여러 부위 선택 가능</div>
+    <div id="calDayLog" class="calday-log"></div>
+    <div class="sub">부위 직접 추가·수정 (여러 개 선택 가능)</div>
     <div class="calpart-grid" id="calPartGrid"></div>
     <div class="modal-btns">
       <button class="btn btn-cancel" onclick="calEditClose()">취소</button>
@@ -837,7 +843,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.17";
+const APP_VERSION = "2026.06.10.18";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1556,6 +1562,18 @@ window.calDayClick = function(ds){
   훈련목록.forEach(t=>{ if(t.이름===분석대상 && t.날짜===ds) auto.add(부위(t.종목||'벤치프레스')); });
   캘린더편집선택=new Set(그날부위(분석대상, ds, auto));
   document.getElementById('calEditTitle').textContent = `${+p[1]}월 ${+p[2]}일 운동 부위`;
+  // 이 날 훈련일지에 입력한 운동 목록 (읽기 전용)
+  const logs = 훈련목록.filter(t=>t.이름===분석대상 && t.날짜===ds)
+    .sort((a,b)=>(a.종목||'').localeCompare(b.종목||''));
+  const logEl = document.getElementById('calDayLog');
+  if(logEl){
+    logEl.innerHTML = logs.length
+      ? `<div class="calday-log-t">📒 이 날 훈련일지</div>` + logs.map(t=>{
+          const w=t.중량??t.weight, r=t.횟수??t.reps;
+          return `<div class="calday-log-row"><b>${escHtml(t.종목||'벤치프레스')}</b> · ${w}kg × ${r}회</div>`;
+        }).join('')
+      : `<div class="calday-log-empty">훈련일지에 입력한 운동이 없는 날이에요</div>`;
+  }
   calEdit버튼그리기();
   document.getElementById('calEditBg').classList.add('show');
 }
