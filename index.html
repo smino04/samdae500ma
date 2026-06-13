@@ -837,7 +837,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.16";
+const APP_VERSION = "2026.06.10.17";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1486,15 +1486,17 @@ function 부위(ex){
     [/(벤치|체스트|푸쉬업|푸시업|딥스|플라이|가슴|펙덱)/,'가슴'],
     [/(데드|로우|풀업|랫|친업|풀다운|등)/,'등'],
     [/(숄더|오버헤드|레터럴|사이드|밀리터리|업라이트|어깨)/,'어깨'],
-    [/(컬|트라이|이두|삼두|푸시다운|킥백|팔)/,'팔'],
+    [/(삼두|트라이|푸시다운|킥백|딥스)/,'삼두'],
+    [/(이두|바이셉|컬|팔)/,'이두'],
     [/(크런치|플랭크|복근|코어|레그레이즈|싯업)/,'코어'],
   ];
   for(const [re,p] of 규칙){ if(re.test(ex)) return p; }
   return '기타';
 }
 function 부위색(p){
-  return ({'가슴':'#ff6b6b','등':'#4dabf7','어깨':'#ffd43b','하체':'#69db7c','팔':'#da77f2','코어':'#ff922b','기타':'#adb5bd'})[p] || '#adb5bd';
+  return ({'가슴':'#ff6b6b','등':'#4dabf7','어깨':'#ffd43b','하체':'#69db7c','이두':'#da77f2','삼두':'#cc5de8','코어':'#ff922b','삼대측정':'#ffc83d','기타':'#adb5bd'})[p] || '#adb5bd';
 }
+function 부위라벨(p){ return p==='삼대측정' ? '🏆측정' : p; }
 window.분석캘린더이동 = function(delta){
   if(!분석캘린더YM) return;
   let mm=분석캘린더YM.m+delta, yy=분석캘린더YM.y;
@@ -1502,7 +1504,7 @@ window.분석캘린더이동 = function(delta){
   분석캘린더YM={y:yy,m:mm};
   분석캘린더그리기(분석대상);
 }
-const 부위목록 = ['가슴','등','어깨','하체','팔','코어','기타'];
+const 부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어','삼대측정','기타'];
 function _ds(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 // 그 날의 부위 목록: 수동 입력(있으면 우선) → 없으면 훈련일지 자동
 function 그날부위(이름, ds, 자동Set){
@@ -1527,23 +1529,21 @@ function 분석캘린더그리기(이름){
   const first=(new Date(y,m,1).getDay()+6)%7, days=new Date(y,m+1,0).getDate();  // 월요일 시작
   let cells=['월','화','수','목','금','토','일'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=0;i<first;i++) cells+=`<div class="cal-cell empty"></div>`;
-  let 운동일수=0;
   for(let d=1;d<=days;d++){
     const ds=_ds(y,m,d);
     const parts=그날부위(이름, ds, 자동[d]);
-    if(parts.length) 운동일수++;
-    const chips=parts.map(pp=>`<span class="cal-chip" style="background:${부위색(pp)}">${pp}</span>`).join('');
+    const chips=parts.map(pp=>`<span class="cal-chip" style="background:${부위색(pp)}">${부위라벨(pp)}</span>`).join('');
     const onclick = 권한 ? ` onclick="calDayClick('${ds}')"` : '';
     cells+=`<div class="cal-cell${parts.length?' has':''}${권한?' editable':''}"${onclick}><div class="cal-day">${d}</div>${chips}</div>`;
   }
   el.innerHTML=`
     <div class="cal-head">
       <button class="cal-nav" onclick="분석캘린더이동(-1)">◀</button>
-      <span class="cal-title">${y}년 ${m+1}월 · ${운동일수}일 운동</span>
+      <span class="cal-title">${y}년 ${m+1}월</span>
       <button class="cal-nav" onclick="분석캘린더이동(1)">▶</button>
     </div>
     <div class="cal-grid">${cells}</div>
-    <div class="cal-legend">${부위목록.slice(0,6).map(pp=>`<span><i style="background:${부위색(pp)}"></i>${pp}</span>`).join('')}</div>
+    <div class="cal-legend">${부위목록.filter(p=>p!=='기타').map(pp=>`<span><i style="background:${부위색(pp)}"></i>${부위라벨(pp)}</span>`).join('')}</div>
     ${권한?`<div class="cal-hint">날짜를 누르면 부위를 직접 추가·수정할 수 있어요</div>`:''}`;
 }
 // ── 달력 날짜 편집 ──
@@ -1561,7 +1561,7 @@ window.calDayClick = function(ds){
 }
 function calEdit버튼그리기(){
   document.getElementById('calPartGrid').innerHTML = 부위목록.map(pp=>
-    `<button class="calpart-btn${캘린더편집선택.has(pp)?' on':''}" style="${캘린더편집선택.has(pp)?`background:${부위색(pp)};color:#10141b;border-color:${부위색(pp)}`:''}" onclick="calTogglePart('${pp}')">${pp}</button>`).join('');
+    `<button class="calpart-btn${캘린더편집선택.has(pp)?' on':''}" style="${캘린더편집선택.has(pp)?`background:${부위색(pp)};color:#10141b;border-color:${부위색(pp)}`:''}" onclick="calTogglePart('${pp}')">${부위라벨(pp)}</button>`).join('');
 }
 window.calTogglePart = function(pp){
   if(캘린더편집선택.has(pp)) 캘린더편집선택.delete(pp); else 캘린더편집선택.add(pp);
