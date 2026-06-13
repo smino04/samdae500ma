@@ -563,7 +563,7 @@
       <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)"></select>
     </div>
     <div id="diaryContent">
-      <div class="role-note">💡 여긴 <b>일상 훈련</b> 기록! 운동마다 <b>메인 세트(탑세트, 제일 무거운 1세트)만</b> 적으면 돼요 — 워밍업·백오프 X. 매달 측정일엔 🏆<b>랭킹 탭(공식 기록)</b>에</div>
+      <div class="role-note">💡 여긴 <b>메인운동</b> 기록! 벤치·스쿼트·데드·OHP 같은 <b>주요 운동만</b> 적으면 돼요 (사레레·컬 등 보조운동은 X). 매달 측정일엔 🏆<b>랭킹 탭(공식 기록)</b>에</div>
       <div class="section-label" style="margin-top:8px;">📅 운동 달력</div>
       <div id="analysisCalendar"></div>
       <div class="section-label" style="margin-top:14px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
@@ -576,8 +576,8 @@
         <summary>💡 어떻게 사용하나요? <span class="why-arrow">▼</span></summary>
         <div class="why-content">
           <p><b>📒 무엇을 기록하나요?</b></p>
-          <p>워밍업 → <b>본세트(탑세트, 제일 무겁게)</b> → 백오프(끝까지 털기)<br>
-          → <b>본세트의 중량 × 횟수만</b> 적으면 끝!</p>
+          <p><b>메인운동만</b> 기록해요! 벤치·스쿼트·데드·OHP 같은 <b>주요 복합운동</b>의 그날 제일 무거운 세트 중량 × 횟수만.<br>
+          → 사레레·컬 같은 <b>보조·고립운동은 안 적어도 돼요.</b></p>
           <p style="margin-top:26px;"><b>📈 어떻게 성장하나요?</b></p>
           <p>· 목표 횟수 <b>채우면</b> → 다음엔 <b>+5kg</b> 🚀<br>
           · <b>못 채우면</b> → 같은 무게로 <b>1회 더</b> 💪</p>
@@ -835,7 +835,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.24";
+const APP_VERSION = "2026.06.10.25";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1677,11 +1677,11 @@ function 분석그리기(){
   // 빠른입력 폼(권한 있을 때만) — 빈 카드/그래프 카드 공통
   const 빠른입력HTML = (idx)=> 권한 ? `<button class="ana-quick-btn" onclick="분석빠른입력토글(${idx})">✏️ 이 운동 기록하기</button>
         <div class="ana-quick" id="anaQuick${idx}" style="display:none">
-          <div class="ana-q-main">💪 <b>메인 세트(탑세트)</b> 하나만 기록! <span class="ana-q-x">워밍업·백오프는 빼세요</span></div>
+          <div class="ana-q-main">💪 <b>메인운동만</b> 기록해요! 벤치·스쿼트·데드·OHP 같은 주요 운동 <span class="ana-q-x">(사레레·컬 등 보조운동은 안 적어도 OK)</span></div>
           <div class="ana-quick-row">
             <input type="date" id="anaQDate${idx}">
-            <input type="number" id="anaQW${idx}" inputmode="decimal" placeholder="탑세트 중량">
-            <input type="number" id="anaQR${idx}" inputmode="numeric" placeholder="탑세트 횟수">
+            <input type="number" id="anaQW${idx}" inputmode="decimal" placeholder="중량(kg)">
+            <input type="number" id="anaQR${idx}" inputmode="numeric" placeholder="횟수">
             <button id="anaQBtn${idx}" class="ana-q-save" onclick="분석빠른저장(${idx})">기록</button>
           </div>
           <div class="ana-q-1rm" id="anaQ1rm${idx}"></div>
