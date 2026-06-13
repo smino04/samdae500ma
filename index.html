@@ -580,6 +580,10 @@
       </div>
       <div class="chart-card"><div class="chart-title">훈련 예상 1RM 추이 (kg)</div><div class="chart-wrap"><canvas id="trainChart"></canvas></div></div>
       <div id="trainList"></div>
+      <div class="section-label" style="margin-top:18px;">📅 운동 달력</div>
+      <div id="analysisCalendar"></div>
+      <div class="section-label" style="margin-top:14px;">📈 운동별 성장 그래프</div>
+      <div id="analysisContent"></div>
       <details class="why-toggle" id="whyToggle">
         <summary>💡 어떻게 사용하나요? <span class="why-arrow">▼</span></summary>
         <div class="why-content">
@@ -592,29 +596,15 @@
           <p style="margin-top:26px;"><b>🔥 왜 이렇게 기록하는 게 효과적인가요?</b></p>
           <p>· <b>점진적 과부하</b> — 매번 조금씩 더 → 계속 성장<br>
           · <b>기록 추적</b> — 1RM 그래프로 성장이 눈에 보임</p>
+          <p style="margin-top:26px;"><b>📌 권장 반복수 (탑세트 기준)</b></p>
+          <p>· <b>복합 운동</b>(벤치·스쿼트·데드 등 큰 운동)<br>
+          &nbsp;&nbsp;– 🔰 입문: <b>8~12회</b> (폼 위주)&nbsp;/&nbsp;🔵 일반: <b>5~8회</b><br>
+          · <b>고립 운동</b>(컬·레터럴 등 작은 운동)<br>
+          &nbsp;&nbsp;– 🔰 입문: <b>12~15회</b>&nbsp;/&nbsp;🔵 일반: <b>10~15회</b><br>
+          <span style="color:var(--text-dim);">※ 사람·운동마다 탑세트 횟수는 다를 수 있어요. 위는 권장 범위예요.</span></p>
         </div>
       </details>
     </div>
-  </div>
-
-  <!-- 분석 뷰 -->
-  <div id="analysisView" style="display:none;">
-    <header style="padding:24px 0 16px;text-align:center;">
-      <h1 class="title-main">📊 분석</h1>
-      <div class="title-sub">운동별 성장 그래프</div>
-      <div class="header-divider"></div>
-    </header>
-    <div class="guest-banner" style="display:none;">
-      <div class="gb-text">👀 <b>게스트 모드</b> — 회원가입하면 내 성장 그래프도 만들 수 있어요!</div>
-      <button class="gb-join" onclick="로그아웃()">회원가입</button>
-    </div>
-    <div class="field" style="margin-bottom:16px;">
-      <label>누구를 분석할까요?</label>
-      <select id="analysisMemberSelect" onchange="selectAnalysisMember(this.value)"></select>
-    </div>
-    <div class="section-label">📅 운동 달력 <span style="font-weight:400;color:var(--text-dim);">— 훈련일지 기준</span></div>
-    <div id="analysisCalendar"></div>
-    <div id="analysisContent"></div>
   </div>
 
   <!-- 프로필 뷰 -->
@@ -702,9 +692,6 @@
     </button>
     <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary')">
       <span class="nav-icon">📒</span><span class="nav-label">훈련일지</span>
-    </button>
-    <button class="bottom-nav-btn" id="navAnalysis" onclick="switchMainTab('analysis')">
-      <span class="nav-icon">📊</span><span class="nav-label">분석</span>
     </button>
     <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
       <span class="nav-icon">👤</span><span class="nav-label">프로필</span>
@@ -860,7 +847,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.20";
+const APP_VERSION = "2026.06.10.21";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1000,9 +987,7 @@ function 데이터구독시작(){
     snap.forEach(d => 훈련목록.push({ ...d.data(), _id:d.id }));
     if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
       훈련일지그리기(일지대상);
-    }
-    if(document.getElementById('analysisView').style.display!=='none' && 분석대상){
-      분석그리기();
+      분석대상 = 일지대상; 분석그리기();
     }
   }));
   // 명언 실시간 수신 (문서 id = 멤버 이름)
@@ -1021,9 +1006,7 @@ function 데이터구독시작(){
     // 숙련도(레벨)가 같은 문서에 있으므로 일지/분석도 갱신
     if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
       훈련일지그리기(일지대상);
-    }
-    if(document.getElementById('analysisView').style.display!=='none' && 분석대상){
-      분석그리기();
+      분석대상 = 일지대상; 분석그리기();
     }
   }));
   // 회원 관리(관리자만 users 컬렉션 전체를 읽을 수 있음)
@@ -1299,23 +1282,13 @@ window.switchMainTab = function(tab){
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 화면 바뀌면 토글 접기
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
-  const navAnalysis = document.getElementById('navAnalysis'); if(navAnalysis) navAnalysis.classList.toggle('active', tab==='analysis');
   const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
-  document.getElementById('analysisView').style.display = tab==='analysis'?'block':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
   if(tab==='account'){ 계정화면그리기(); }
-  if(tab==='analysis'){
-    const sel = document.getElementById('analysisMemberSelect');
-    sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
-      전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
-    if(!분석대상 && 현재유저){ 분석대상 = 현재유저.이름; }  // 처음엔 본인 분석
-    sel.value = 분석대상 || '';
-    분석그리기();
-  }
   if(tab==='diary'){
     // 멤버 드롭다운 채우기 (가입자 자동 반영, 맨 위에 안내 옵션)
     const sel = document.getElementById('diaryMemberSelect');
@@ -1347,6 +1320,8 @@ window.selectDiaryMember = function(이름){
   document.getElementById('diaryMemberSelect').value = 이름;
   document.getElementById('diaryContent').style.display = 'flex';
   훈련일지그리기(이름);
+  // 통합: 같은 화면에 달력 + 운동별 성장 그래프도 함께
+  분석대상 = 이름; 분석캘린더YM = null; 분석그리기();
   setTimeout(()=>{ if(trainChartObj)trainChartObj.resize(); }, 50);
 }
 // ── 주간 훈련 일지 ──
@@ -1472,18 +1447,30 @@ const 점값플러그인 = {
   id:'ptValsCommon',
   afterDatasetsDraw(chart){
     const {ctx}=chart; const ca=chart.chartArea; ctx.save();
-    ctx.font="700 11px 'Noto Sans KR'"; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.textAlign='center';
     chart.data.datasets.forEach((ds,di)=>{
+      const below = ds.belowLabels;   // 탑세트 중량×횟수 (점 아래 흐릿하게)
       chart.getDatasetMeta(di).data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null) return;
         const r=(pt.options&&pt.options.radius)||ds.pointRadius||4;
-        // 가장자리 점의 숫자가 잘리지 않게 차트 영역 안으로 끌어당김
+        // 위: 예상 1RM 값 (가장자리 점이 잘리지 않게 안쪽으로 끌어당김)
+        ctx.font="700 11px 'Noto Sans KR'"; ctx.textBaseline='bottom';
         let x=pt.x; const hw=ctx.measureText(String(v)).width/2 + 2;
         if(x-hw<ca.left) x=ca.left+hw;
         if(x+hw>ca.right) x=ca.right-hw;
-        let y=pt.y - r - 7;
-        if(y < 13) y = pt.y + r + 16;   // 위 공간 없으면 점 아래에 표기 (잘림 방지)
+        const wantY = pt.y - r - 7;
+        const topMovedDown = wantY < 13;
+        const y = topMovedDown ? pt.y + r + 16 : wantY;   // 위 공간 없으면 점 아래로
         ctx.fillStyle=ds.borderColor; ctx.fillText(v, x, y);
+        // 아래: 탑세트 중량×횟수 — 흐릿하게 (위 값이 아래로 내려간 점은 생략해 겹침 방지)
+        if(below && below[i] && !topMovedDown){
+          ctx.font="600 10px 'Noto Sans KR'"; ctx.textBaseline='top';
+          let bx=pt.x; const bhw=ctx.measureText(below[i]).width/2 + 2;
+          if(bx-bhw<ca.left) bx=ca.left+bhw;
+          if(bx+bhw>ca.right) bx=ca.right-bhw;
+          const by=pt.y + r + 5;
+          if(by+11 <= ca.bottom){ ctx.fillStyle='rgba(173,181,189,0.55)'; ctx.fillText(below[i], bx, by); }
+        }
       });
     });
     ctx.restore();
@@ -1565,9 +1552,7 @@ function 분석캘린더그리기(이름){
       <span class="cal-title">${y}년 ${m+1}월</span>
       <button class="cal-nav" onclick="분석캘린더이동(1)">▶</button>
     </div>
-    <div class="cal-grid">${cells}</div>
-    <div class="cal-legend">${부위목록.filter(p=>p!=='기타').map(pp=>`<span><i style="background:${부위색(pp)}"></i>${부위라벨(pp)}</span>`).join('')}</div>
-    ${권한?`<div class="cal-hint">날짜를 누르면 부위를 직접 추가·수정할 수 있어요</div>`:''}`;
+    <div class="cal-grid">${cells}</div>`;
 }
 // ── 달력 날짜 편집 ──
 let 캘린더편집날짜=null, 캘린더편집선택=new Set();
@@ -1696,7 +1681,6 @@ function 분석그리기(){
         .sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
       return `<div class="chart-card"><div class="chart-title">${escHtml(ex)} · 예상 1RM (kg)</div>
         <div class="chart-wrap"${권한?` onclick="분석빠른입력토글(${idx})" style="cursor:pointer"`:''}><canvas id="anaChart${idx}"></canvas></div>
-        <div class="ana-suggest ana-guide">${가이드HTML(이름, ex)}</div>
         ${권한?`<button class="ana-quick-btn" onclick="분석빠른입력토글(${idx})">✏️ 이 그래프에 바로 기록</button>
         <div class="ana-quick" id="anaQuick${idx}" style="display:none">
           <div class="ana-quick-row">
@@ -1723,9 +1707,10 @@ function 분석그리기(){
     if(recs.length===0) return;  // 미기록 종목은 유도 카드만 표시
     const labels = recs.map(t=>{ const p=(t.날짜||'').split('-'); return p.length===3?`${p[1]}/${p[2]}`:t.날짜; });
     const data = recs.map(t=>추정1RM(t.중량,t.횟수));
+    const below = recs.map(t=>`${t.중량}×${t.횟수}`);
     const ys = yScale(data);
     const ch = new Chart(document.getElementById('anaChart'+idx),{type:'line',
-      data:{labels,datasets:[{label:ex,data,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
+      data:{labels,datasets:[{label:ex,data,belowLabels:below,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
         plugins:{legend:{display:false}},
         scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step},grid:{color:line}}}},
@@ -1825,8 +1810,7 @@ function 훈련일지그리기(이름){
     suggestEl.innerHTML = `✏️ 위 칸에 운동명을 입력하면 그 운동의 기록과 그래프를 볼 수 있어요!`;
   } else {
     const last = 내훈련.length>0 ? 내훈련[내훈련.length-1] : null;
-    suggestEl.innerHTML = 가이드HTML(이름, 현재종목)
-      + (last ? `<br><span class="guide-last">지난 기록: ${last.중량}kg × ${last.횟수}회 · 예상 1RM ${추정1RM(last.중량,last.횟수)}kg</span>` : '');
+    suggestEl.innerHTML = last ? `<span class="guide-last">지난 기록: ${last.중량}kg × ${last.횟수}회 · 예상 1RM ${추정1RM(last.중량,last.횟수)}kg</span>` : '';
   }
 
   // 실시간 1RM 미리보기 (입력값 바뀔 때)
@@ -1847,14 +1831,16 @@ function 훈련일지그리기(이름){
     const p=(t.날짜||'').split('-'); return p.length===3?`${p[1]}/${p[2]}`:t.날짜;
   });
   const rmData = 내훈련.map(t=>추정1RM(t.중량,t.횟수));
+  const rmBelow = 내훈련.map(t=>`${t.중량}×${t.횟수}`);
   const css=getComputedStyle(document.documentElement);
   const blue=css.getPropertyValue('--blue-bright').trim();
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
-  if(trainChartObj)trainChartObj.destroy();
+  const tcEl=document.getElementById('trainChart');
+  if(trainChartObj){ trainChartObj.destroy(); trainChartObj=null; }
   const tys = yScale(rmData);
-  trainChartObj=new Chart(document.getElementById('trainChart'),{type:'line',
-    data:{labels,datasets:[{label:현재종목+' 1RM',data:rmData,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
+  if(tcEl) trainChartObj=new Chart(tcEl,{type:'line',
+    data:{labels,datasets:[{label:현재종목+' 1RM',data:rmData,belowLabels:rmBelow,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
       plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
       scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:tys.min,max:tys.max,ticks:{color:textDim,stepSize:tys.step},grid:{color:line}}}},
