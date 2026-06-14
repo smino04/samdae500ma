@@ -578,12 +578,12 @@
       <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)"></select>
     </div>
     <div id="diaryContent">
-      <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
-      <div id="analysisContent"></div>
-      <div id="addExRow" class="add-ex-row" style="display:none;">
+      <div id="addExRow" class="add-ex-row" style="display:none;margin-top:0;margin-bottom:16px;">
         <input type="text" id="newExInput" placeholder="추가할 운동명 (예: 풀업)" maxlength="20" onkeydown="if(event.key==='Enter')다른운동추가()">
         <button class="add-ex-btn" onclick="다른운동추가()">＋ 다른 운동 추가</button>
       </div>
+      <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
+      <div id="analysisContent"></div>
       <details class="why-toggle" id="whyToggle">
         <summary>💡 어떻게 사용하나요? <span class="why-arrow">▼</span></summary>
         <div class="why-content">
@@ -614,12 +614,12 @@
   <!-- 캘린더 뷰 -->
   <div id="calendarView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
-      <h1 class="title-main">📅 운동 달력</h1>
+      <h1 class="title-main">📅 캘린더</h1>
       <div class="title-sub">어느 날 무슨 부위를 했는지 한눈에</div>
       <div class="header-divider"></div>
     </header>
     <div class="field" style="margin-bottom:16px;">
-      <label>누구의 달력을 볼까요?</label>
+      <label>누구의 캘린더를 볼까요?</label>
       <select id="calMemberSelect" onchange="selectCalendarMember(this.value)"></select>
     </div>
     <div id="analysisCalendar"></div>
@@ -712,7 +712,7 @@
       <span class="nav-icon">📒</span><span class="nav-label">훈련일지</span>
     </button>
     <button class="bottom-nav-btn" id="navCalendar" onclick="switchMainTab('calendar')">
-      <span class="nav-icon">📅</span><span class="nav-label">달력</span>
+      <span class="nav-icon">📅</span><span class="nav-label">캘린더</span>
     </button>
     <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
       <span class="nav-icon">👤</span><span class="nav-label">프로필</span>
@@ -868,7 +868,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.34";
+const APP_VERSION = "2026.06.10.35";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
