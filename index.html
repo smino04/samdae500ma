@@ -335,8 +335,8 @@
   .bottom-nav-btn.active{color:var(--blue-bright);}
   .bottom-nav-btn .nav-icon{font-size:22px;}
   .bottom-nav-btn .nav-label{font-size:11px;font-weight:700;font-family:'Noto Sans KR';}
-  #diaryMemberSelect,#analysisMemberSelect{width:100%;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;outline:none;}
-  #diaryMemberSelect:focus,#analysisMemberSelect:focus{border-color:var(--blue-bright);}
+  #diaryMemberSelect,#analysisMemberSelect,#calMemberSelect{width:100%;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;outline:none;}
+  #diaryMemberSelect:focus,#analysisMemberSelect:focus,#calMemberSelect:focus{border-color:var(--blue-bright);}
   /* 로그인 / 회원가입 화면 */
   #authView{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
   .auth-card{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 22px;text-align:center;}
@@ -578,9 +578,7 @@
       <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)"></select>
     </div>
     <div id="diaryContent">
-      <div class="section-label" style="margin-top:8px;">📅 운동 달력</div>
-      <div id="analysisCalendar"></div>
-      <div class="section-label" style="margin-top:14px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
+      <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
       <div id="analysisContent"></div>
       <div id="addExRow" class="add-ex-row" style="display:none;">
         <input type="text" id="newExInput" placeholder="추가할 운동명 (예: 풀업)" maxlength="20" onkeydown="if(event.key==='Enter')다른운동추가()">
@@ -611,6 +609,20 @@
         </div>
       </details>
     </div>
+  </div>
+
+  <!-- 캘린더 뷰 -->
+  <div id="calendarView" style="display:none;">
+    <header style="padding:24px 0 16px;text-align:center;">
+      <h1 class="title-main">📅 운동 달력</h1>
+      <div class="title-sub">어느 날 무슨 부위를 했는지 한눈에</div>
+      <div class="header-divider"></div>
+    </header>
+    <div class="field" style="margin-bottom:16px;">
+      <label>누구의 달력을 볼까요?</label>
+      <select id="calMemberSelect" onchange="selectCalendarMember(this.value)"></select>
+    </div>
+    <div id="analysisCalendar"></div>
   </div>
 
   <!-- 프로필 뷰 -->
@@ -698,6 +710,9 @@
     </button>
     <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary')">
       <span class="nav-icon">📒</span><span class="nav-label">훈련일지</span>
+    </button>
+    <button class="bottom-nav-btn" id="navCalendar" onclick="switchMainTab('calendar')">
+      <span class="nav-icon">📅</span><span class="nav-label">달력</span>
     </button>
     <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
       <span class="nav-icon">👤</span><span class="nav-label">프로필</span>
@@ -853,7 +868,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.33";
+const APP_VERSION = "2026.06.10.34";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1285,13 +1300,24 @@ window.switchMainTab = function(tab){
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 화면 바뀌면 토글 접기
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
+  const navCalendar = document.getElementById('navCalendar'); if(navCalendar) navCalendar.classList.toggle('active', tab==='calendar');
   const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
+  document.getElementById('calendarView').style.display = tab==='calendar'?'block':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
   if(tab==='account'){ 계정화면그리기(); }
+  if(tab==='calendar'){
+    const sel = document.getElementById('calMemberSelect');
+    sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
+      전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
+    let 대상 = 분석대상 || 일지대상 || (현재유저 && !게스트인가() ? 현재유저.이름 : null);
+    sel.value = 대상 || '';
+    if(대상){ 분석대상 = 대상; 분석캘린더그리기(대상); }
+    else { document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; }
+  }
   if(tab==='diary'){
     // 멤버 드롭다운 채우기 (가입자 자동 반영, 맨 위에 안내 옵션)
     const sel = document.getElementById('diaryMemberSelect');
@@ -1320,8 +1346,13 @@ window.selectDiaryMember = function(이름){
   현재상세이름 = 이름;
   document.getElementById('diaryMemberSelect').value = 이름;
   document.getElementById('diaryContent').style.display = 'flex';
-  // 달력 + 운동별 그래프(그래프 클릭으로 바로 입력)
+  // 운동별 그래프(그래프 클릭으로 바로 입력)
   분석대상 = 이름; 분석캘린더YM = null; 추가종목들 = []; 분석그리기();
+}
+window.selectCalendarMember = function(이름){
+  document.getElementById('calMemberSelect').value = 이름 || '';
+  if(!이름){ document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; return; }
+  분석대상 = 이름; 분석캘린더YM = null; 분석캘린더그리기(이름);
 }
 // ── 주간 훈련 일지 ──
 // 종목별 설정: 목표회수 채우면 무게 올림(증가), 다시 시작회수부터
@@ -1730,7 +1761,6 @@ function 분석그리기(){
   const cont = document.getElementById('analysisContent');
   if(!cont) return;
   const 이름 = 분석대상;
-  분석캘린더그리기(이름);   // 부위별 운동 달력
   if(!이름){ cont.innerHTML = '<div class="status">분석할 사람을 선택하세요.</div>'; return; }
   // 기본 종목(항상 표시) + 이 사람이 기록한 종목 + 방금 추가한(빈) 종목
   const 커스텀 = [...new Set(훈련목록.filter(t=>t.이름===이름 && t.종목 && !종목목록.includes(t.종목)).map(t=>t.종목))];
