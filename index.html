@@ -868,7 +868,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.35";
+const APP_VERSION = "2026.06.10.36";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1463,6 +1463,7 @@ function _tone(freq, start, dur, vol=0.18, type='sine'){
 function 효과음저장(){
   _tone(660, 0, 0.12, 0.16, 'triangle');
   _tone(990, 0.08, 0.16, 0.13, 'triangle');
+  햅틱(20);
 }
 // 신기록: 상승 팡파레 (더 화려하게)
 function 효과음신기록(){
@@ -1470,7 +1471,14 @@ function 효과음신기록(){
   notes.forEach((f,i)=> _tone(f, i*0.10, 0.30, 0.20, 'triangle'));
   _tone(1318.51, 0.42, 0.5, 0.16, 'sine');         // 마무리 반짝
   _tone(1567.98, 0.42, 0.5, 0.12, 'sine');
+  햅틱([0,45,60,45,80]);
 }
+// ── 햅틱(진동) — 안드로이드 지원, iOS 웹은 미지원 ──
+function 햅틱(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+// 버튼·탭·선택·달력셀 등 누르면 짧게 진동
+document.addEventListener('pointerdown', (e)=>{
+  if(e.target.closest('button, select, summary, .bottom-nav-btn, .cal-cell.editable, .ana-quick-btn, .level-btn, .detail-tab, .calpart-btn')) 햅틱(10);
+}, {passive:true});
 
 function 추정1RM(중량, 횟수){
   // 1회: 그대로 / 2~5회: 에플리 / 6회 이상: 웰던
