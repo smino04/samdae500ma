@@ -199,6 +199,15 @@
   .ana-q-main{font-size:12.5px;line-height:1.5;color:var(--text);background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.35);border-radius:8px;padding:8px 10px;margin-bottom:9px;}
   .ana-q-main b{color:var(--gold,#ffc83d);}
   .ana-q-x{color:var(--text-dim);}
+  .ana-rec-list{margin-top:12px;border-top:1px solid var(--line);max-height:188px;overflow-y:auto;}
+  .ana-rec{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px;}
+  .ana-rec-date{flex-shrink:0;width:42px;color:var(--text-dim);font-weight:700;font-size:12px;}
+  .ana-rec-val{flex:1;min-width:0;color:var(--text);}
+  .ana-rec-val i{color:var(--text-dim);font-style:normal;font-size:11.5px;}
+  .ana-rec-act{flex-shrink:0;display:flex;gap:6px;}
+  .ana-rec-act button{padding:5px 9px;border-radius:7px;font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--bg);}
+  .ana-rec-edit{color:var(--blue-bright);border-color:var(--blue-bright)!important;}
+  .ana-rec-del{color:var(--text-dim);}
   .ana-guide,.train-suggest{text-align:left;}
   .guide-lv{font-size:11px;font-weight:700;opacity:0.85;margin-left:4px;}
   .guide-tip{display:inline-block;margin-top:4px;font-size:12px;font-weight:500;color:var(--text-dim);}
@@ -844,7 +853,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.32";
+const APP_VERSION = "2026.06.10.33";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1702,6 +1711,20 @@ window.분석빠른저장 = async function(idx){
   }catch(e){ alert('저장 실패: '+e.message); }
   finally{ if(btn){ btn.disabled=false; btn.textContent='기록'; } }
 }
+// 기록 수정: 그 기록의 날짜·중량·횟수를 폼에 채워 넣고 폼 열기 (같은 날짜로 저장하면 덮어씀)
+window.분석기록수정 = function(idx, id){
+  const t = 훈련목록.find(x=>x._id===id); if(!t) return;
+  const box = document.getElementById('anaQuick'+idx);
+  if(box && box.style.display==='none') 분석빠른입력토글(idx);   // 닫혀 있으면 연다
+  const d=document.getElementById('anaQDate'+idx), w=document.getElementById('anaQW'+idx), r=document.getElementById('anaQR'+idx);
+  if(d) d.value=t.날짜||'';
+  if(w) w.value=t.중량;
+  if(r) r.value=t.횟수;
+  const el=document.getElementById('anaQ1rm'+idx);
+  if(el && t.중량>0 && t.횟수>0) el.innerHTML=`예상 1RM <b>${추정1RM(t.중량,t.횟수)}kg</b>`;
+  if(box) box.scrollIntoView({behavior:'smooth', block:'center'});
+  토스트('✏️ 값을 고치고 기록을 누르면 수정돼요');
+}
 function 분석그리기(){
   분석차트들.forEach(c=>{ try{ c.destroy(); }catch(e){} }); 분석차트들 = [];
   const cont = document.getElementById('analysisContent');
@@ -1728,12 +1751,27 @@ function 분석그리기(){
           <div class="ana-q-1rm" id="anaQ1rm${idx}"></div>
           <div class="ana-q-hint">같은 날짜면 덮어써요</div>
         </div>` : '';
+  // 기록 목록 + 수정/삭제 (권한 있을 때만)
+  const 기록목록HTML = (ex, idx)=>{
+    if(!권한) return '';
+    const recs = 훈련목록.filter(t=>t.이름===이름 && (t.종목||'벤치프레스')===ex)
+      .sort((a,b)=>(b.날짜||'').localeCompare(a.날짜||''));   // 최신순
+    if(!recs.length) return '';
+    return `<div class="ana-rec-list">` + recs.map(t=>`<div class="ana-rec">
+        <span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span>
+        <span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${추정1RM(t.중량,t.횟수)}</i></span>
+        <span class="ana-rec-act">
+          <button class="ana-rec-edit" onclick="분석기록수정(${idx},'${t._id}')">수정</button>
+          <button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button>
+        </span>
+      </div>`).join('') + `</div>`;
+  };
   cont.innerHTML = 종목들.map((ex,idx)=>{
     const 기록있음 = 훈련목록.some(t=>t.이름===이름 && (t.종목||'벤치프레스')===ex);
     if(기록있음){
       return `<div class="chart-card"><div class="chart-title">${escHtml(ex)} · 예상 1RM (kg)</div>
         <div class="chart-wrap"${권한?` onclick="분석빠른입력토글(${idx})" style="cursor:pointer"`:''}><canvas id="anaChart${idx}"></canvas></div>
-        ${빠른입력HTML(idx)}</div>`;
+        ${빠른입력HTML(idx)}${기록목록HTML(ex,idx)}</div>`;
     }
     return `<div class="chart-card ana-empty"><div class="chart-title">${escHtml(ex)}</div>
       <p class="ana-empty-msg">아직 기록이 없어요.${자기자신?' 아래에서 첫 기록을 남겨보세요 💪':' 기록이 쌓이면 그래프가 나타나요.'}</p>
