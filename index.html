@@ -157,7 +157,7 @@
   .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-dim);padding:4px 0;}
   .cal-cell{min-height:54px;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:3px;display:flex;flex-direction:column;gap:2px;overflow:hidden;}
   .cal-cell.empty{background:transparent;border:none;}
-  .cal-cell.has{border-color:var(--blue-bright);}
+  .cal-cell.today{border-color:var(--blue-bright);box-shadow:0 0 0 1px var(--blue-bright) inset;}
   .cal-day{font-size:10px;color:var(--text-dim);font-weight:700;}
   .cal-chip{font-size:9px;font-weight:700;color:#10141b;border-radius:4px;padding:1px 2px;text-align:center;line-height:1.35;}
   .cal-legend{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:12px 0 18px;font-size:11px;color:var(--text-dim);}
@@ -844,7 +844,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.29";
+const APP_VERSION = "2026.06.10.30";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1546,6 +1546,7 @@ function 분석캘린더그리기(이름){
   const 자동={};  // day -> Set
   recs.forEach(t=>{ const p=t.날짜.split('-'); if(+p[0]===y && (+p[1]-1)===m){ (자동[+p[2]]=자동[+p[2]]||new Set()).add(부위(t.종목||'벤치프레스')); } });
   const first=(new Date(y,m,1).getDay()+6)%7, days=new Date(y,m+1,0).getDate();  // 월요일 시작
+  const _t=new Date(); const 오늘ds=_ds(_t.getFullYear(),_t.getMonth(),_t.getDate());
   let cells=['월','화','수','목','금','토','일'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
   for(let i=0;i<first;i++) cells+=`<div class="cal-cell empty"></div>`;
   for(let d=1;d<=days;d++){
@@ -1553,7 +1554,7 @@ function 분석캘린더그리기(이름){
     const parts=그날부위(이름, ds, 자동[d]);
     const chips=parts.map(pp=>`<span class="cal-chip" style="background:${부위색(pp)}">${부위라벨(pp)}</span>`).join('');
     const onclick = 권한 ? ` onclick="calDayClick('${ds}')"` : '';
-    cells+=`<div class="cal-cell${parts.length?' has':''}${권한?' editable':''}"${onclick}><div class="cal-day">${d}</div>${chips}</div>`;
+    cells+=`<div class="cal-cell${ds===오늘ds?' today':''}${권한?' editable':''}"${onclick}><div class="cal-day">${d}</div>${chips}</div>`;
   }
   el.innerHTML=`
     <div class="cal-head">
