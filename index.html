@@ -183,7 +183,16 @@
   .cal-cell.today{border-color:var(--blue-bright);box-shadow:0 0 0 1px var(--blue-bright) inset;}
   .cal-day{font-size:10px;color:var(--text-dim);font-weight:700;}
   .cal-chip{font-size:9px;font-weight:700;color:#10141b;border-radius:4px;padding:1px 2px;text-align:center;line-height:1.35;}
-  .cal-ex-counts{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .cal-days{display:flex;gap:10px;margin-top:16px;}
+  .cal-day-box{flex:1;border-radius:14px;padding:14px 12px;text-align:center;border:1px solid var(--line);}
+  .cal-day-box .n{font-size:30px;font-weight:800;line-height:1;}
+  .cal-day-box .n small{font-size:14px;font-weight:700;margin-left:2px;}
+  .cal-day-box .l{font-size:12px;font-weight:700;color:var(--text-dim);margin-top:7px;}
+  .cal-day-box.work{background:rgba(105,219,124,0.12);border-color:rgba(105,219,124,0.4);}
+  .cal-day-box.work .n{color:#69db7c;}
+  .cal-day-box.rest{background:rgba(173,181,189,0.1);}
+  .cal-day-box.rest .n{color:var(--text-dim);}
+  .cal-ex-counts{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
   .cal-ex-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
   .cal-ex-title span{font-size:12px;font-weight:500;color:var(--text-dim);}
   .cal-ex-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:14px;}
@@ -214,6 +223,8 @@
   .add-ex-row input{flex:1;min-width:0;padding:11px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:16px;}
   .add-ex-row input:focus{outline:none;border-color:var(--blue-bright);}
   .add-ex-row .add-ex-btn{flex-shrink:0;background:var(--bg);border:1px solid var(--blue-bright);border-radius:9px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:13px;font-weight:700;padding:0 14px;cursor:pointer;}
+  .add-ex-toggle{width:100%;background:var(--bg);border:1px dashed var(--blue-bright);border-radius:9px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:14px;font-weight:700;padding:11px;cursor:pointer;}
+  .add-ex-toggle:active{transform:scale(0.99);}
   .ana-quick-btn{display:block;width:100%;margin-top:10px;background:var(--bg);border:1px solid var(--blue-bright);border-radius:8px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:13px;font-weight:700;padding:9px 12px;cursor:pointer;}
   .ana-quick-btn:active{transform:scale(0.99);}
   .ana-quick{margin-top:10px;}
@@ -673,9 +684,12 @@
     <div id="diaryContent">
       <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
       <div id="analysisContent"></div>
-      <div id="addExRow" class="add-ex-row" style="display:none;margin-top:8px;margin-bottom:16px;">
-        <input type="text" id="newExInput" placeholder="추가할 운동명 (예: 풀업)" maxlength="20" onkeydown="if(event.key==='Enter')다른운동추가()">
-        <button class="add-ex-btn" onclick="다른운동추가()">＋ 다른 운동 추가</button>
+      <div id="addExRow" style="display:none;flex-direction:column;margin:8px 0 16px;">
+        <button class="add-ex-btn add-ex-toggle" onclick="운동추가토글()">＋ 다른 종목 추가</button>
+        <div class="add-ex-row" id="addExInputRow" style="display:none;margin-top:8px;">
+          <input type="text" id="newExInput" placeholder="추가할 운동명 (예: OHP)" maxlength="20" onkeydown="if(event.key==='Enter')다른운동추가()">
+          <button class="add-ex-btn" onclick="다른운동추가()">추가</button>
+        </div>
       </div>
       <details class="why-toggle" id="whyToggle">
         <summary>💡 어떻게 사용하나요? <span class="why-arrow">▼</span></summary>
@@ -963,7 +977,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.43";
+const APP_VERSION = "2026.06.10.44";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1687,7 +1701,13 @@ window.종목제거 = async function(idx){
   try{ await setDoc(doc(db,'quotes',이름), { 종목숨김:[...숨김], 종목순서:종목순서목록[이름] }, { merge:true }); }
   catch(e){ alert('저장 실패: '+e.message); }
 };
-// 맨 위 '다른 운동 추가'
+// 맨 위 '다른 종목 추가' — 버튼 누르면 입력칸 토글
+window.운동추가토글 = function(){
+  const r=document.getElementById('addExInputRow'); if(!r) return;
+  const open = r.style.display!=='none';
+  r.style.display = open?'none':'flex';
+  if(!open){ const i=document.getElementById('newExInput'); if(i){ i.value=''; i.focus(); } }
+};
 window.다른운동추가 = async function(){
   const inp = document.getElementById('newExInput');
   const v = (inp.value||'').trim();
@@ -1701,6 +1721,7 @@ window.다른운동추가 = async function(){
   }
   if(!추가종목들.includes(v)) 추가종목들.push(v);
   inp.value='';
+  const _r=document.getElementById('addExInputRow'); if(_r) _r.style.display='none';   // 추가 후 입력칸 닫기
   분석그리기();
   if(숨김변경){ try{ await setDoc(doc(db,'quotes',이름), { 종목숨김: 종목숨김목록[이름] }, { merge:true }); }catch(e){} }
   // 새로 생긴 카드의 빠른입력 자동 열기 + 스크롤
@@ -1777,17 +1798,26 @@ function 분석캘린더그리기(이름){
     const onclick = 권한 ? ` onclick="calDayClick('${ds}')"` : '';
     cells+=`<div class="cal-cell${ds===오늘ds?' today':''}${권한?' editable':''}"${onclick}><div class="cal-day">${d}</div>${chips}</div>`;
   }
-  // 이번 달 부위별 횟수 집계 (수동 편집 부위 우선 반영, 하루에 같은 부위는 1회)
+  // 집계: 오늘까지만 (남은 날짜 제외). 과거달=말일까지, 이번달=오늘까지, 미래달=0
+  let cutoff;
+  if(y<_t.getFullYear() || (y===_t.getFullYear() && m<_t.getMonth())) cutoff=days;
+  else if(y===_t.getFullYear() && m===_t.getMonth()) cutoff=_t.getDate();
+  else cutoff=0;
   const 카운트={}; let 운동일수=0;
   for(let d=1;d<=days;d++){
     const ds=_ds(y,m,d);
     const parts=그날부위(이름, ds, 자동[d]);
-    if(parts.length) 운동일수++;
+    if(d<=cutoff && parts.length) 운동일수++;
     parts.forEach(pp=>{ 카운트[pp]=(카운트[pp]||0)+1; });
   }
+  const 휴식일수 = Math.max(0, cutoff - 운동일수);
   const 정렬=부위목록.filter(p=>카운트[p]).map(p=>[p,카운트[p]]).sort((a,b)=>b[1]-a[1]);
+  const 일수HTML = `<div class="cal-days">
+      <div class="cal-day-box work"><div class="n">${운동일수}<small>일</small></div><div class="l">💪 운동</div></div>
+      <div class="cal-day-box rest"><div class="n">${휴식일수}<small>일</small></div><div class="l">😴 휴식</div></div>
+    </div>`;
   const 카운트HTML = `<div class="cal-ex-counts">
-      <div class="cal-ex-title">📊 ${m+1}월 부위별 횟수 <span>총 ${운동일수}일 운동</span></div>
+      <div class="cal-ex-title">📊 ${m+1}월 부위별 횟수</div>
       ${정렬.length ? 정렬.map(([pp,n])=>`<div class="cal-ex-row"><span class="cal-ex-dot" style="background:${부위색(pp)}"></span><span class="cal-ex-name">${부위라벨(pp)}</span><span class="cal-ex-n">${n}회</span></div>`).join('')
         : `<div class="cal-ex-empty">이번 달 기록이 없어요</div>`}
     </div>`;
@@ -1798,6 +1828,7 @@ function 분석캘린더그리기(이름){
       <button class="cal-nav" onclick="분석캘린더이동(1)">▶</button>
     </div>
     <div class="cal-grid">${cells}</div>
+    ${일수HTML}
     ${카운트HTML}`;
 }
 // ── 달력 날짜 편집 ──
