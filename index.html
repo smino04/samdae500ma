@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
+<html lang="ko"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -16,6 +15,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="삼대오백마">
+
 <script>
   // 안드로이드 '설치앱'으로 켤 때만: OS 스플래시와 겹치지 않게 자체 스플래시 생략 (아이폰/브라우저는 그대로)
   // + 스플래시는 '사이트에 새로 접속할 때'만 표시. 스와이프 뒤로가기 등으로 같은 세션 안에서
@@ -40,7 +40,24 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
-  :root{
+  /* latin */
+/* cyrillic */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+/* cyrillic */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+/* cyrillic */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+/* cyrillic */
+/* vietnamese */
+/* latin-ext */
+/* latin */
+:root{
     --bg:#07090d; --panel:#11151c; --panel-light:#1a212c;
     --blue:#c8d0dc; --blue-bright:#dce3ee; --blue-glow:rgba(200,212,228,0.40);
     --gold:#ffc83d; --silver:#c4ccd6; --bronze:#e08953;
@@ -346,6 +363,9 @@
   /* 로그인 / 회원가입 화면 */
   #authView{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
   .auth-card{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 22px;text-align:center;}
+  .auth-emblem{width:96px;height:96px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .auth-emblem::before{content:'';position:absolute;width:124px;height:124px;border-radius:50%;background:radial-gradient(circle,rgba(180,205,255,0.18),transparent 65%);}
+  .auth-emblem img{width:96px;height:96px;position:relative;z-index:1;border-radius:50%;filter:drop-shadow(0 4px 18px rgba(200,212,228,0.4));}
   .auth-title{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:700;font-size:28px;letter-spacing:1px;color:var(--text);}
   .auth-sub{font-size:12px;letter-spacing:4px;font-weight:700;color:var(--blue-bright);margin-top:8px;}
   .auth-tabs{display:flex;gap:8px;margin-bottom:18px;}
@@ -452,6 +472,65 @@
   .danger-label{color:#f87171;}
   .danger-box{border-color:rgba(248,113,113,0.35);}
   .danger-btn{background:#f87171;color:#1a0e0e;}
+  /* ===== 훈련일지 새 흐름: 리스트 / 상세 / 키패드 ===== */
+  .exlist{display:flex;flex-direction:column;gap:9px;}
+  .exrow{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 14px;cursor:pointer;transition:transform .14s,border-color .14s;}
+  .exrow:active{transform:scale(0.985);}
+  .exrow-bar{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0;min-height:34px;}
+  .exrow-main{flex:1;min-width:0;}
+  .exrow-name{font-size:15px;font-weight:700;}
+  .exrow-sub{font-size:11.5px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .exrow-empty-msg{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
+  .exrow-right{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+  .exrow-hint{font-size:11px;font-weight:700;white-space:nowrap;}
+  .exrow-hint.up{color:var(--gold);}
+  .exrow-hint.keep{color:var(--text-dim);}
+  .exrow-chev{color:var(--text-dim);font-size:18px;flex-shrink:0;}
+  .exrow-ops{display:flex;gap:3px;flex-shrink:0;}
+  .exrow-ops button{width:24px;height:24px;border-radius:6px;background:var(--bg);border:1px solid var(--line);color:var(--text-dim);font-size:10px;cursor:pointer;padding:0;}
+  .exrow-ops button:disabled{opacity:0.3;}
+  .exrow-ops .op-del{color:#f87171;}
+  #diaryContent.detail-mode>#addExRow,
+  #diaryContent.detail-mode>.section-label,
+  #diaryContent.detail-mode>#whyToggle,
+  #diaryContent.detail-mode>.rep-guide-toggle{display:none!important;}
+  .detail-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .detail-back{width:34px;height:34px;border-radius:9px;background:var(--panel);border:1px solid var(--line);color:var(--text);font-size:20px;cursor:pointer;flex-shrink:0;line-height:1;}
+  .detail-bar{width:4px;height:22px;border-radius:2px;flex-shrink:0;}
+  .detail-head h2{font-size:19px;font-weight:900;}
+  .detail-stats{display:flex;gap:10px;margin-bottom:14px;}
+  .detail-stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 14px;}
+  .detail-stat .l{font-size:10.5px;color:var(--text-dim);}
+  .detail-stat .v{font-family:'Black Han Sans',sans-serif;font-size:26px;line-height:1.1;margin-top:3px;}
+  .detail-stat .v small{font-size:13px;color:var(--text-dim);font-family:'Noto Sans KR';font-weight:700;}
+  .detail-record-btn{position:sticky;bottom:14px;width:100%;margin-top:16px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.45);}
+  .detail-record-btn:active{transform:scale(0.99);}
+  .kp-ov{position:fixed;inset:0;z-index:240;background:var(--bg);display:flex;flex-direction:column;animation:kpUp .26s cubic-bezier(.4,0,.2,1);}
+  @keyframes kpUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .kp-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:18px 18px 8px;}
+  .kp-top .x{font-size:18px;color:var(--text-dim);cursor:pointer;background:none;border:none;}
+  .kp-top h3{font-size:16px;font-weight:700;flex:1;text-align:center;}
+  .kp-top .date{font-size:12px;color:var(--blue-bright);background:none;border:none;cursor:pointer;white-space:nowrap;}
+  .kp-chips{display:flex;gap:6px;padding:4px 18px 2px;overflow-x:auto;}
+  .kp-chip{flex-shrink:0;padding:6px 13px;border-radius:15px;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--text-dim);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR';}
+  .kp-disp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:120px;}
+  .kp-fields{display:flex;align-items:flex-end;gap:16px;}
+  .kp-field{text-align:center;cursor:pointer;padding:6px 16px;border-radius:14px;border:2px solid transparent;}
+  .kp-field.on{border-color:var(--blue-bright);background:rgba(220,227,238,0.06);}
+  .kp-field .big{font-family:'Black Han Sans',sans-serif;font-size:48px;line-height:1;}
+  .kp-field .cap{font-size:11px;color:var(--text-dim);margin-top:5px;}
+  .kp-x{font-size:26px;color:var(--line);align-self:center;padding-bottom:16px;}
+  .kp-1rm{background:rgba(220,227,238,0.07);border:1px solid var(--line);border-radius:11px;padding:9px 16px;font-size:12.5px;color:var(--blue-bright);}
+  .kp-last{font-size:11px;color:var(--text-dim);text-align:center;padding:0 18px;}
+  .kp-quick{display:flex;gap:7px;padding:0 18px 10px;}
+  .kp-q{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:11px 0;text-align:center;font-size:13px;color:var(--text);font-weight:600;cursor:pointer;font-family:'Noto Sans KR';}
+  .kp-q:active{background:var(--panel-light);}
+  .kp-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 18px 10px;}
+  .kp-key{background:var(--panel);border-radius:11px;padding:15px 0;text-align:center;font-size:20px;font-weight:700;cursor:pointer;color:var(--text);border:none;font-family:'Noto Sans KR';}
+  .kp-key:active{background:var(--panel-light);}
+  .kp-save{margin:0 18px 18px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;}
+  .kp-save:disabled{opacity:0.5;}
+  .kp-date-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -463,6 +542,7 @@
 <!-- 로그인 / 회원가입 화면 -->
 <div id="authView" style="display:none;">
   <div class="auth-card">
+    <div class="auth-emblem"><img src="emblem.png?v=1" alt="삼대오백마"></div>
     <div class="auth-title">삼대오백마</div>
     <div class="auth-sub">3대 500을 향하여</div>
     <div class="header-divider" style="margin-bottom:22px;"></div>
@@ -874,7 +954,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.37";
+const APP_VERSION = "2026.06.10.38";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1816,15 +1896,100 @@ window.분석기록수정 = function(idx, id){
   if(box) box.scrollIntoView({behavior:'smooth', block:'center'});
   토스트('✏️ 값을 고치고 기록을 누르면 수정돼요');
 }
+// 영역 라인 차트용 세로 그라데이션 채움 (선 색 기준, 위→아래 페이드)
+function 영역채움(color){
+  return (c)=>{
+    const ch=c.chart, area=ch.chartArea;
+    if(!area) return color+'00';
+    const g=ch.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, color+'40');
+    g.addColorStop(1, color+'00');
+    return g;
+  };
+}
+// ===== 훈련일지 새 흐름 (리스트 → 상세 → 키패드) =====
+let 상세종목 = null;
+const 종목색맵 = {'벤치프레스':'#4A9EDB','스쿼트':'#5CC97A','데드리프트':'#E87060','오버헤드프레스':'#C8A0E8','OHP':'#C8A0E8','풀업':'#E0A93B'};
+function 종목컴러(ex){ return 종목색맵[ex] || (getComputedStyle(document.documentElement).getPropertyValue('--blue-bright').trim() || '#dce3ee'); }
+function 스파크라인(recs, color){
+  const vals = recs.map(t=>추정1RM(t.중량,t.횟수));
+  if(vals.length<2) return '';
+  const max=Math.max(...vals),min=Math.min(...vals),w=54,h=22;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1))*w},${(h-((v-min)/(max-min||1))*(h-5)-3).toFixed(1)}`).join(' ');
+  const last=pts.split(' ').pop().split(',');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="${color}"/></svg>`;
+}
+function 다음무게힌트(이름, ex, last){
+  const cfg = 운동설정(이름, ex);
+  if(last.횟수 >= cfg.목표회수) return {txt:`↑ ${Math.round((last.중량+cfg.증가)*10)/10}kg 도전`, up:true};
+  return {txt:`→ ${last.중량}kg ${last.횟수+1}회`, up:false};
+}
+function 분석리스트그리기(이름, 종목들){
+  const dc=document.getElementById('diaryContent'); if(dc) dc.classList.remove('detail-mode');
+  const cont=document.getElementById('analysisContent');
+  const 자기자신=!!(현재유저&&현재유저.이름===이름);
+  const 권한=내권한(이름);
+  const rows=종목들.map((ex,idx)=>{
+    const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+    const c=종목컴러(ex);
+    const ops=권한?`<span class="exrow-ops"><button onclick="event.stopPropagation();종목이동(${idx},-1)"${idx===0?' disabled':''}>▲</button><button onclick="event.stopPropagation();종목이동(${idx},1)"${idx===종목들.length-1?' disabled':''}>▼</button><button class="op-del" onclick="event.stopPropagation();종목제거(${idx})">✕</button></span>`:'';
+    if(!recs.length){
+      return `<div class="exrow exrow-empty"${권한?` onclick="키패드열기(${idx})"`:''}><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-empty-msg">${자기자신?'아직 기록이 없어요 · 눌러서 첫 기록 💪':'기록이 쌓이면 그래프가 나타나요'}</div></div>${ops}${권한?'<span class="exrow-chev">＋</span>':''}</div>`;
+    }
+    const last=recs[recs.length-1];
+    const hint=다음무게힌트(이름,ex,last);
+    return `<div class="exrow" onclick="운동상세열기(${idx})"><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-sub"><b style="color:${c}">${last.중량}kg × ${last.횟수}회</b> → 1RM ${추정1RM(last.중량,last.횟수)}kg</div></div><span class="exrow-right">${스파크라인(recs,c)}<span class="exrow-hint ${hint.up?'up':'keep'}">${hint.txt}</span></span>${ops}<span class="exrow-chev">›</span></div>`;
+  }).join('');
+  cont.innerHTML=`<div class="exlist">${rows||'<div class="status">표시할 운동이 없어요.</div>'}</div>`;
+  const addRow=document.getElementById('addExRow'); if(addRow) addRow.style.display=권한?'flex':'none';
+}
+function 운동상세그리기(이름, ex){
+  const dc=document.getElementById('diaryContent'); if(dc) dc.classList.add('detail-mode');
+  const cont=document.getElementById('analysisContent');
+  const c=종목컴러(ex); const 권한=내권한(이름);
+  const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+  const vals=recs.map(t=>추정1RM(t.중량,t.횟수));
+  const cur=vals.length?vals[vals.length-1]:0, first=vals.length?vals[0]:0;
+  const grow=Math.round((cur-first)*10)/10;
+  let runMax=-Infinity; const prFlags=vals.map(v=>{ const pr=v>=runMax; if(v>runMax)runMax=v; return pr; });
+  const hist=recs.map((t,i)=>({t,pr:prFlags[i],v:vals[i]})).reverse();
+  const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${v}</i>${pr?' <b style="color:var(--gold)">PR</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="키패드열기(null,'${t._id}')">수정</button><button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button></span>`:''}</div>`).join('');
+  cont.innerHTML=`<div class="detail-head"><button class="detail-back" onclick="운동상세닫기()">‹</button><span class="detail-bar" style="background:${c}"></span><h2>${escHtml(ex)}</h2></div>`+
+    `<div class="detail-stats"><div class="detail-stat"><div class="l">현재 추정 1RM</div><div class="v" style="color:${c}">${cur}<small>kg</small></div></div><div class="detail-stat"><div class="l">누적 성장</div><div class="v" style="color:var(--gold)">${grow>=0?'+':''}${grow}<small>kg</small></div></div></div>`+
+    `<div class="chart-card"><div class="chart-wrap"><canvas id="detailChart"></canvas></div></div>`+
+    `<div class="section-label" style="margin-top:4px">📋 기록 히스토리</div><div class="ana-rec-list" style="max-height:none">${histHTML||'<div class="status">기록이 없어요.</div>'}</div>`+
+    `${권한?`<button class="detail-record-btn" onclick="키패드열기()">＋ 기록하기</button>`:''}`;
+  const css=getComputedStyle(document.documentElement);
+  const textDim=css.getPropertyValue('--text-dim').trim(), line=css.getPropertyValue('--line').trim();
+  const labels=recs.map(t=>{const p=(t.날짜||'').split('-');return p.length===3?`${p[1]}/${p[2]}`:t.날짜;});
+  const below=recs.map(t=>`${t.중량}×${t.횟수}`);
+  const ys=yScale(vals);
+  const ptColors=vals.map((v,i)=> prFlags[i]?'#ffc83d':c);
+  const ptR=vals.map((v,i)=> prFlags[i]?5:3.5);
+  if(vals.length){
+    const ch=new Chart(document.getElementById('detailChart'),{type:'line',
+      data:{labels,datasets:[{label:ex,data:vals,belowLabels:below,borderColor:c,backgroundColor:영역채움(c),fill:true,tension:0.35,borderWidth:2.5,pointRadius:ptR,pointHoverRadius:6,pointBackgroundColor:ptColors,pointBorderColor:ptColors,pointStyle:'circle'}]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
+        plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step},grid:{color:line}}}},
+      plugins:[점값플러그인]});
+    분석차트들.push(ch);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function 분석그리기(){
   분석차트들.forEach(c=>{ try{ c.destroy(); }catch(e){} }); 분석차트들 = [];
   const cont = document.getElementById('analysisContent');
   if(!cont) return;
   const 이름 = 분석대상;
-  if(!이름){ cont.innerHTML = '<div class="status">분석할 사람을 선택하세요.</div>'; return; }
-  // 사용자가 정한 순서/숨김을 반영한 표시 목록
+  if(!이름){ cont.innerHTML = '<div class="status">분석할 사람을 선택하세요.</div>'; 상세종목=null; const _dc=document.getElementById('diaryContent'); if(_dc)_dc.classList.remove('detail-mode'); return; }
   const 종목들 = 표시종목들(이름);
   현재분석종목들 = 종목들;
+  if(상세종목 && (!종목들.includes(상세종목) || !훈련목록.some(t=>t.이름===이름&&(t.종목||'벤치프레스')===상세종목))) 상세종목=null;
+  if(상세종목){ 운동상세그리기(이름, 상세종목); return; }
+  분석리스트그리기(이름, 종목들);
+  return;
+  /* ↓ 구버전 카드(미사용, 호환용 보존) ↓ */
   const 자기자신 = !!(현재유저 && 현재유저.이름===이름);
   const 권한 = 내권한(이름);
   // 빠른입력 폼(권한 있을 때만) — 빈 카드/그래프 카드 공통
@@ -1885,7 +2050,7 @@ function 분석그리기(){
     const below = recs.map(t=>`${t.중량}×${t.횟수}`);
     const ys = yScale(data);
     const ch = new Chart(document.getElementById('anaChart'+idx),{type:'line',
-      data:{labels,datasets:[{label:ex,data,belowLabels:below,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
+      data:{labels,datasets:[{label:ex,data,belowLabels:below,borderColor:blue,backgroundColor:영역채움(blue),fill:true,tension:0.35,borderWidth:2.5,pointRadius:4,pointHoverRadius:6,pointStyle:'circle'}]},
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
         plugins:{legend:{display:false}},
         scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step},grid:{color:line}}}},
@@ -1893,6 +2058,79 @@ function 분석그리기(){
     분석차트들.push(ch);
   });
 }
+// ===== 새 흐름: 상세 열기/닫기 + 키패드 =====
+window.운동상세열기 = function(idx){ 상세종목 = 현재분석종목들[idx]; if(!상세종목) return; 분석그리기(); };
+window.운동상세닫기 = function(){ 상세종목 = null; 분석그리기(); };
+let kp = {이름:null,ex:null,날짜:null,w:'',r:'',focus:'w',dirty:{w:false,r:false},editId:null,last:null};
+let kp종목들 = [];
+function _kpToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function _kpDateFmt(s){ if(!s)return ''; const p=s.split('-'); return p.length===3?`${+p[1]}/${+p[2]}`:s; }
+window.kpSetDate = function(v){ kp.날짜=v; const el=document.getElementById('kpDateLbl'); if(el)el.textContent=_kpDateFmt(v); };
+window.키패드열기 = function(idx, editId){
+  const 이름 = 분석대상 || (현재유저 && 현재유저.이름);
+  if(!이름 || !내권한(이름)){ alert('본인 기록만 추가할 수 있어요.'); return; }
+  const ex = (typeof idx==='number') ? 현재분석종목들[idx] : 상세종목;
+  if(!ex) return;
+  kp종목들 = 표시종목들(이름);
+  const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+  const last=recs.length?recs[recs.length-1]:null;
+  const rec=editId?훈련목록.find(t=>t._id===editId):null;
+  kp={이름,ex,날짜:rec?rec.날짜:_kpToday(),w:String(rec?rec.중량:''),r:String(rec?rec.횟수:''),focus:'w',dirty:rec?{w:true,r:true}:{w:false,r:false},editId:editId||null,last};
+  const old=document.getElementById('kpOverlay'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.id='kpOverlay'; ov.className='kp-ov';
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><button class="date" onclick="var d=document.getElementById('kpDate'); d.showPicker?d.showPicker():d.click()">📅 <span id="kpDateLbl"></span></button><input type="date" id="kpDate" class="kp-date-input" value="${kp.날짜}" onchange="kpSetDate(this.value)"></div>`+
+    `<div class="kp-chips" id="kpChips"></div>`+
+    `<div class="kp-disp"><div class="kp-fields"><div class="kp-field" id="kpFW" onclick="kpFocus('w')"><div class="big" id="kpWv">0</div><div class="cap">무게 (kg)</div></div><div class="kp-x">×</div><div class="kp-field" id="kpFR" onclick="kpFocus('r')"><div class="big" id="kpRv">0</div><div class="cap">횟수</div></div></div><div class="kp-1rm" id="kp1rm">예상 1RM —</div></div>`+
+    `<div class="kp-last" id="kpLast"></div>`+
+    `<div class="kp-quick"><button class="kp-q" onclick="kpAdj(-5)">−5</button><button class="kp-q" onclick="kpAdj(-2.5)">−2.5</button><button class="kp-q" onclick="kpAdj(2.5)">+2.5</button><button class="kp-q" onclick="kpAdj(5)">+5</button></div>`+
+    `<div class="kp-pad">${[1,2,3,4,5,6,7,8,9,'.',0,'⌫'].map(k=>`<button class="kp-key" onclick="kpKey('${k}')">${k}</button>`).join('')}</div>`+
+    `<button class="kp-save" id="kpSaveBtn" onclick="kpSave()">${rec?'수정 저장':'저장하기'}</button>`;
+  document.body.appendChild(ov);
+  const lbl=document.getElementById('kpDateLbl'); if(lbl)lbl.textContent=_kpDateFmt(kp.날짜);
+  키패드칩렌더(); kpUpdate();
+};
+window.키패드닫기 = function(){ const o=document.getElementById('kpOverlay'); if(o) o.remove(); };
+function 키패드칩렌더(){
+  const el=document.getElementById('kpChips'); if(!el) return;
+  el.innerHTML=kp종목들.map((ex,i)=>{ const c=종목컴러(ex); const on=ex===kp.ex; return `<button class="kp-chip" style="${on?`background:${c};border-color:${c};color:#0a0d12;font-weight:700`:''}" onclick="키패드칩선택(${i})">${escHtml(ex)}</button>`; }).join('');
+}
+window.키패드칩선택 = function(i){ const ex=kp종목들[i]; if(!ex)return; kp.ex=ex; const recs=훈련목록.filter(t=>t.이름===kp.이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||'')); kp.last=recs.length?recs[recs.length-1]:null; kp.w=''; kp.r=''; kp.dirty={w:false,r:false}; kp.editId=null; 키패드칩렌더(); kpUpdate(); };
+window.kpFocus = function(f){ kp.focus=f; kpUpdate(); };
+window.kpKey = function(k){
+  const f=kp.focus;
+  if(!kp.dirty[f] && k!=='⌫'){ kp[f]=''; kp.dirty[f]=true; }
+  let cur=kp[f];
+  if(k==='⌫'){ cur=cur.slice(0,-1); kp.dirty[f]=true; }
+  else if(k==='.'){ if(f==='r')return; if(!cur.includes('.'))cur=(cur||'0')+'.'; }
+  else { cur=(cur==='0'?'':cur)+k; }
+  if(cur.replace('.','').length>4)return;
+  kp[f]=cur; kpUpdate();
+};
+window.kpAdj = function(d){ let v=parseFloat(kp.w||'0')+d; if(v<0)v=0; kp.w=String(Math.round(v*10)/10); kp.dirty.w=true; kp.focus='w'; kpUpdate(); };
+function kpUpdate(){
+  const wEl=document.getElementById('kpWv'),rEl=document.getElementById('kpRv'); if(!wEl)return;
+  wEl.textContent=kp.w||'0'; rEl.textContent=kp.r||'0';
+  wEl.style.opacity=kp.dirty.w?'1':'0.35'; rEl.style.opacity=kp.dirty.r?'1':'0.35';
+  document.getElementById('kpFW').classList.toggle('on',kp.focus==='w');
+  document.getElementById('kpFR').classList.toggle('on',kp.focus==='r');
+  const w=parseFloat(kp.w),r=parseInt(kp.r); const el=document.getElementById('kp1rm');
+  if(w>0&&r>0){ const c=종목컴러(kp.ex); el.innerHTML=`예상 1RM <b style="color:${c}">${추정1RM(w,r)}kg</b>`; } else el.textContent='예상 1RM —';
+  const lastEl=document.getElementById('kpLast');
+  if(lastEl) lastEl.textContent = kp.last?`🕒 지난 기록 ${kp.last.중량}kg × ${kp.last.횟수}회 · 숫자를 누르면 새로 입력돼요`:'첫 기록을 남겨보세요 💪';
+}
+window.kpSave = async function(){
+  const w=parseFloat(kp.w),r=parseInt(kp.r);
+  if(!(w>0)||!(r>0)){ 토스트('무게와 횟수를 입력하세요'); return; }
+  if(!kp.날짜){ 토스트('날짜를 선택하세요'); return; }
+  const btn=document.getElementById('kpSaveBtn'); if(btn){btn.disabled=true;btn.textContent='저장 중…';}
+  try{
+    const {신기록,새1RM,덮어쓀}=await 훈련기록저장(kp.이름,kp.ex,kp.날짜,w,r);
+    상세종목=kp.ex;
+    키패드닫기();
+    if(신기록){ try{효과음신기록();}catch(e){} 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
+    else { try{효과음저장();}catch(e){} 토스트(덮어쓀?'✅ 기록! (같은 날짜 덮어쓀)':'✅ 기록 완료!'); }
+  }catch(e){ alert('저장 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='저장하기';} }
+};
 window.분석운동시작 = function(idx){
   const ex = 현재분석종목들[idx]; if(!ex) return;
   const 이름 = 분석대상 || (현재유저 && 현재유저.이름);
@@ -2015,7 +2253,7 @@ function 훈련일지그리기(이름){
   if(trainChartObj){ trainChartObj.destroy(); trainChartObj=null; }
   const tys = yScale(rmData);
   if(tcEl) trainChartObj=new Chart(tcEl,{type:'line',
-    data:{labels,datasets:[{label:현재종목+' 1RM',data:rmData,belowLabels:rmBelow,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:5,pointStyle:'circle'}]},
+    data:{labels,datasets:[{label:현재종목+' 1RM',data:rmData,belowLabels:rmBelow,borderColor:blue,backgroundColor:영역채움(blue),fill:true,tension:0.35,borderWidth:2.5,pointRadius:4,pointHoverRadius:6,pointStyle:'circle'}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
       plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
       scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:tys.min,max:tys.max,ticks:{color:textDim,stepSize:tys.step},grid:{color:line}}}},
@@ -2958,5 +3196,6 @@ window.회원탈퇴 = async function(){
     if(sp) sp.classList.add('hide');
   }, 2800);
 </script>
-</body>
-</html>
+
+
+</body></html>
