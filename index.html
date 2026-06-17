@@ -646,8 +646,9 @@
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
     </div>
     <div class="sort-toggle">
-      <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계 순</button>
-      <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비 순</button>
+      <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계</button>
+      <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비</button>
+      <button class="sort-btn" data-sort="growth" onclick="setSort('growth')">📈 성장</button>
     </div>
     <div class="period-row">
       <select class="period-select" id="yearSelect" onchange="selectYear(parseInt(this.value))"></select>
@@ -989,7 +990,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.48";
+const APP_VERSION = "2026.06.10.49";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1232,9 +1233,10 @@ function 화면갱신(){
   const years = 데이터연도목록();
   // 기록이 하나도 없을 때
   if(years.length===0){
-    document.getElementById('rankList').innerHTML='<div class="status">아직 기록이 없습니다.<br>프로필 탭에서 첫 기록을 입력해보세요!</div>';
     document.getElementById('yearSelect').innerHTML='';
     document.getElementById('monthSelect').innerHTML='';
+    if(현재정렬==='growth'){ 랭킹그리기(); return; }
+    document.getElementById('rankList').innerHTML='<div class="status">아직 기록이 없습니다.<br>프로필 탭에서 첫 기록을 입력해보세요!</div>';
     return;
   }
   // 현재 연도 정하기 (없거나 기록 없는 연도면 가장 최근 연도로)
@@ -1245,8 +1247,9 @@ function 화면갱신(){
   // 그 연도의 월 드롭다운 그리기
   const tabs = 월목록();
   if(tabs.length===0){
-    document.getElementById('rankList').innerHTML='<div class="status">이 시즌 기록이 없습니다.</div>';
     document.getElementById('monthSelect').innerHTML='';
+    if(현재정렬==='growth'){ 랭킹그리기(); return; }
+    document.getElementById('rankList').innerHTML='<div class="status">이 시즌 기록이 없습니다.</div>';
     return;
   }
   if(!현재월 || !tabs.includes(현재월)) 현재월 = tabs[tabs.length-1];
@@ -1268,7 +1271,75 @@ window.setSort = function(s){
   document.querySelectorAll('.sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===s));
   랭킹그리기();
 }
+// ── 성장(우상향) 랭킹: 훈련일지 e1RM 기반, 이번 주 성장폭 ──
+function _weekStart(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
+function _weekKey(dateStr){ const ws=_weekStart(new Date(dateStr)); return ws.getFullYear()+'-'+String(ws.getMonth()+1).padStart(2,'0')+'-'+String(ws.getDate()).padStart(2,'0'); }
+// 연속 우상향 주(기록 있는 주 중, 최근부터 PR을 낸 주가 몇 주 연속인지)
+function 우상향스트릭(recs){
+  const byEx={}; recs.forEach(t=>{ const ex=t.종목||'벤치프레스'; (byEx[ex]=byEx[ex]||[]).push(t); });
+  const prWeeks=new Set(), allWeeks=new Set();
+  for(const ex in byEx){
+    const arr=byEx[ex].slice().sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+    let best=-Infinity;
+    arr.forEach(t=>{ const v=추정1RM(t.중량,t.횟수); const wk=_weekKey(t.날짜); allWeeks.add(wk); if(v>best){ if(best>-Infinity) prWeeks.add(wk); best=v; } });
+  }
+  const weeks=[...allWeeks].sort().reverse();
+  let s=0; for(const wk of weeks){ if(prWeeks.has(wk)) s++; else break; }
+  return s;
+}
+function 성장데이터(){
+  const tStart=_weekStart(new Date()); const tKey=_weekKey(new Date());
+  const byName={};
+  훈련목록.forEach(t=>{ if(!t.이름||!t.날짜) return; (byName[t.이름]=byName[t.이름]||[]).push(t); });
+  const res=[];
+  for(const 이름 in byName){
+    if(이름==='test' || 탈퇴자명단.includes(이름) || 실명닉네임맵[이름]) continue;
+    const recs=byName[이름];
+    const byEx={}; recs.forEach(t=>{ const ex=t.종목||'벤치프레스'; (byEx[ex]=byEx[ex]||[]).push(t); });
+    let 성장=0, pr=0;
+    for(const ex in byEx){
+      const arr=byEx[ex];
+      const prior=arr.filter(t=> new Date(t.날짜) < tStart);
+      const week=arr.filter(t=> _weekKey(t.날짜)===tKey);
+      if(!week.length || !prior.length) continue;
+      const priorBest=Math.max(...prior.map(t=>추정1RM(t.중량,t.횟수)));
+      const weekBest=Math.max(...week.map(t=>추정1RM(t.중량,t.횟수)));
+      if(weekBest>priorBest){ 성장+=weekBest-priorBest; pr++; }
+    }
+    성장=Math.round(성장*10)/10;
+    res.push({이름, 성장, pr, streak:우상향스트릭(recs)});
+  }
+  res.sort((a,b)=> b.성장-a.성장 || b.pr-a.pr || b.streak-a.streak || a.이름.localeCompare(b.이름,'ko'));
+  return res;
+}
+function 성장랭킹그리기(){
+  const g=성장데이터();
+  const 활성=g.filter(x=>x.성장>0);
+  const el=document.getElementById('rankList');
+  if(!활성.length){ el.innerHTML='<div class="status">이번 주 성장 기록이 아직 없어요. 💪<br>훈련일지에 탑세트를 기록하면<br>지난 기록을 넘은 만큼 여기 랭킹에 올라요!</div>'; return; }
+  el.innerHTML = 활성.map((x,i)=>{
+    const topClass=i<3?`top${i+1}`:'';
+    const medal=['🥇','🥈','🥉'][i]||(i+1);
+    const 내것=(현재유저 && !게스트인가() && x.이름===현재유저.이름);
+    const sub=[`🎯 신기록 ${x.pr}개`, x.streak>=2?`🔥 ${x.streak}주 연속 우상향`:''].filter(Boolean).join(' · ');
+    return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.이름}')">
+        <div class="rank-num">${medal}</div>
+        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}</div>
+        <div class="rank-detail">${sub||'이번 주 성장 중'}</div></div>
+        <div class="rank-total"><div class="num">+${x.성장}</div><div class="unit">kg ↑</div></div>
+        <div class="chevron">›</div></div>`;
+  }).join('');
+}
 function 랭킹그리기(){
+  // 성장 모드: 월 선택/공식측정 안내 숨기고 주간 성장 랭킹 표시
+  const pr=document.querySelector('.period-row'), rn=document.querySelector('.role-note');
+  if(현재정렬==='growth'){
+    if(pr) pr.style.display='none';
+    if(rn){ rn.innerHTML='📈 <b>이번 주</b> 자기 기록을 넘어선 만큼(e1RM)으로 겨뤄요 · 누구나 동등하게!'; rn.style.display=''; }
+    성장랭킹그리기(); return;
+  }
+  if(pr) pr.style.display='';
+  if(rn){ rn.innerHTML='🏆 <b>월 1회 공식 측정</b> 기록 · 랭킹·뱃지에 반영돼요'; rn.style.display=''; }
   const members = 멤버별데이터();
   let list = members.map(m=>({member:m,rec:해당월기록(m,현재월)})).filter(x=>x.rec && 삼대유효(x.rec));
   list.sort((a,b)=>현재정렬==='total'?합계(b.rec)-합계(a.rec):상대점수(b.rec)-상대점수(a.rec));
@@ -2064,8 +2135,8 @@ function 운동상세그리기(이름, ex){
   cont.innerHTML=`<div class="detail-head"><button class="detail-back" onclick="운동상세닫기()">‹</button><span class="detail-bar" style="background:${c}"></span><h2>${escHtml(ex)}</h2></div>`+
     `<div class="detail-stats"><div class="detail-stat"><div class="l">현재 추정 1RM</div><div class="v" style="color:${c}">${cur}<small>kg</small></div></div><div class="detail-stat"><div class="l">누적 성장</div><div class="v" style="color:var(--gold)">${grow>=0?'+':''}${grow}<small>kg</small></div></div></div>`+
     `<div class="chart-card"><div class="chart-wrap"><canvas id="detailChart"></canvas></div></div>`+
-    `<div class="section-label" style="margin-top:4px">📋 기록 히스토리</div><div class="ana-rec-list" style="max-height:none">${histHTML||'<div class="status">기록이 없어요.</div>'}</div>`+
-    `${권한?`<button class="detail-record-btn" onclick="키패드열기()">＋ 기록하기</button>`:''}`;
+    `${권한?`<button class="detail-record-btn" onclick="키패드열기()">＋ 기록하기</button>`:''}`+
+    `<div class="section-label" style="margin-top:4px">📋 기록 히스토리</div><div class="ana-rec-list" style="max-height:none">${histHTML||'<div class="status">기록이 없어요.</div>'}</div>`;
   const css=getComputedStyle(document.documentElement);
   const textDim=css.getPropertyValue('--text-dim').trim(), line=css.getPropertyValue('--line').trim();
   const labels=recs.map(t=>{const p=(t.날짜||'').split('-');return p.length===3?`${p[1]}/${p[2]}`:t.날짜;});
