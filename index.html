@@ -533,7 +533,7 @@
   .detail-stat .l{font-size:10.5px;color:var(--text-dim);}
   .detail-stat .v{font-family:'Black Han Sans',sans-serif;font-size:26px;line-height:1.1;margin-top:3px;}
   .detail-stat .v small{font-size:13px;color:var(--text-dim);font-family:'Noto Sans KR';font-weight:700;}
-  .detail-record-btn{position:sticky;bottom:14px;width:100%;margin-top:16px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.45);}
+  .detail-record-btn{width:100%;margin:14px 0 28px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.45);}
   .detail-record-btn:active{transform:scale(0.99);}
   .kp-ov{position:fixed;inset:0;z-index:240;background:var(--bg);display:flex;flex-direction:column;animation:kpUp .26s cubic-bezier(.4,0,.2,1);}
   @keyframes kpUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
@@ -646,9 +646,8 @@
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
     </div>
     <div class="sort-toggle">
-      <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계</button>
-      <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비</button>
-      <button class="sort-btn" data-sort="growth" onclick="setSort('growth')">📈 성장</button>
+      <button class="sort-btn active" data-sort="total" onclick="setSort('total')">삼대합계 순</button>
+      <button class="sort-btn" data-sort="score" onclick="setSort('score')">체중대비 순</button>
     </div>
     <div class="period-row">
       <select class="period-select" id="yearSelect" onchange="selectYear(parseInt(this.value))"></select>
@@ -990,7 +989,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.49";
+const APP_VERSION = "2026.06.10.50";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2130,8 +2129,9 @@ function 운동상세그리기(이름, ex){
   let bestIdx=-1;
   if(vals.length>=2){ const mx=Math.max(...vals); for(let i=0;i<vals.length;i++){ if(vals[i]>=mx) bestIdx=i; } }
   const prFlags=vals.map((v,i)=> i===bestIdx);
+  const firstId = recs.length ? recs[0]._id : null;
   const hist=recs.map((t,i)=>({t,pr:prFlags[i],v:vals[i]})).reverse();
-  const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${v}</i>${pr?' <b style="color:var(--gold)">PR</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="키패드열기(null,'${t._id}')">수정</button><button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button></span>`:''}</div>`).join('');
+  const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${v}</i>${pr?' <b style="color:var(--gold)">PR</b>':''}${t._id===firstId?' <b style="color:var(--text-dim)">시작</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="키패드열기(null,'${t._id}')">수정</button><button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button></span>`:''}</div>`).join('');
   cont.innerHTML=`<div class="detail-head"><button class="detail-back" onclick="운동상세닫기()">‹</button><span class="detail-bar" style="background:${c}"></span><h2>${escHtml(ex)}</h2></div>`+
     `<div class="detail-stats"><div class="detail-stat"><div class="l">현재 추정 1RM</div><div class="v" style="color:${c}">${cur}<small>kg</small></div></div><div class="detail-stat"><div class="l">누적 성장</div><div class="v" style="color:var(--gold)">${grow>=0?'+':''}${grow}<small>kg</small></div></div></div>`+
     `<div class="chart-card"><div class="chart-wrap"><canvas id="detailChart"></canvas></div></div>`+
