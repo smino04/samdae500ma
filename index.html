@@ -172,6 +172,10 @@
   .card-ops button:disabled{opacity:0.3;cursor:default;}
   .card-ops .op-del{color:#ff6b6b;border-color:rgba(255,107,107,0.4);}
   .chart-wrap{position:relative;height:240px;}
+  .chart-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;}
+  .chart-empty .ce-icon{font-size:34px;opacity:0.5;}
+  .chart-empty .ce-t{font-size:15px;font-weight:700;color:var(--text);}
+  .chart-empty .ce-d{font-size:12.5px;color:var(--text-dim);line-height:1.5;max-width:240px;}
   /* 운동 달력 */
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .cal-nav{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;width:40px;height:34px;font-size:14px;cursor:pointer;}
@@ -657,11 +661,11 @@
 
     <div id="paneOfficial">
       <div class="section-label">📈 삼대운동 추이</div>
-      <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap" id="liftWrap"><canvas id="liftChart"></canvas></div></div>
       <div class="edit-row" id="pEditLift"></div>
       <div class="section-label">📊 인바디 추이</div>
-      <div class="chart-card"><div class="chart-title">골격근량 (kg)</div><div class="chart-wrap"><canvas id="muscleChart"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">체지방률 (%)</div><div class="chart-wrap"><canvas id="fatChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">골격근량 (kg)</div><div class="chart-wrap" id="muscleWrap"><canvas id="muscleChart"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">체지방률 (%)</div><div class="chart-wrap" id="fatWrap"><canvas id="fatChart"></canvas></div></div>
       <div class="edit-row" id="pEditBody"></div>
     </div>
   </div>
@@ -977,7 +981,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.44";
+const APP_VERSION = "2026.06.10.45";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2421,11 +2425,27 @@ function 그래프그리기(member){
   const silver=css.getPropertyValue('--silver').trim();
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
+  // 데이터 2개 미만이면 차트 대신 안내 카드 (외로운 점 하나 방지)
+  function 차트칸준비(wrapId, canvasId, count, noun){
+    const wrap=document.getElementById(wrapId); if(!wrap) return null;
+    if(count<2){
+      const t = count===0 ? `아직 ${noun} 기록이 없어요` : `${noun} 측정 1회`;
+      const d = count===0 ? `측정 기록을 남기면 여기에 추이가 그려져요` : `다음 달에 한 번 더 측정하면 추이선이 그려져요 📈`;
+      wrap.innerHTML=`<div class="chart-empty"><div class="ce-icon">📊</div><div class="ce-t">${t}</div><div class="ce-d">${d}</div></div>`;
+      return null;
+    }
+    if(!document.getElementById(canvasId)) wrap.innerHTML=`<canvas id="${canvasId}"></canvas>`;
+    return document.getElementById(canvasId);
+  }
+  const 삼대n=member.기록.filter(삼대유효).length;
+  const 근육n=member.기록.filter(r=>r.골격근량!=null).length;
+  const 지방n=member.기록.filter(r=>r.체지방률!=null).length;
   const opts={responsive:true,maintainAspectRatio:false,
     plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
     scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}};
-  if(liftChartObj)liftChartObj.destroy();
-  liftChartObj=new Chart(document.getElementById('liftChart'),{type:'line',
+  if(liftChartObj){liftChartObj.destroy();liftChartObj=null;}
+  const liftCv=차트칸준비('liftWrap','liftChart',삼대n,'삼대');
+  if(liftCv) liftChartObj=new Chart(liftCv,{type:'line',
     data:{labels:월s,datasets:[
       {label:'삼대합계',data:member.기록.map(r=>삼대유효(r)?합계(r):null),borderColor:'#ff4d6d',backgroundColor:'#ff4d6d',tension:0.3,borderWidth:3,pointRadius:6,pointStyle:'circle',spanGaps:true},
       {label:'스쿼트',data:member.기록.map(r=>삼대유효(r)?r.스쿼트:null),borderColor:'#34d399',backgroundColor:'#34d399',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
@@ -2456,14 +2476,16 @@ function 그래프그리기(member){
   const 골격근data=member.기록.map(r=>r.골격근량), 체지방data=member.기록.map(r=>r.체지방률);
   const mys=yScale(골격근data), fys=yScale(체지방data);
   // 골격근량 그래프
-  if(muscleChartObj)muscleChartObj.destroy();
-  muscleChartObj=new Chart(document.getElementById('muscleChart'),{type:'line',
+  if(muscleChartObj){muscleChartObj.destroy();muscleChartObj=null;}
+  const muscleCv=차트칸준비('muscleWrap','muscleChart',근육n,'골격근량');
+  if(muscleCv) muscleChartObj=new Chart(muscleCv,{type:'line',
     data:{labels:월s,datasets:[
       {label:'골격근량(kg)',data:골격근data,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:4,spanGaps:true},
     ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{min:mys.min,max:mys.max,ticks:{color:textDim,stepSize:mys.step},grid:{color:line}}}},plugins:[숫자표시플러그인]});
   // 체지방률 그래프
-  if(fatChartObj)fatChartObj.destroy();
-  fatChartObj=new Chart(document.getElementById('fatChart'),{type:'line',
+  if(fatChartObj){fatChartObj.destroy();fatChartObj=null;}
+  const fatCv=차트칸준비('fatWrap','fatChart',지방n,'체지방률');
+  if(fatCv) fatChartObj=new Chart(fatCv,{type:'line',
     data:{labels:월s,datasets:[
       {label:'체지방률(%)',data:체지방data,borderColor:'#ff9f40',backgroundColor:'#ff9f40',tension:0.3,borderWidth:3,pointRadius:4,spanGaps:true},
     ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{min:fys.min,max:fys.max,ticks:{color:textDim,stepSize:fys.step},grid:{color:line}}}},plugins:[숫자표시플러그인]});
