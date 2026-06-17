@@ -989,7 +989,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.46";
+const APP_VERSION = "2026.06.10.47";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1444,6 +1444,7 @@ window.switchMainTab = function(tab){
     else { document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; }
   }
   if(tab==='diary'){
+    상세종목 = null;   // 개별 운동 상세를 보다가 탭을 누르면 첫 화면(목록)으로
     // 멤버 드롭다운 채우기 (가입자 자동 반영, 맨 위에 안내 옵션)
     const sel = document.getElementById('diaryMemberSelect');
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
@@ -1584,18 +1585,33 @@ function _tone(freq, start, dur, vol=0.18, type='sine'){
   osc.connect(g); g.connect(ac.destination);
   osc.start(t0); osc.stop(t0+dur+0.02);
 }
-// 일반 저장: 가벼운 '딩'
+// 음 높이를 매끄럽게 올리는 '뾰롱' 글라이드 음
+function _chirp(f1, f2, start, dur, vol=0.2, type='sine'){
+  const ac=_audioCtx(); if(!ac) return;
+  const t0=ac.currentTime+start;
+  const osc=ac.createOscillator(), g=ac.createGain();
+  osc.type=type;
+  osc.frequency.setValueAtTime(f1, t0);
+  osc.frequency.exponentialRampToValueAtTime(f2, t0+dur);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(vol, t0+0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(g); g.connect(ac.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+// 일반 저장: 만족스러운 '뾰롱' (상승 글라이드 + 반짝)
 function 효과음저장(){
-  _tone(660, 0, 0.12, 0.16, 'triangle');
-  _tone(990, 0.08, 0.16, 0.13, 'triangle');
+  _chirp(620, 1080, 0, 0.13, 0.2, 'sine');
+  _tone(1500, 0.10, 0.10, 0.07, 'sine');   // 끝에 살짝 반짝
   햅틱(20);
 }
-// 신기록: 상승 팡파레 (더 화려하게)
+// 신기록: 통통 튀어오르는 '뾰로로롱~✨' (상승 글라이드 3연 + 반짝)
 function 효과음신기록(){
-  const notes=[523.25, 659.25, 783.99, 1046.50];  // 도-미-솔-높은도
-  notes.forEach((f,i)=> _tone(f, i*0.10, 0.30, 0.20, 'triangle'));
-  _tone(1318.51, 0.42, 0.5, 0.16, 'sine');         // 마무리 반짝
-  _tone(1567.98, 0.42, 0.5, 0.12, 'sine');
+  _chirp(523, 784, 0,    0.15, 0.22, 'sine');
+  _chirp(740, 1109, 0.13, 0.16, 0.22, 'sine');
+  _chirp(988, 1568, 0.27, 0.22, 0.2,  'sine');
+  _tone(2093, 0.46, 0.45, 0.12, 'sine');   // 반짝 ✨
+  _tone(1568, 0.46, 0.45, 0.09, 'sine');
   햅틱([0,45,60,45,80]);
 }
 // ── 신기록 연출: "NEW RECORD!" + 불꽃(confetti) + 강한 진동 ──
@@ -2039,7 +2055,10 @@ function 운동상세그리기(이름, ex){
   const vals=recs.map(t=>추정1RM(t.중량,t.횟수));
   const cur=vals.length?vals[vals.length-1]:0, first=vals.length?vals[0]:0;
   const grow=Math.round((cur-first)*10)/10;
-  let runMax=-Infinity; const prFlags=vals.map(v=>{ const pr=v>=runMax; if(v>runMax)runMax=v; return pr; });
+  // PR 배지는 '현재 역대 최고' 기록 하나에만 (동률이면 가장 최근). 기록 1개뿐이면 표시 안 함.
+  let bestIdx=-1;
+  if(vals.length>=2){ const mx=Math.max(...vals); for(let i=0;i<vals.length;i++){ if(vals[i]>=mx) bestIdx=i; } }
+  const prFlags=vals.map((v,i)=> i===bestIdx);
   const hist=recs.map((t,i)=>({t,pr:prFlags[i],v:vals[i]})).reverse();
   const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${v}</i>${pr?' <b style="color:var(--gold)">PR</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="키패드열기(null,'${t._id}')">수정</button><button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button></span>`:''}</div>`).join('');
   cont.innerHTML=`<div class="detail-head"><button class="detail-back" onclick="운동상세닫기()">‹</button><span class="detail-bar" style="background:${c}"></span><h2>${escHtml(ex)}</h2></div>`+
