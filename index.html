@@ -183,15 +183,11 @@
   .cal-cell.today{border-color:var(--blue-bright);box-shadow:0 0 0 1px var(--blue-bright) inset;}
   .cal-day{font-size:10px;color:var(--text-dim);font-weight:700;}
   .cal-chip{font-size:9px;font-weight:700;color:#10141b;border-radius:4px;padding:1px 2px;text-align:center;line-height:1.35;}
-  .rank-react{display:flex;gap:6px;margin-top:8px;}
-  .rx{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--text-dim);cursor:pointer;line-height:1.4;font-family:'Noto Sans KR';}
-  .rx.on{background:rgba(255,146,43,0.16);border-color:rgba(255,146,43,0.55);color:var(--text);}
-  .rx:active{transform:scale(0.94);}
   .streak-card{display:flex;gap:10px;margin-bottom:16px;}
-  .streak-box{flex:1;border-radius:14px;padding:13px 12px;text-align:center;background:rgba(255,146,43,0.1);border:1px solid rgba(255,146,43,0.32);}
-  .streak-box:last-child{background:rgba(77,171,247,0.1);border-color:rgba(77,171,247,0.32);}
-  .streak-box .sn{font-size:26px;font-weight:800;line-height:1;color:#ff922b;}
-  .streak-box:last-child .sn{color:#4dabf7;}
+  .streak-box{flex:1;border-radius:14px;padding:13px 12px;text-align:center;background:rgba(77,171,247,0.1);border:1px solid rgba(77,171,247,0.32);}
+  .streak-box.wk{background:rgba(255,146,43,0.1);border-color:rgba(255,146,43,0.32);}
+  .streak-box .sn{font-size:26px;font-weight:800;line-height:1;color:#4dabf7;}
+  .streak-box.wk .sn{color:#ff922b;}
   .streak-box .sn small{font-size:13px;font-weight:700;margin-left:2px;}
   .streak-box .sl{font-size:11.5px;font-weight:700;color:var(--text-dim);margin-top:7px;}
   .cal-days{display:flex;gap:10px;margin-top:16px;}
@@ -234,8 +230,8 @@
   .add-ex-row input{flex:1;min-width:0;padding:11px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Noto Sans KR';font-size:16px;}
   .add-ex-row input:focus{outline:none;border-color:var(--blue-bright);}
   .add-ex-row .add-ex-btn{flex-shrink:0;background:var(--bg);border:1px solid var(--blue-bright);border-radius:9px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:13px;font-weight:700;padding:0 14px;cursor:pointer;}
-  .add-ex-toggle{width:100%;background:var(--bg);border:1px dashed var(--blue-bright);border-radius:9px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:14px;font-weight:700;padding:11px;cursor:pointer;}
-  .add-ex-toggle:active{transform:scale(0.99);}
+  .add-ex-toggle{width:100%;background:var(--panel-light);border:1px solid var(--blue-bright);border-radius:11px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:14px;font-weight:700;padding:13px;cursor:pointer;transition:background 0.15s;}
+  .add-ex-toggle:active{transform:scale(0.99);background:var(--panel);}
   .ana-quick-btn{display:block;width:100%;margin-top:10px;background:var(--bg);border:1px solid var(--blue-bright);border-radius:8px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:13px;font-weight:700;padding:9px 12px;cursor:pointer;}
   .ana-quick-btn:active{transform:scale(0.99);}
   .ana-quick{margin-top:10px;}
@@ -272,8 +268,9 @@
   .diff.down{color:#f87171;}
   .diff.same{color:var(--text-dim);}
   .edit-row{display:flex;gap:10px;margin-bottom:20px;}
-  .edit-btn{flex:1;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text-dim);font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;}
-  .edit-btn.del{color:#f87171;border-color:rgba(248,113,113,0.3);}
+  .edit-btn{flex:1;padding:13px;border:1px solid var(--blue-bright);border-radius:11px;background:var(--panel-light);color:var(--blue-bright);font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;transition:background 0.15s;}
+  .edit-btn:active{transform:scale(0.99);background:var(--panel);}
+  .edit-btn.del{color:#f87171;border-color:rgba(248,113,113,0.45);background:rgba(248,113,113,0.08);}
   .edit-btn:active{background:var(--panel-light);}
   .detail-tabs{display:flex;gap:8px;margin-bottom:20px;}
   .detail-tab{flex:1;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;}
@@ -1001,7 +998,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.54";
+const APP_VERSION = "2026.06.10.56";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1105,7 +1102,6 @@ let 운동유형목록 = {};   // { 이름: { 운동명: '복합'|'고립' } } (
 let 달력목록 = {};   // { 이름: { 'YYYY-MM-DD': [부위...] } } (달력 수동 입력/수정)
 let 종목순서목록 = {};   // { 이름: [운동명...] } 사용자가 정한 운동 표시 순서
 let 종목숨김목록 = {};   // { 이름: [운동명...] } 목록에서 없앤(숨긴) 운동
-let 리액션목록 = {};   // { 응원한사람: { '대상|연도|월': '👍'|'🔥' } } — 본인 quotes 문서에 저장, 전체 합산해서 표시
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 
@@ -1151,9 +1147,8 @@ function 데이터구독시작(){
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
     명언목록 = {}; 레벨목록 = {};
     운동유형목록 = {}; 달력목록 = {};
-    종목순서목록 = {}; 종목숨김목록 = {}; 리액션목록 = {};
-    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.리액션) 리액션목록[d.id] = data.리액션; });
-    if(현재메인탭==='ranking' && 현재월){ try{ 랭킹그리기(); }catch(e){} }
+    종목순서목록 = {}; 종목숨김목록 = {};
+    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; });
     if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
       const q = 명언목록[현재상세이름];
       const el = document.getElementById('pQuote');
@@ -1343,32 +1338,6 @@ function 성장랭킹그리기(){
         <div class="chevron">›</div></div>`;
   }).join('');
 }
-// ── 응원 리액션(👍🔥) : 본인 quotes 문서에 저장, 전체 합산해 표시 ──
-function 리액션집계(key){
-  let up=0, fire=0, mine=null;
-  for(const r in 리액션목록){ const e=리액션목록[r] && 리액션목록[r][key]; if(!e) continue; if(e==='👍')up++; else if(e==='🔥')fire++; if(현재유저 && r===현재유저.이름) mine=e; }
-  return {up, fire, mine};
-}
-window.리액션토글 = async function(ev, key, emoji){
-  if(ev && ev.stopPropagation) ev.stopPropagation();
-  if(!현재유저 || 게스트인가()){ alert('회원만 응원할 수 있어요. 🙂'); return; }
-  const me=현재유저.이름;
-  const cur=(리액션목록[me]||{})[key];
-  const next=(cur===emoji)?null:emoji;     // 같은 거 다시 누르면 취소, 다른 거 누르면 변경
-  if(!리액션목록[me]) 리액션목록[me]={};
-  if(next) 리액션목록[me][key]=next; else delete 리액션목록[me][key];
-  try{ 햅틱(12); }catch(e){}
-  if(현재메인탭==='ranking' && 현재월) 랭킹그리기();
-  try{ await setDoc(doc(db,'quotes',me), { 리액션: { [key]: next?next:deleteField() } }, { merge:true }); }
-  catch(e){ console.warn('리액션 저장 실패', e); }
-};
-function 리액션바(key){
-  const a=리액션집계(key);
-  return `<div class="rank-react">
-    <button class="rx${a.mine==='👍'?' on':''}" onclick="리액션토글(event,'${key}','👍')">👍${a.up?' '+a.up:''}</button>
-    <button class="rx${a.mine==='🔥'?' on':''}" onclick="리액션토글(event,'${key}','🔥')">🔥${a.fire?' '+a.fire:''}</button>
-  </div>`;
-}
 function 랭킹그리기(){
   // 성장 모드: 월 선택/공식측정 안내 숨기고 주간 성장 랭킹 표시
   const pr=document.querySelector('.period-row'), rn=document.querySelector('.role-note');
@@ -1396,12 +1365,10 @@ function 랭킹그리기(){
     else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.abs(diff)}</span>`;
     else if(diff!==null && diff===0) diffHtml=`<span class="diff same">―</span>`;
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
-    const rxKey = `${x.member.이름}|${현재연도}|${현재월}`;
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
         <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
-        <div class="rank-detail">체중 ${x.rec.체중}kg · 상대점수 ${score}</div>
-        ${리액션바(rxKey)}</div>
+        <div class="rank-detail">체중 ${x.rec.체중}kg · 상대점수 ${score}</div></div>
         <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div></div>
         <div class="chevron">›</div></div>`;
   }).join('');
@@ -1973,8 +1940,8 @@ function 분석캘린더그리기(이름){
   const 정렬=부위목록.filter(p=>카운트[p]).map(p=>[p,카운트[p]]).sort((a,b)=>b[1]-a[1]);
   const _st=스트릭계산(이름);
   const 일수HTML = `<div class="streak-card" style="margin-top:16px">
-      <div class="streak-box"><div class="sn">🗓️ ${_st.주연속}<small>주</small></div><div class="sl">주 4회 연속 달성</div></div>
-      <div class="streak-box wk"><div class="sn">${_st.이번주}<small>/4</small></div><div class="sl">이번 주 운동</div></div>
+      <div class="streak-box"><div class="sn">${_st.이번주}<small>/4</small></div><div class="sl">이번 주 운동</div></div>
+      <div class="streak-box wk"><div class="sn">🗓️ ${_st.주연속}<small>주</small></div><div class="sl">주 4회 연속 달성</div></div>
     </div>`;
   const 카운트HTML = `<div class="cal-ex-counts">
       <div class="cal-ex-title">📊 ${m+1}월 부위별 횟수</div>
