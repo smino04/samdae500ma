@@ -183,6 +183,33 @@
   .cal-cell.today{border-color:var(--blue-bright);box-shadow:0 0 0 1px var(--blue-bright) inset;}
   .cal-day{font-size:10px;color:var(--text-dim);font-weight:700;}
   .cal-chip{font-size:9px;font-weight:700;color:#10141b;border-radius:4px;padding:1px 2px;text-align:center;line-height:1.35;}
+  /* 홈 대시보드 */
+  .home-hello{font-size:22px;font-weight:800;color:var(--text);}
+  .home-date{font-size:13px;color:var(--text-dim);font-weight:700;margin-top:5px;}
+  .home-streak{display:flex;gap:10px;margin-bottom:12px;}
+  .hs-box{flex:1;border-radius:14px;padding:14px 12px;text-align:center;background:rgba(255,146,43,0.1);border:1px solid rgba(255,146,43,0.32);}
+  .hs-box.wk{background:rgba(77,171,247,0.1);border-color:rgba(77,171,247,0.32);}
+  .hs-n{font-size:27px;font-weight:800;line-height:1;color:#ff922b;}
+  .hs-box.wk .hs-n{color:#4dabf7;}
+  .hs-n small{font-size:13px;font-weight:700;margin-left:2px;}
+  .hs-l{font-size:11.5px;font-weight:700;color:var(--text-dim);margin-top:7px;}
+  .home-week{display:flex;gap:10px;margin-bottom:12px;}
+  .hw-box{flex:1;border-radius:14px;padding:13px 12px;text-align:center;border:1px solid var(--line);}
+  .hw-box.work{background:rgba(105,219,124,0.1);border-color:rgba(105,219,124,0.3);}
+  .hw-box.rest{background:rgba(173,181,189,0.08);}
+  .hw-n{font-size:22px;font-weight:800;line-height:1;}
+  .hw-box.work .hw-n{color:#69db7c;}
+  .hw-box.rest .hw-n{color:var(--text-dim);}
+  .hw-l{font-size:11.5px;font-weight:700;color:var(--text-dim);margin-top:7px;}
+  .home-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;}
+  .home-card-t{font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:9px;}
+  .home-last-ex{font-size:16px;font-weight:700;color:var(--text);}
+  .home-last-when{font-size:13px;color:var(--text-dim);margin-top:5px;}
+  .home-rec-txt{font-size:16px;font-weight:700;color:var(--text);line-height:1.5;margin-bottom:14px;text-align:center;}
+  .home-cta{width:100%;background:var(--blue);border:none;border-radius:12px;padding:14px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;}
+  .home-cta:active{transform:scale(0.99);}
+  .home-guest{text-align:center;padding:30px 10px;}
+  .home-guest p{font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:18px;}
   .streak-card{display:flex;gap:10px;margin-bottom:16px;}
   .streak-box{flex:1;border-radius:14px;padding:13px 12px;text-align:center;background:rgba(255,146,43,0.1);border:1px solid rgba(255,146,43,0.32);}
   .streak-box:last-child{background:rgba(77,171,247,0.1);border-color:rgba(77,171,247,0.32);}
@@ -638,6 +665,15 @@
 </div>
 
 <div class="app" id="appRoot" style="display:none;">
+  <!-- 홈(개인 대시보드) 뷰 -->
+  <div id="homeView" style="display:none;">
+    <header style="padding:24px 0 14px;">
+      <div id="homeHello" class="home-hello"></div>
+      <div id="homeDate" class="home-date"></div>
+    </header>
+    <div id="homeContent"></div>
+  </div>
+
   <div id="rankingView">
         <header>
       <div class="emblem-wrap">
@@ -832,7 +868,10 @@
 
   <!-- 하단 고정 탭 -->
   <nav class="bottom-nav">
-    <button class="bottom-nav-btn active" id="navRanking" onclick="switchMainTab('ranking')">
+    <button class="bottom-nav-btn active" id="navHome" onclick="switchMainTab('home')">
+      <span class="nav-icon">🏠</span><span class="nav-label">홈</span>
+    </button>
+    <button class="bottom-nav-btn" id="navRanking" onclick="switchMainTab('ranking')">
       <span class="nav-icon">🏆</span><span class="nav-label">랭킹</span>
     </button>
     <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary')">
@@ -996,7 +1035,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.51";
+const APP_VERSION = "2026.06.10.52";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1500,16 +1539,19 @@ window.switchMainTab = function(tab){
     history.back();
   }
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 화면 바뀌면 토글 접기
+  const navHome = document.getElementById('navHome'); if(navHome) navHome.classList.toggle('active', tab==='home');
   document.getElementById('navRanking').classList.toggle('active', tab==='ranking');
   document.getElementById('navDiary').classList.toggle('active', tab==='diary');
   const navCalendar = document.getElementById('navCalendar'); if(navCalendar) navCalendar.classList.toggle('active', tab==='calendar');
   const navAccount = document.getElementById('navAccount'); if(navAccount) navAccount.classList.toggle('active', tab==='account');
   document.getElementById('detailView').classList.remove('show');
+  const homeV = document.getElementById('homeView'); if(homeV) homeV.style.display = tab==='home'?'block':'none';
   document.getElementById('rankingView').style.display = tab==='ranking'?'block':'none';
   document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
   document.getElementById('calendarView').style.display = tab==='calendar'?'block':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
   window.scrollTo(0,0);
+  if(tab==='home'){ 홈그리기(); }
   if(tab==='account'){ 계정화면그리기(); }
   if(tab==='calendar'){
     const sel = document.getElementById('calMemberSelect');
@@ -2112,8 +2154,8 @@ function 분석리스트그리기(이름, 종목들){
   const 권한=내권한(이름);
   const st=스트릭계산(이름);
   const 스트릭카드=`<div class="streak-card">
-      <div class="streak-box"><div class="sn">🔥 ${st.연속일}<small>일</small></div><div class="sl">연속 운동</div></div>
-      <div class="streak-box"><div class="sn">🗓️ ${st.주연속}<small>주</small></div><div class="sl">연속 · 이번 주 ${st.이번주}회</div></div>
+      <div class="streak-box"><div class="sn">🗓️ ${st.주연속}<small>주</small></div><div class="sl">주 4회 연속 달성</div></div>
+      <div class="streak-box wk"><div class="sn">${st.이번주}<small>/4</small></div><div class="sl">이번 주 운동</div></div>
     </div>`;
   const rows=종목들.map((ex,idx)=>{
     const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
@@ -2147,10 +2189,68 @@ function 스트릭계산(이름){
   const ws=_weekStart(new Date());
   const keyOf=(n)=>{ const d=new Date(ws); d.setDate(d.getDate()-7*n); return _weekKey(d); };
   const 이번주=주카운트[keyOf(0)]||0;
-  // 연속 주: 이번 주(0회면 지난 주부터)부터 거꾸로 1회 이상인 주가 연속 몇 주
-  let start=(이번주===0)?1:0, 주연속=0;
-  for(let n=start;;n++){ if((주카운트[keyOf(n)]||0)>=1) 주연속++; else break; }
+  // 연속 주: '주 4회 이상' 달성한 주가 연속 몇 주. 이번 주가 아직 4회 미만이면 지난 주부터 셈(진행 중 보호)
+  const 목표=4;
+  let start=(이번주>=목표)?0:1, 주연속=0;
+  for(let n=start;;n++){ if((주카운트[keyOf(n)]||0)>=목표) 주연속++; else break; }
   return {연속일, 주연속, 이번주};
+}
+// ── 홈(개인 대시보드) ──
+function 홈그리기(){
+  const hello=document.getElementById('homeHello'), dateEl=document.getElementById('homeDate'), cont=document.getElementById('homeContent');
+  if(!cont) return;
+  const now=new Date();
+  const 요일=['일','월','화','수','목','금','토'][now.getDay()];
+  dateEl.textContent=`${now.getMonth()+1}월 ${now.getDate()}일 (${요일})`;
+  // 게스트
+  if(!현재유저 || 게스트인가()){
+    hello.textContent='👀 게스트 모드';
+    cont.innerHTML=`<div class="home-guest"><p>회원가입하면 <b>나만의 대시보드</b>가 생겨요.<br>스트릭·성장 그래프로 매주 강해지는 걸 확인해봐요! 💪</p><button class="home-cta" onclick="switchMainTab('ranking')">🏆 랭킹 둘러보기</button></div>`;
+    return;
+  }
+  const 이름=현재유저.이름;
+  hello.innerHTML=`안녕, <b>${escHtml(이름)}</b>님 💪`;
+  const st=스트릭계산(이름);
+  const elapsed=((now.getDay()+6)%7)+1;        // 월=1 … 이번 주 경과 일수
+  const 휴식=Math.max(0, elapsed-st.이번주);
+  // 마지막 운동
+  const myRecs=훈련목록.filter(t=>t.이름===이름 && t.날짜).sort((a,b)=>(b.날짜||'').localeCompare(a.날짜||''));
+  const last=myRecs[0];
+  let 마지막HTML;
+  if(last){
+    const d0=new Date(last.날짜); d0.setHours(0,0,0,0); const t0=new Date(); t0.setHours(0,0,0,0);
+    const gap=Math.round((t0-d0)/86400000);
+    const when=gap<=0?'오늘':gap===1?'어제':`${gap}일 전`;
+    마지막HTML=`<div class="home-last-ex"><b style="color:${종목컴러(last.종목||'벤치프레스')}">${escHtml(last.종목||'벤치프레스')}</b> ${last.중량}kg × ${last.횟수}회</div><div class="home-last-when">${when} · 예상 1RM ${추정1RM(last.중량,last.횟수)}kg</div>`;
+  } else {
+    마지막HTML=`<div class="home-last-when">아직 기록이 없어요 · 첫 운동을 남겨봐요!</div>`;
+  }
+  // 오늘 추천: 가장 오래 안 한 운동
+  const exs=표시종목들(이름);
+  let 추천=null, bestGap=-1;
+  exs.forEach(ex=>{
+    const er=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(b.날짜||'').localeCompare(a.날짜||''));
+    const gap=er.length? (Date.now()-new Date(er[0].날짜)) : 9e15;
+    if(gap>bestGap){ bestGap=gap; 추천=ex; }
+  });
+  const 추천txt = 추천 ? `오늘은 <b style="color:${종목컴러(추천)}">${escHtml(추천)}</b> 어때요?` : `운동을 추가하고 첫 기록을 남겨봐요!`;
+  cont.innerHTML=`
+    <div class="home-streak">
+      <div class="hs-box"><div class="hs-n">🗓️ ${st.주연속}<small>주</small></div><div class="hs-l">주 4회 연속 달성</div></div>
+      <div class="hs-box wk"><div class="hs-n">${st.이번주}<small>/4</small></div><div class="hs-l">이번 주 운동</div></div>
+    </div>
+    <div class="home-week">
+      <div class="hw-box work"><div class="hw-n">💪 ${st.이번주}</div><div class="hw-l">이번 주 운동</div></div>
+      <div class="hw-box rest"><div class="hw-n">😴 ${휴식}</div><div class="hw-l">이번 주 휴식</div></div>
+    </div>
+    <div class="home-card">
+      <div class="home-card-t">🕒 마지막 운동</div>
+      ${마지막HTML}
+    </div>
+    <div class="home-card home-rec">
+      <div class="home-rec-txt">${추천txt}</div>
+      <button class="home-cta" onclick="switchMainTab('diary')">📒 훈련일지 기록하러 가기</button>
+    </div>`;
 }
 function 운동상세그리기(이름, ex){
   const dc=document.getElementById('diaryContent'); if(dc) dc.classList.add('detail-mode');
@@ -3072,7 +3172,7 @@ function 로그인화면표시(state){
 function 앱표시(){
   document.getElementById('authView').style.display = 'none';
   document.getElementById('appRoot').style.display = 'flex';
-  switchMainTab('ranking');  // 시작 화면을 랭킹으로
+  switchMainTab('home');  // 시작 화면을 개인 대시보드(홈)로
   introShow();  // 처음 1회 공식기록 vs 훈련일지 안내
 }
 // 첫 진입 안내 (기기당 1회)
