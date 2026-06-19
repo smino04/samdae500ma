@@ -1001,7 +1001,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.53";
+const APP_VERSION = "2026.06.10.54";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1970,11 +1970,11 @@ function 분석캘린더그리기(이름){
     if(d<=cutoff && parts.length) 운동일수++;
     parts.forEach(pp=>{ 카운트[pp]=(카운트[pp]||0)+1; });
   }
-  const 휴식일수 = Math.max(0, cutoff - 운동일수);
   const 정렬=부위목록.filter(p=>카운트[p]).map(p=>[p,카운트[p]]).sort((a,b)=>b[1]-a[1]);
-  const 일수HTML = `<div class="cal-days">
-      <div class="cal-day-box work"><div class="n">${운동일수}<small>일</small></div><div class="l">💪 운동</div></div>
-      <div class="cal-day-box rest"><div class="n">${휴식일수}<small>일</small></div><div class="l">😴 휴식</div></div>
+  const _st=스트릭계산(이름);
+  const 일수HTML = `<div class="streak-card" style="margin-top:16px">
+      <div class="streak-box"><div class="sn">🗓️ ${_st.주연속}<small>주</small></div><div class="sl">주 4회 연속 달성</div></div>
+      <div class="streak-box wk"><div class="sn">${_st.이번주}<small>/4</small></div><div class="sl">이번 주 운동</div></div>
     </div>`;
   const 카운트HTML = `<div class="cal-ex-counts">
       <div class="cal-ex-title">📊 ${m+1}월 부위별 횟수</div>
@@ -2145,11 +2145,6 @@ function 분석리스트그리기(이름, 종목들){
   const cont=document.getElementById('analysisContent');
   const 자기자신=!!(현재유저&&현재유저.이름===이름);
   const 권한=내권한(이름);
-  const st=스트릭계산(이름);
-  const 스트릭카드=`<div class="streak-card">
-      <div class="streak-box"><div class="sn">🗓️ ${st.주연속}<small>주</small></div><div class="sl">주 4회 연속 달성</div></div>
-      <div class="streak-box wk"><div class="sn">${st.이번주}<small>/4</small></div><div class="sl">이번 주 운동</div></div>
-    </div>`;
   const rows=종목들.map((ex,idx)=>{
     const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
     const c=종목컴러(ex);
@@ -2161,7 +2156,7 @@ function 분석리스트그리기(이름, 종목들){
     const hint=다음무게힌트(이름,ex,last);
     return `<div class="exrow" onclick="운동상세열기(${idx})"><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-sub"><b style="color:${c}">${last.중량}kg × ${last.횟수}회</b> → 1RM ${추정1RM(last.중량,last.횟수)}kg</div></div><span class="exrow-right">${스파크라인(recs,c)}<span class="exrow-hint ${hint.up?'up':'keep'}">${hint.txt}</span></span>${ops}<span class="exrow-chev">›</span></div>`;
   }).join('');
-  cont.innerHTML=스트릭카드+`<div class="exlist">${rows||'<div class="status">표시할 운동이 없어요.</div>'}</div>`;
+  cont.innerHTML=`<div class="exlist">${rows||'<div class="status">표시할 운동이 없어요.</div>'}</div>`;
   const addRow=document.getElementById('addExRow'); if(addRow) addRow.style.display=권한?'flex':'none';
 }
 // ── 스트릭(연속 운동일 / 주간 연속) ──
