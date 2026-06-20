@@ -1060,7 +1060,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.69";
+const APP_VERSION = "2026.06.10.70";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1622,7 +1622,6 @@ function 업적목록(이름){
   const 최대주횟수=Object.values(wk).reduce((m,v)=>Math.max(m,v),0);
   const st=스트릭계산(이름);
   const PR수=_누적PR(이름);
-  const 우상향연속=우상향스트릭(훈련목록.filter(t=>t.이름===이름));
   const 삼대=멤버삼대최고(이름)||0;
   const exBest={}; 종목별최고기록(이름).forEach(b=>{ exBest[b.종목]=b.rm; });
   const bench=exBest['벤치프레스']||0, squat=exBest['스쿼트']||0, dead=exBest['데드리프트']||0;
@@ -1636,8 +1635,6 @@ function 업적목록(이름){
     A('🛡️','강철 의지','4주 연속 주4회', st.주연속>=4, `${st.주연속}/4주`),
     // 성장형
     A('🎉','첫 신기록','첫 PR(예상 1RM 경신)', PR수>=1),
-    A('🏹','PR 헌터','누적 신기록 10개', PR수>=10, `${PR수}/10개`),
-    A('📈','우상향 전사','4주 연속 우상향', 우상향연속>=4, `${우상향연속}/4주`),
     // 종목형
     A('🏋️','벤치 100','벤치프레스 e1RM 100kg', bench>=100, `${Math.round(bench)}/100kg`),
     A('🦵','스쿼트 150','스쿼트 e1RM 150kg', squat>=150, `${Math.round(squat)}/150kg`),
