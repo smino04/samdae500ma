@@ -1004,7 +1004,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.59";
+const APP_VERSION = "2026.06.10.60";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1740,6 +1740,7 @@ window.PR연출닫기 = function(){ const fx=document.getElementById('prFx'); if
 function _이미지로드(src){ return new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
 function _둥근사각(x,l,t,w,h,r){ if(x.roundRect){ x.beginPath(); x.roundRect(l,t,w,h,r); return; } x.beginPath(); x.moveTo(l+r,t); x.arcTo(l+w,t,l+w,t+h,r); x.arcTo(l+w,t+h,l,t+h,r); x.arcTo(l,t+h,l,t,r); x.arcTo(l,t,l+w,t,r); x.closePath(); }
 function _카드날짜(ds){ if(!ds) return ''; const p=String(ds).split('-'); return p.length===3 ? `${+p[1]}월 ${+p[2]}일` : ds; }
+const _HF="'Helvetica Neue',Helvetica,Arial,'Noto Sans KR',sans-serif";
 async function PR카드그리기(info){
   try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
   const W=1080,H=1080;
@@ -1749,49 +1750,40 @@ async function PR카드그리기(info){
   const g=x.createLinearGradient(0,0,W,H);
   g.addColorStop(0,'#0a0e14'); g.addColorStop(1,'#151d29');
   x.fillStyle=g; x.fillRect(0,0,W,H);
-  // 상단 골드 글로우
-  const rg=x.createRadialGradient(W/2,210,30,W/2,210,680);
-  rg.addColorStop(0,'rgba(255,212,59,0.18)'); rg.addColorStop(1,'rgba(255,212,59,0)');
+  // 상단 골드 글로우 (은은하게)
+  const rg=x.createRadialGradient(W/2,260,20,W/2,260,440);
+  rg.addColorStop(0,'rgba(255,212,59,0.08)'); rg.addColorStop(1,'rgba(255,212,59,0)');
   x.fillStyle=rg; x.fillRect(0,0,W,H);
   // 테두리 프레임
   x.strokeStyle='rgba(220,227,238,0.28)'; x.lineWidth=4;
   _둥근사각(x,42,42,W-84,H-84,40); x.stroke();
-  // 엠블럼
-  try{ const em=await _이미지로드('emblem.png?v=1'); const es=190; x.drawImage(em,(W-es)/2,86,es,es); }catch(e){}
+  // 엠블럼 (검은 배경 박스는 screen 합성으로 배경에 녹아들게)
+  try{ const em=await _이미지로드('emblem.png?v=1'); const es=190; x.save(); x.globalCompositeOperation='screen'; x.drawImage(em,(W-es)/2,86,es,es); x.restore(); }catch(e){}
   x.textAlign='center';
   // 브랜드
-  x.fillStyle='#dce3ee'; x.font='700 38px "Noto Sans KR",sans-serif';
+  x.fillStyle='#dce3ee'; x.font=`700 38px ${_HF}`;
   x.fillText('삼대오백마', W/2, 338);
   // NEW RECORD 배지
-  x.save();
-  x.shadowColor='rgba(255,212,59,0.55)'; x.shadowBlur=24;
-  x.fillStyle='#ffd43b'; x.font='900 70px "Black Han Sans","Noto Sans KR",sans-serif';
-  x.fillText('🎉 NEW RECORD 🎉', W/2, 452);
-  x.restore();
+  x.fillStyle='#ffd43b'; x.font=`700 66px ${_HF}`;
+  x.fillText('NEW RECORD', W/2, 448);
   // 이름
-  x.fillStyle='#f4f7fb'; x.font='800 54px "Noto Sans KR",sans-serif';
+  x.fillStyle='#f4f7fb'; x.font=`700 54px ${_HF}`;
   x.fillText(String(info.이름||''), W/2, 560);
   // 운동명
-  x.fillStyle='#9fb0c4'; x.font='700 46px "Noto Sans KR",sans-serif';
+  x.fillStyle='#9fb0c4'; x.font=`500 46px ${_HF}`;
   x.fillText(String(info.운동명||''), W/2, 642);
   // 중량 × 횟수 (대형)
-  x.save();
-  x.shadowColor='rgba(0,0,0,0.5)'; x.shadowBlur=16;
-  x.fillStyle='#ffffff'; x.font='900 116px "Noto Sans KR",sans-serif';
+  x.fillStyle='#ffffff'; x.font=`700 116px ${_HF}`;
   x.fillText(`${info.중량}kg × ${info.횟수}`, W/2, 800);
-  x.restore();
   // 예상 1RM 강조
   if(info.rm!=null){
-    x.fillStyle='#7d8a9c'; x.font='700 36px "Noto Sans KR",sans-serif';
+    x.fillStyle='#7d8a9c'; x.font=`500 36px ${_HF}`;
     x.fillText('예상 1RM', W/2, 892);
-    x.save();
-    x.shadowColor='rgba(255,212,59,0.5)'; x.shadowBlur=20;
-    x.fillStyle='#ffd43b'; x.font='900 92px "Black Han Sans","Noto Sans KR",sans-serif';
+    x.fillStyle='#ffd43b'; x.font=`700 92px ${_HF}`;
     x.fillText(`${info.rm}kg`, W/2, 980);
-    x.restore();
   }
   // 푸터: 날짜 · 주소
-  x.fillStyle='#5a6573'; x.font='600 30px "Noto Sans KR",sans-serif';
+  x.fillStyle='#5a6573'; x.font=`500 30px ${_HF}`;
   const foot=[_카드날짜(info.날짜),'obaengma.web.app'].filter(Boolean).join('   ·   ');
   x.fillText(foot, W/2, 1028);
   return new Promise(res=>c.toBlob(res,'image/png',0.96));
