@@ -548,7 +548,7 @@
   .kp-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:18px 18px 8px;}
   .kp-top .x{font-size:18px;color:var(--text-dim);cursor:pointer;background:none;border:none;}
   .kp-top h3{font-size:16px;font-weight:700;flex:1;text-align:center;}
-  .kp-top .date{font-size:12px;color:var(--blue-bright);background:none;border:none;cursor:pointer;white-space:nowrap;}
+  .kp-top .date{font-size:12px;color:var(--blue-bright);background:none;border:none;cursor:pointer;white-space:nowrap;position:relative;overflow:hidden;}
   .kp-chips{display:flex;gap:6px;padding:4px 18px 2px;overflow-x:auto;}
   .kp-chip{flex-shrink:0;padding:6px 13px;border-radius:15px;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--text-dim);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR';}
   .kp-disp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:120px;}
@@ -568,7 +568,7 @@
   .kp-key:active{background:var(--panel-light);}
   .kp-save{margin:0 18px 18px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;}
   .kp-save:disabled{opacity:0.5;}
-  .kp-date-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+  .kp-date-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -998,7 +998,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.56";
+const APP_VERSION = "2026.06.10.57";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2131,6 +2131,8 @@ function _ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'
 function 스트릭계산(이름){
   const days=new Set();
   훈련목록.forEach(t=>{ if(t.이름===이름 && t.날짜 && t.날짜.split('-').length===3) days.add(t.날짜); });
+  const calDays=달력목록[이름]||{};
+  Object.entries(calDays).forEach(([ds,parts])=>{ if(parts&&parts.length&&ds.split('-').length===3) days.add(ds); });
   if(!days.size) return {연속일:0, 주연속:0, 이번주:0};
   // 연속 운동일: 오늘(없으면 어제)부터 거꾸로 연속
   const today=new Date(); today.setHours(0,0,0,0);
@@ -2289,7 +2291,7 @@ window.키패드열기 = function(idx, editId){
   kp={이름,ex,날짜:rec?rec.날짜:_kpToday(),w:String(rec?rec.중량:''),r:String(rec?rec.횟수:''),focus:'w',dirty:rec?{w:true,r:true}:{w:false,r:false},editId:editId||null,last};
   const old=document.getElementById('kpOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='kpOverlay'; ov.className='kp-ov';
-  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><button class="date" onclick="var d=document.getElementById('kpDate'); d.showPicker?d.showPicker():d.click()">📅 <span id="kpDateLbl"></span></button><input type="date" id="kpDate" class="kp-date-input" value="${kp.날짜}" onchange="kpSetDate(this.value)"></div>`+
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><label class="date">📅 <span id="kpDateLbl"></span><input type="date" id="kpDate" class="kp-date-input" value="${kp.날짜}" onchange="kpSetDate(this.value)"></label></div>`+
     `<div class="kp-chips" id="kpChips"></div>`+
     `<div class="kp-disp"><div class="kp-fields"><div class="kp-field" id="kpFW" onclick="kpFocus('w')"><div class="big" id="kpWv">0</div><div class="cap">무게 (kg)</div></div><div class="kp-x">×</div><div class="kp-field" id="kpFR" onclick="kpFocus('r')"><div class="big" id="kpRv">0</div><div class="cap">횟수</div></div></div><div class="kp-1rm" id="kp1rm">예상 1RM —</div></div>`+
     `<div class="kp-last" id="kpLast"></div>`+
