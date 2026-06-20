@@ -349,6 +349,12 @@
   .pr-rm{margin-top:10px;font-size:17px;color:#fff;font-weight:700;}
   .pr-rm b{color:#ffd43b;font-size:22px;}
   .pr-sub{margin-top:6px;font-size:14px;font-weight:700;color:#ff8a80;}
+  .pr-card{pointer-events:auto;}
+  .pr-actions{margin-top:22px;display:flex;flex-direction:column;gap:10px;align-items:center;}
+  .pr-share{background:#ffd43b;color:#1a1205;border:none;border-radius:13px;padding:14px 30px;font-family:'Noto Sans KR';font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 26px rgba(255,212,59,0.5);transition:transform 0.15s;}
+  .pr-share:active{transform:scale(0.97);}
+  .pr-share:disabled{opacity:0.6;}
+  .pr-close{background:none;border:none;color:#8a93a3;font-family:'Noto Sans KR';font-size:13px;font-weight:700;cursor:pointer;padding:6px 12px;}
   .modal-bg.show{display:flex;}
   .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;width:100%;max-width:420px;animation:slideIn 0.3s;}
   .month-warn{font-size:12px;font-weight:700;color:var(--gold);background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.4);border-radius:8px;padding:8px 12px;margin:-2px 0 4px;line-height:1.4;}
@@ -998,7 +1004,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.58";
+const APP_VERSION = "2026.06.10.59";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1694,7 +1700,12 @@ function 효과음신기록(){
   햅틱([0,45,60,45,80]);
 }
 // ── 신기록 연출: "NEW RECORD!" + 불꽃(confetti) + 강한 진동 ──
-function 신기록연출(rm){
+// info: {이름, 운동명, 중량, 횟수, rm, 날짜}  (옛 호출 호환: 숫자 rm 단독도 허용)
+let _마지막PR = null;
+function 신기록연출(info){
+  if(info==null || typeof info==='number') info={rm:info};
+  _마지막PR = info;
+  const rm = info.rm;
   try{ 햅틱([0,60,40,60,40,140]); }catch(e){}
   const old=document.getElementById('prFx'); if(old) old.remove();
   const fx=document.createElement('div'); fx.id='prFx'; fx.className='pr-fx';
@@ -1708,11 +1719,102 @@ function 신기록연출(rm){
     const delay=Math.random()*0.08;
     conf+=`<i class="pr-conf" style="--dx:${dx.toFixed(0)}px;--dy:${dy.toFixed(0)}px;--rot:${rot.toFixed(0)}deg;background:${c};width:${s.toFixed(0)}px;height:${s.toFixed(0)}px;animation-delay:${delay.toFixed(2)}s"></i>`;
   }
-  fx.innerHTML=`<div class="pr-burst">${conf}</div><div class="pr-card"><div class="pr-badge">🎉 NEW RECORD! 🎉</div>${rm!=null?`<div class="pr-rm">예상 1RM <b>${rm}kg</b></div>`:''}<div class="pr-sub">신기록 경신! 🔥</div></div>`;
+  const 공유가능 = !!(info.운동명 && info.중량 && info.횟수);
+  const actionsHTML = 공유가능
+    ? `<div class="pr-actions"><button class="pr-share" onclick="PR카드공유(this)">📸 이미지로 자랑하기</button><button class="pr-close" onclick="PR연출닫기()">닫기</button></div>`
+    : '';
+  fx.innerHTML=`<div class="pr-burst">${conf}</div><div class="pr-card"><div class="pr-badge">🎉 NEW RECORD! 🎉</div>${rm!=null?`<div class="pr-rm">예상 1RM <b>${rm}kg</b></div>`:''}<div class="pr-sub">신기록 경신! 🔥</div>${actionsHTML}</div>`;
   document.body.appendChild(fx);
-  setTimeout(()=>{ fx.classList.add('out'); }, 1500);
-  setTimeout(()=>{ fx.remove(); }, 1950);
+  if(공유가능){
+    // 공유 버튼이 있으면 카드는 유지, 색종이만 사라지게. 바깥 탭하면 닫힘.
+    fx.addEventListener('click', e=>{ if(e.target===fx) PR연출닫기(); });
+    setTimeout(()=>{ const b=fx.querySelector('.pr-burst'); if(b){ b.style.transition='opacity 0.4s'; b.style.opacity='0'; } }, 1400);
+  } else {
+    setTimeout(()=>{ fx.classList.add('out'); }, 1500);
+    setTimeout(()=>{ fx.remove(); }, 1950);
+  }
 }
+window.PR연출닫기 = function(){ const fx=document.getElementById('prFx'); if(fx){ fx.classList.add('out'); setTimeout(()=>fx.remove(), 380); } };
+
+// ── 카톡 공유용 PR 카드 이미지 생성 (Canvas) ──
+function _이미지로드(src){ return new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+function _둥근사각(x,l,t,w,h,r){ if(x.roundRect){ x.beginPath(); x.roundRect(l,t,w,h,r); return; } x.beginPath(); x.moveTo(l+r,t); x.arcTo(l+w,t,l+w,t+h,r); x.arcTo(l+w,t+h,l,t+h,r); x.arcTo(l,t+h,l,t,r); x.arcTo(l,t,l+w,t,r); x.closePath(); }
+function _카드날짜(ds){ if(!ds) return ''; const p=String(ds).split('-'); return p.length===3 ? `${+p[1]}월 ${+p[2]}일` : ds; }
+async function PR카드그리기(info){
+  try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+  const W=1080,H=1080;
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  // 배경 (앱 다크 테마 그라데이션)
+  const g=x.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#0a0e14'); g.addColorStop(1,'#151d29');
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  // 상단 골드 글로우
+  const rg=x.createRadialGradient(W/2,210,30,W/2,210,680);
+  rg.addColorStop(0,'rgba(255,212,59,0.18)'); rg.addColorStop(1,'rgba(255,212,59,0)');
+  x.fillStyle=rg; x.fillRect(0,0,W,H);
+  // 테두리 프레임
+  x.strokeStyle='rgba(220,227,238,0.28)'; x.lineWidth=4;
+  _둥근사각(x,42,42,W-84,H-84,40); x.stroke();
+  // 엠블럼
+  try{ const em=await _이미지로드('emblem.png?v=1'); const es=190; x.drawImage(em,(W-es)/2,86,es,es); }catch(e){}
+  x.textAlign='center';
+  // 브랜드
+  x.fillStyle='#dce3ee'; x.font='700 38px "Noto Sans KR",sans-serif';
+  x.fillText('삼대오백마', W/2, 338);
+  // NEW RECORD 배지
+  x.save();
+  x.shadowColor='rgba(255,212,59,0.55)'; x.shadowBlur=24;
+  x.fillStyle='#ffd43b'; x.font='900 70px "Black Han Sans","Noto Sans KR",sans-serif';
+  x.fillText('🎉 NEW RECORD 🎉', W/2, 452);
+  x.restore();
+  // 이름
+  x.fillStyle='#f4f7fb'; x.font='800 54px "Noto Sans KR",sans-serif';
+  x.fillText(String(info.이름||''), W/2, 560);
+  // 운동명
+  x.fillStyle='#9fb0c4'; x.font='700 46px "Noto Sans KR",sans-serif';
+  x.fillText(String(info.운동명||''), W/2, 642);
+  // 중량 × 횟수 (대형)
+  x.save();
+  x.shadowColor='rgba(0,0,0,0.5)'; x.shadowBlur=16;
+  x.fillStyle='#ffffff'; x.font='900 116px "Noto Sans KR",sans-serif';
+  x.fillText(`${info.중량}kg × ${info.횟수}`, W/2, 800);
+  x.restore();
+  // 예상 1RM 강조
+  if(info.rm!=null){
+    x.fillStyle='#7d8a9c'; x.font='700 36px "Noto Sans KR",sans-serif';
+    x.fillText('예상 1RM', W/2, 892);
+    x.save();
+    x.shadowColor='rgba(255,212,59,0.5)'; x.shadowBlur=20;
+    x.fillStyle='#ffd43b'; x.font='900 92px "Black Han Sans","Noto Sans KR",sans-serif';
+    x.fillText(`${info.rm}kg`, W/2, 980);
+    x.restore();
+  }
+  // 푸터: 날짜 · 주소
+  x.fillStyle='#5a6573'; x.font='600 30px "Noto Sans KR",sans-serif';
+  const foot=[_카드날짜(info.날짜),'obaengma.web.app'].filter(Boolean).join('   ·   ');
+  x.fillText(foot, W/2, 1028);
+  return new Promise(res=>c.toBlob(res,'image/png',0.96));
+}
+window.PR카드공유 = async function(btn){
+  const info=_마지막PR; if(!info) return;
+  const 원래 = btn ? btn.textContent : '';
+  if(btn){ btn.disabled=true; btn.textContent='이미지 만드는 중…'; }
+  try{
+    const blob=await PR카드그리기(info);
+    const fname=`삼대오백마_PR_${(info.운동명||'기록')}.png`;
+    const file=new File([blob], fname, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({ files:[file], title:'삼대오백마 신기록!', text:`💪 ${info.이름} ${info.운동명} 신기록 경신!` });
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1500);
+      토스트('이미지를 저장했어요! 단톡방에 자랑해보세요 📲');
+    }
+  }catch(e){ if(!e || e.name!=='AbortError') 토스트('공유 실패: '+((e&&e.message)||e)); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent=원래||'📸 이미지로 자랑하기'; } }
+};
 // ── 햅틱(진동) — 안드로이드 지원, iOS 웹은 미지원 ──
 function 햅틱(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
 // 버튼·탭·선택·달력셀 등 누르면 짧게 진동
@@ -2060,7 +2162,7 @@ window.분석빠른저장 = async function(idx){
   try{
     if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
     const {신기록, 새1RM, 덮어씀} = await 훈련기록저장(이름, ex, 날짜, 중량, 횟수);
-    if(신기록){ 효과음신기록(); 신기록연출(새1RM); 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
+    if(신기록){ 효과음신기록(); 신기록연출({이름, 운동명:ex, 중량, 횟수, rm:새1RM, 날짜}); 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
     else { 효과음저장(); 토스트(덮어씀 ? '✅ 기록! (같은 날짜 덮어씀)' : '✅ 기록 완료!'); }
   }catch(e){ alert('저장 실패: '+e.message); }
   finally{ if(btn){ btn.disabled=false; btn.textContent='기록'; } }
@@ -2340,7 +2442,7 @@ window.kpSave = async function(){
     const {신기록,새1RM,덮어쓀}=await 훈련기록저장(kp.이름,kp.ex,kp.날짜,w,r);
     상세종목=kp.ex;
     키패드닫기();
-    if(신기록){ try{효과음신기록();}catch(e){} try{신기록연출(새1RM);}catch(e){} 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
+    if(신기록){ try{효과음신기록();}catch(e){} try{신기록연출({이름:kp.이름, 운동명:kp.ex, 중량:w, 횟수:r, rm:새1RM, 날짜:kp.날짜});}catch(e){} 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
     else { try{효과음저장();}catch(e){} 토스트(덮어쓀?'✅ 기록! (같은 날짜 덮어쓀)':'✅ 기록 완료!'); }
   }catch(e){ alert('저장 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='저장하기';} }
 };
