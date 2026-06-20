@@ -1017,7 +1017,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.62";
+const APP_VERSION = "2026.06.10.63";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1859,8 +1859,8 @@ function 주간결산데이터(){
   // 성장 데이터
   const g=성장데이터(); const 활성=g.filter(x=>x.성장>0);
   const 총PR=활성.reduce((s,x)=>s+x.pr,0);
-  const 활성멤버=활성.length;
-  return {범위, 출석왕, 출석왕일수, 총PR, 활성멤버, mvp:활성[0]||null, top3:활성.slice(0,3)};
+  const 주4회이상=Object.values(출석).filter(s=>s.size>=4).length;
+  return {범위, 출석왕, 출석왕일수, 총PR, 주4회이상, mvp:활성[0]||null, top3:활성.slice(0,3)};
 }
 async function 주간결산카드그리기(){
   try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(e){}
@@ -1899,7 +1899,7 @@ async function 주간결산카드그리기(){
   const boxes=[
     {label:'이번 주 PR', val:`${d.총PR}개`, sub:'신기록 갱신'},
     {label:'출석왕', val:d.출석왕||'-', sub:d.출석왕?`${d.출석왕일수}일 출석`:'기록 없음'},
-    {label:'활성 멤버', val:`${d.활성멤버}명`, sub:'성장 달성'},
+    {label:'주 4회 이상', val:`${d.주4회이상}명`, sub:'이번 주 달성'},
   ];
   const bW=284, bH=168, bY=406, bGap=22, bX0=80;
   boxes.forEach((b,i)=>{
