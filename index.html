@@ -161,6 +161,17 @@
   .ach-nm{font-size:10px;font-weight:700;color:var(--text);line-height:1.25;}
   .ach-item.locked .ach-nm{color:var(--text-dim);}
   .ach-item:active{transform:scale(0.95);}
+  /* 뱃지 설명 팝업 */
+  .badge-pop{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:32px;animation:fadeIn 0.2s;}
+  .badge-pop-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 26px;text-align:center;max-width:300px;width:100%;animation:prPop 0.4s cubic-bezier(.2,1.4,.4,1) both;}
+  .badge-pop-card.earned{border-color:var(--gold);box-shadow:0 8px 30px rgba(255,200,61,0.18);}
+  .badge-pop-ic{width:76px;height:76px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.4);}
+  .badge-pop-card.locked .badge-pop-ic{background:var(--bg);border-color:var(--line);filter:grayscale(1);opacity:0.45;}
+  .badge-pop-nm{font-size:20px;font-weight:800;color:var(--text);}
+  .badge-pop-st{margin-top:6px;font-size:13px;font-weight:700;color:var(--gold);}
+  .badge-pop-card.locked .badge-pop-st{color:var(--text-dim);}
+  .badge-pop-desc{margin-top:14px;font-size:14px;color:var(--text);line-height:1.5;}
+  .badge-pop-prog{margin-top:10px;font-size:13px;font-weight:700;color:var(--blue-bright);}
   /* 종목별 최고기록 카드 */
   .pb-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
   .pb-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
@@ -739,7 +750,7 @@
     <div id="paneOfficial">
       <div id="pBadges"></div>
       <div id="pBests"></div>
-      <div class="section-label">📈 삼대운동 추이</div>
+      <div class="section-label">📈 공식 삼대기록 추이</div>
       <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
       <div class="edit-row" id="pEditLift"></div>
       <div class="section-label">📊 인바디 추이</div>
@@ -1060,7 +1071,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.70";
+const APP_VERSION = "2026.06.10.71";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1583,12 +1594,12 @@ window.showDetail = function(이름){
   const abEl = document.getElementById('pBadges');
   if(abEl){
     const list = 업적목록(이름);
+    _현재업적 = list;
     const 획득 = list.filter(a=>a.earned).length;
     abEl.innerHTML = `<div class="ach-card"><div class="ach-hd"><span class="ach-title">🎖️ 업적</span><span class="ach-count">${획득} / ${list.length}</span></div>`
       + `<div class="ach-grid">`
-      + list.map(a=>{
-          const desc = a.earned ? '✅ 달성!' : (a.prog ? `${a.desc} (${a.prog})` : a.desc);
-          return `<div class="ach-item ${a.earned?'':'locked'}" onclick="토스트('${a.icon} ${a.name} — ${desc}')">
+      + list.map((a,i)=>{
+          return `<div class="ach-item ${a.earned?'':'locked'}" onclick="뱃지팝업(${i})">
             <div class="ach-ic">${a.icon}</div><div class="ach-nm">${a.name}</div></div>`;
         }).join('')
       + `</div></div>`;
@@ -1645,6 +1656,21 @@ function 업적목록(이름){
     A('👑','오백마','삼대합계 500kg', 삼대>=500, `${Math.round(삼대)}/500kg`),
   ];
 }
+let _현재업적 = [];
+window.뱃지팝업 = function(i){
+  const a = _현재업적[i]; if(!a) return;
+  const old=document.getElementById('badgePop'); if(old) old.remove();
+  const pop=document.createElement('div'); pop.id='badgePop'; pop.className='badge-pop';
+  pop.onclick=function(){ pop.remove(); };
+  pop.innerHTML=`<div class="badge-pop-card ${a.earned?'earned':'locked'}">
+      <div class="badge-pop-ic">${a.icon}</div>
+      <div class="badge-pop-nm">${a.name}</div>
+      <div class="badge-pop-st">${a.earned?'✅ 달성!':'🔒 미달성'}</div>
+      <div class="badge-pop-desc">${a.desc}</div>
+      ${(!a.earned&&a.prog)?`<div class="badge-pop-prog">진행률 ${a.prog}</div>`:''}
+    </div>`;
+  document.body.appendChild(pop);
+};
 // 종목별 최고 예상 1RM (메인 3대 우선, 그 다음 e1RM 높은 순)
 function 종목별최고기록(이름){
   const byEx={};
