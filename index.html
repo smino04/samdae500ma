@@ -149,6 +149,15 @@
   .profile-rank{display:inline-block;margin-top:8px;padding:5px 16px;background:var(--blue);border-radius:8px;font-size:13px;font-weight:700;color:#10141b;box-shadow:0 0 14px var(--blue-glow);}
   .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  /* 종목별 최고기록 카드 */
+  .pb-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  .pb-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+  .pb-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);}
+  .pb-row:first-of-type{border-top:none;}
+  .pb-name{flex:1;font-size:14px;font-weight:700;min-width:0;}
+  .pb-detail{font-size:11.5px;color:var(--text-dim);flex-shrink:0;}
+  .pb-rm{font-family:'Black Han Sans',sans-serif;font-size:20px;color:var(--blue-bright);flex-shrink:0;line-height:1;}
+  .pb-rm small{font-size:11px;color:var(--text-dim);margin-left:2px;font-family:'Noto Sans KR';}
   .goal-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:var(--text);margin-bottom:9px;}
   .goal-remain{color:var(--blue-bright);}
   .goal-bar{height:10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
@@ -716,6 +725,7 @@
     <div id="pGoal" class="goal-box"></div>
 
     <div id="paneOfficial">
+      <div id="pBests"></div>
       <div class="section-label">📈 삼대운동 추이</div>
       <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
       <div class="edit-row" id="pEditLift"></div>
@@ -1037,7 +1047,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.67";
+const APP_VERSION = "2026.06.10.68";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1540,8 +1550,40 @@ window.showDetail = function(이름){
     `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>` : '';
   document.getElementById('pEditBody').innerHTML = 권한 ?
     `<button class="edit-btn" onclick="editRecord('${이름}','body')">✏️ 인바디 기록 수정</button>` : '';
+  // 종목별 최고기록 (훈련일지 e1RM 기준)
+  const pbEl = document.getElementById('pBests');
+  if(pbEl){
+    const bests = 종목별최고기록(이름);
+    if(!bests.length){
+      pbEl.innerHTML = '';
+    } else {
+      const dFmt=ds=>{ const p=String(ds).split('-'); return p.length===3?`${+p[1]}/${+p[2]}`:''; };
+      pbEl.innerHTML = `<div class="pb-card"><div class="pb-title">🏅 종목별 최고기록 <span style="font-weight:400;color:var(--text-dim);font-size:11px;">— 훈련일지 예상 1RM</span></div>`
+        + bests.map(b=>`<div class="pb-row">
+            <span class="pb-name">${escHtml(b.종목)}</span>
+            <span class="pb-detail">${b.중량}kg×${b.횟수} · ${dFmt(b.날짜)}</span>
+            <span class="pb-rm">${b.rm}<small>kg</small></span></div>`).join('')
+        + `</div>`;
+    }
+  }
   그래프그리기(member);
   setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
+}
+// 종목별 최고 예상 1RM (메인 3대 우선, 그 다음 e1RM 높은 순)
+function 종목별최고기록(이름){
+  const byEx={};
+  훈련목록.forEach(t=>{
+    if(t.이름!==이름 || t.중량==null || t.횟수==null) return;
+    const ex=t.종목||'벤치프레스'; const rm=추정1RM(t.중량,t.횟수);
+    const cur=byEx[ex];
+    if(!cur || rm>cur.rm) byEx[ex]={종목:ex, rm, 중량:t.중량, 횟수:t.횟수, 날짜:t.날짜};
+  });
+  const 우선=['벤치프레스','스쿼트','데드리프트','오버헤드프레스','OHP'];
+  return Object.values(byEx).sort((a,b)=>{
+    const ai=우선.indexOf(a.종목), bi=우선.indexOf(b.종목);
+    if(ai>=0 || bi>=0){ if(ai<0) return 1; if(bi<0) return -1; return ai-bi; }
+    return b.rm-a.rm;
+  });
 }
 window.editQuote = async function(){
   if(!현재상세이름) return;
