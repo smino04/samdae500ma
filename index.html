@@ -852,6 +852,14 @@
     </div>
 
     <div id="memberOnlyAccount">
+    <!-- 운동 리마인더 -->
+    <div class="section-label" style="margin-top:22px;">🔔 운동 리마인더</div>
+    <div class="acct-box">
+      <p class="acct-desc" style="margin-bottom:12px;">매일 저녁 <b>8시 30분</b>, 오늘 기록이 없으면 알림으로 콕 찔러드려요. 💪</p>
+      <button class="acct-btn" id="reminderBtn" onclick="리마인더토글()">알림 켜기</button>
+      <div class="acct-msg" id="reminderMsg"></div>
+      <p class="acct-desc" style="font-size:11.5px;color:var(--text-dim);margin-top:6px;">※ 아이폰은 홈 화면에 <b>"앱으로 추가"</b> 후 사용해야 알림이 와요.</p>
+    </div>
     <!-- 관리자 전용 -->
     <div id="accountAdmin" style="display:none;">
       <div class="section-label" style="margin-top:22px;">🛡️ 가입 승인 대기</div>
@@ -1065,13 +1073,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail, signInAnonymously, sendEmailVerification, verifyBeforeUpdateEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getMessaging, getToken, onMessage, deleteToken, isSupported } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-messaging.js";
 
 /* =====================================================
    자동 업데이트 감지
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.71";
+const APP_VERSION = "2026.06.10.72";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1100,6 +1109,26 @@ const recordsCol = collection(db, "records");
 const trainingCol = collection(db, "training");  // 주간 훈련 일지
 const quotesCol = collection(db, "quotes");  // 멤버별 명언
 const usersCol = collection(db, "users");  // 로그인 사용자(회원) 정보
+const pushTokensCol = collection(db, "pushTokens");  // 푸시 알림 토큰 { 이름, ts }
+
+/* =====================================================
+   푸시 리마인더 (FCM 웹 푸시)
+   ⚠️ 아래 VAPID_KEY를 Firebase 콘솔에서 발급받아 붙여넣어야 작동합니다.
+   콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서 → 키 쌍 생성 → "키 쌍" 값 복사
+===================================================== */
+const VAPID_KEY = "여기에_VAPID_공개키_붙여넣기";
+let messaging = null;
+(async()=>{
+  try{
+    if(await isSupported()){
+      messaging = getMessaging(app);
+      onMessage(messaging, (payload)=>{
+        const d = payload.data || (payload.notification||{});
+        토스트((d.title||'운동 리마인더') + (d.body? ' — '+d.body : ''));
+      });
+    }
+  }catch(e){ /* 미지원 환경 */ }
+})();
 
 /* =====================================================
    멤버 명단 — 실제 부원 이름으로 바꾸세요
@@ -1901,6 +1930,49 @@ function 토스트(msg){
   clearTimeout(토스트타이머);
   토스트타이머 = setTimeout(()=>t.classList.remove('show'), 1800);
 }
+
+// ── 운동 리마인더 (FCM 푸시) ──
+window.리마인더상태초기화 = function(){
+  const btn=document.getElementById('reminderBtn'); const msg=document.getElementById('reminderMsg');
+  if(!btn) return;
+  msg.textContent='';
+  const on = !!localStorage.getItem('reminderToken') && (typeof Notification!=='undefined' && Notification.permission==='granted');
+  btn.dataset.on = on ? '1' : '';
+  btn.textContent = on ? '알림 끄기' : '알림 켜기';
+};
+window.리마인더토글 = async function(){
+  const btn=document.getElementById('reminderBtn'); const msg=document.getElementById('reminderMsg');
+  if(!btn) return;
+  // 끄기
+  if(btn.dataset.on==='1'){
+    btn.disabled=true;
+    try{
+      const tk=localStorage.getItem('reminderToken');
+      if(tk){ try{ await deleteDoc(doc(db,'pushTokens',tk)); }catch(_){} }
+      if(messaging){ try{ await deleteToken(messaging); }catch(_){} }
+      localStorage.removeItem('reminderToken');
+      msg.textContent='알림을 껐어요.'; btn.textContent='알림 켜기'; btn.dataset.on='';
+    }catch(e){ msg.textContent='오류: '+(e.message||e); }
+    btn.disabled=false; return;
+  }
+  // 켜기
+  if(typeof Notification==='undefined' || !('serviceWorker' in navigator)){ msg.textContent='이 브라우저는 웹 푸시를 지원하지 않아요.'; return; }
+  if(!messaging){ msg.textContent='이 기기/브라우저는 웹 푸시를 지원하지 않아요. (아이폰은 홈 화면에 "앱으로 추가" 후 사용)'; return; }
+  if(!현재유저 || !현재유저.이름 || 게스트인가()){ msg.textContent='회원만 사용할 수 있어요.'; return; }
+  if(!VAPID_KEY || VAPID_KEY.indexOf('여기에')===0){ msg.textContent='⚠️ 관리자 설정 필요: VAPID 키가 아직 등록되지 않았어요.'; return; }
+  btn.disabled=true; msg.textContent='알림 권한 요청 중…';
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){ msg.textContent='알림이 차단됐어요. 브라우저/기기 설정에서 알림을 허용해주세요.'; btn.disabled=false; return; }
+    const reg=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    const token=await getToken(messaging, { vapidKey:VAPID_KEY, serviceWorkerRegistration:reg });
+    if(!token){ msg.textContent='토큰 발급에 실패했어요. 잠시 후 다시 시도해주세요.'; btn.disabled=false; return; }
+    await setDoc(doc(db,'pushTokens',token), { 이름:현재유저.이름, uid:(현재유저.uid||null), ts:Date.now() });
+    localStorage.setItem('reminderToken', token);
+    msg.textContent='✅ 매일 20:30 리마인더가 켜졌어요!'; btn.textContent='알림 끄기'; btn.dataset.on='1';
+  }catch(e){ msg.textContent='오류: '+(e.message||e); }
+  btn.disabled=false;
+};
 
 // ── 효과음 (Web Audio, 외부 파일 없이 생성) ──
 let _ac = null;
@@ -3776,6 +3848,7 @@ function 계정화면그리기(){
   const accLogout = document.getElementById('accLogout');
   if(accLogout) accLogout.textContent = guest ? '나가기' : '로그아웃';
   if(guest) return;
+  try{ 리마인더상태초기화(); }catch(_){}
   // 입력칸/메시지 초기화
   ['curPw','newPw','newPw2','delPw','newNick'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['pwMsg','resetMsg','delMsg','nickMsg'].forEach(id=>acctMsg(id,''));

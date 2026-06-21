@@ -1,0 +1,13 @@
+{
+  "name": "obaengma-functions",
+  "description": "삼대오백마 Cloud Functions (운동 리마인더)",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "private": true
+}
