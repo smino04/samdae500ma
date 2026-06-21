@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.80";
+const APP_VERSION = "2026.06.10.81";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2158,12 +2158,16 @@ async function 주간결산카드그리기(){
     x.fillStyle='#ffffff'; x.fillText(왕표시, W/2, 510);
     x.fillStyle='#ffd43b'; x.font=`700 76px ${HF}`;
     x.fillText(`${d.출석왕일수}일 출석`, W/2, 600);
-    // 2·3등 작게 (그 다음 출석 순위)
-    const rest=d.출석랭킹.filter(r=>r.일수<d.출석왕일수).slice(0,2); const medals=['🥈','🥉'];
-    rest.forEach((r,i)=>{
+    // 2·3등 작게 (그 다음 출석 순위, 동률은 공동으로 묶음)
+    const 일수목록=[...new Set(d.출석랭킹.filter(r=>r.일수<d.출석왕일수).map(r=>r.일수))].slice(0,2);
+    const medals=['🥈','🥉'];
+    일수목록.forEach((일,i)=>{
+      const 이름들=d.출석랭킹.filter(r=>r.일수===일).map(r=>r.이름);
       const ry=660+i*42;
-      x.fillStyle='#8a98ac'; x.font=`600 27px ${HF}`;
-      x.fillText(`${medals[i]||''} ${r.이름}   ${r.일수}일`, W/2, ry);
+      let line=`${medals[i]||''} ${이름들.join(' · ')}   ${일}일`;
+      let fs=27; x.font=`600 ${fs}px ${HF}`;
+      while(fs>18 && x.measureText(line).width>W-180){ fs-=2; x.font=`600 ${fs}px ${HF}`; }
+      x.fillStyle='#8a98ac'; x.fillText(line, W/2, ry);
     });
   } else {
     x.fillStyle='#5a6a7a'; x.font=`500 36px ${HF}`; x.fillText('아직 기록 없음', W/2, 540);
