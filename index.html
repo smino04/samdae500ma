@@ -1104,7 +1104,7 @@ import { getMessaging, getToken, onMessage, deleteToken, isSupported } from "htt
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.75";
+const APP_VERSION = "2026.06.10.76";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2154,11 +2154,19 @@ window.PR카드공유 = async function(btn){
   finally{ if(btn){ btn.disabled=false; btn.textContent=원래||'📸 이미지로 자랑하기'; } }
 };
 // ── 주간 동아리 결산 카드 ──
+function 주차텍스트(ws){
+  // ws = 그 주의 월요일. 목요일(주 중간)로 소속 월을 정함(주가 두 달에 걸칠 때 안정적)
+  const thu=new Date(ws); thu.setDate(thu.getDate()+3);
+  const y=thu.getFullYear(), m=thu.getMonth();
+  const firstMon=_weekStart(new Date(y,m,1));
+  const weekNo=Math.round((ws-firstMon)/(7*86400000))+1;
+  const 한글=['','첫째','둘째','셋째','넷째','다섯째','여섯째'];
+  return `${y}년 ${m+1}월 ${한글[weekNo]||weekNo+'번째'}주`;
+}
 function 주간결산데이터(){
   const tKey=_weekKey(new Date());
-  const ws=_weekStart(new Date()); const we=new Date(ws); we.setDate(we.getDate()+6);
-  const fmt=(d)=>`${d.getMonth()+1}/${d.getDate()}`;
-  const 범위=`${fmt(ws)} ~ ${fmt(we)}`;
+  const ws=_weekStart(new Date());
+  const 주차=주차텍스트(ws);
   // 출석 집계 (훈련일지 + 캘린더 부위 모두)
   const 출석={}; // {이름: Set(날짜)}
   훈련목록.forEach(t=>{
@@ -2169,13 +2177,14 @@ function 주간결산데이터(){
     if(탈퇴자명단.includes(이름)||실명닉네임맵[이름]||이름==='test') return;
     Object.entries(맵||{}).forEach(([ds,parts])=>{ if(parts&&parts.length&&_weekKey(ds)===tKey) (출석[이름]=출석[이름]||new Set()).add(ds); });
   });
-  let 출석왕=null, 출석왕일수=0;
-  Object.entries(출석).forEach(([이름,s])=>{ if(s.size>출석왕일수){출석왕=이름;출석왕일수=s.size;} });
+  let 출석왕일수=0;
+  Object.values(출석).forEach(s=>{ if(s.size>출석왕일수) 출석왕일수=s.size; });
+  const 출석왕목록=출석왕일수>0 ? Object.entries(출석).filter(([,s])=>s.size===출석왕일수).map(([n])=>n) : [];
   // 성장 데이터
   const g=성장데이터(); const 활성=g.filter(x=>x.성장>0);
   const 총PR=활성.reduce((s,x)=>s+x.pr,0);
   const 주4회이상=Object.values(출석).filter(s=>s.size>=4).length;
-  return {범위, 출석왕, 출석왕일수, 총PR, 주4회이상, mvp:활성[0]||null, top3:활성.slice(0,3)};
+  return {주차, 출석왕목록, 출석왕일수, 총PR, 주4회이상, mvp:활성[0]||null, top3:활성.slice(0,3)};
 }
 async function 주간결산카드그리기(){
   try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(e){}
@@ -2203,68 +2212,57 @@ async function 주간결산카드그리기(){
   x.fillText('삼대오백마', W/2, 228);
   // 주간 결산 타이틀
   x.fillStyle='#ffffff'; x.font=`700 52px ${HF}`;
-  x.fillText('이번 주 결산', W/2, 306);
-  // 날짜 범위
+  x.fillText('주간 결산', W/2, 300);
+  // 주차 (예: 2026년 6월 셋째주)
   x.fillStyle='#6a7a8e'; x.font=`500 32px ${HF}`;
-  x.fillText(d.범위, W/2, 356);
-  // 구분선
-  x.strokeStyle='rgba(220,227,238,0.15)'; x.lineWidth=1;
-  x.beginPath(); x.moveTo(80,386); x.lineTo(W-80,386); x.stroke();
-  // 스탯 3칸 (총PR · 출석왕 · 활성멤버)
+  x.fillText(d.주차, W/2, 348);
+
+  // ── 성장 MVP (날짜 바로 밑) ──
+  x.strokeStyle='rgba(255,200,61,0.18)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(80,380); x.lineTo(W-80,380); x.stroke();
+  x.fillStyle='#ffc83d'; x.font=`700 28px ${HF}`;
+  x.fillText('👑  이번 주 성장 MVP', W/2, 438);
+  if(d.mvp){
+    x.fillStyle='#ffffff'; x.font=`700 60px ${HF}`;
+    x.fillText(d.mvp.이름, W/2, 512);
+    x.fillStyle='#ffd43b'; x.font=`700 80px ${HF}`;
+    x.fillText(`+${d.mvp.성장}kg`, W/2, 606);
+    const mvpSub=[d.mvp.pr>0?`신기록 ${d.mvp.pr}개`:null, d.mvp.streak>=2?`${d.mvp.streak}주 연속 우상향`:null].filter(Boolean).join('  ·  ');
+    x.fillStyle='#6a7a8e'; x.font=`500 28px ${HF}`; x.fillText(mvpSub, W/2, 654);
+  } else {
+    x.fillStyle='#5a6a7a'; x.font=`500 36px ${HF}`; x.fillText('아직 기록 없음', W/2, 560);
+  }
+
+  // ── 스탯 3칸 (이번 주 PR · 출석왕 · 주 4회 이상) ──
+  x.strokeStyle='rgba(220,227,238,0.12)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(80,700); x.lineTo(W-80,700); x.stroke();
+  const 출석왕표시=d.출석왕목록.length?d.출석왕목록.join(' · '):'-';
   const boxes=[
     {label:'이번 주 PR', val:`${d.총PR}개`, sub:'신기록 갱신'},
-    {label:'출석왕', val:d.출석왕||'-', sub:d.출석왕?`${d.출석왕일수}일 출석`:'기록 없음'},
+    {label:'출석왕', val:출석왕표시, sub:d.출석왕목록.length?`${d.출석왕일수}일 출석`:'기록 없음'},
     {label:'주 4회 이상', val:`${d.주4회이상}명`, sub:'이번 주 달성'},
   ];
-  const bW=284, bH=168, bY=406, bGap=22, bX0=80;
+  const bW=284, bH=168, bY=728, bGap=22, bX0=80;
   boxes.forEach((b,i)=>{
     const bx=bX0+i*(bW+bGap);
-    // 박스 배경
     x.fillStyle='rgba(220,227,238,0.05)'; _둥근사각(x,bx,bY,bW,bH,18); x.fill();
     x.strokeStyle='rgba(220,227,238,0.12)'; x.lineWidth=1; _둥근사각(x,bx,bY,bW,bH,18); x.stroke();
     x.textAlign='center';
     const cx=bx+bW/2;
     x.fillStyle='#7d8a9c'; x.font=`600 25px ${HF}`; x.fillText(b.label, cx, bY+44);
-    // 값 — 출석왕 이름이면 폰트 작게
-    const isName=(i===1 && d.출석왕 && d.출석왕.length>3);
-    x.fillStyle='#f4f7fb'; x.font=`700 ${isName?34:40}px ${HF}`; x.fillText(b.val, cx, bY+100);
+    // 값 — 길면 폰트 축소 (출석왕 공동 등)
+    let fs=40;
+    if(b.val.length>4) fs=34;
+    if(b.val.length>7) fs=27;
+    if(b.val.length>11) fs=21;
+    x.fillStyle='#f4f7fb'; x.font=`700 ${fs}px ${HF}`; x.fillText(b.val, cx, bY+100);
     x.fillStyle='#5a6a7a'; x.font=`500 22px ${HF}`; x.fillText(b.sub, cx, bY+138);
   });
-  // 구분선 + MVP 섹션
-  x.strokeStyle='rgba(255,200,61,0.18)'; x.lineWidth=1;
-  x.beginPath(); x.moveTo(80,604); x.lineTo(W-80,604); x.stroke();
-  x.textAlign='center';
-  x.fillStyle='var(--gold,#ffc83d)';
-  // MVP 라벨
-  x.fillStyle='#ffc83d'; x.font=`700 28px ${HF}`;
-  x.fillText('👑  이번 주 성장 MVP', W/2, 648);
-  if(d.mvp){
-    x.fillStyle='#ffffff'; x.font=`700 62px ${HF}`;
-    x.fillText(d.mvp.이름, W/2, 730);
-    x.fillStyle='#ffd43b'; x.font=`700 82px ${HF}`;
-    x.fillText(`+${d.mvp.성장}kg`, W/2, 828);
-    const mvpSub=[d.mvp.pr>0?`신기록 ${d.mvp.pr}개`:null, d.mvp.streak>=2?`${d.mvp.streak}주 연속 우상향`:null].filter(Boolean).join('  ·  ');
-    x.fillStyle='#6a7a8e'; x.font=`500 28px ${HF}`; x.fillText(mvpSub, W/2, 878);
-  } else {
-    x.fillStyle='#5a6a7a'; x.font=`500 36px ${HF}`; x.fillText('아직 기록 없음', W/2, 760);
-  }
-  // Top 3 미니 리스트 (MVP 제외 2~3위)
-  const rest=d.top3.slice(1);
-  if(rest.length){
-    x.strokeStyle='rgba(220,227,238,0.10)'; x.lineWidth=1;
-    x.beginPath(); x.moveTo(80,912); x.lineTo(W-80,912); x.stroke();
-    const medals=['🥈','🥉']; const rowH=54; const y0=950;
-    rest.forEach((r,i)=>{
-      const ry=y0+i*rowH; x.textAlign='left';
-      x.fillStyle='#6a7a8e'; x.font=`600 28px ${HF}`; x.fillText(`${medals[i]||''} ${r.이름}`, 110, ry);
-      x.textAlign='right';
-      x.fillStyle='#9fb0c4'; x.font=`700 28px ${HF}`; x.fillText(`+${r.성장}kg`, W-110, ry);
-    });
-  }
+
   // 푸터
   x.textAlign='center';
   x.fillStyle='#3a4a5a'; x.font=`500 26px ${HF}`;
-  x.fillText('obaengma.web.app', W/2, 1046);
+  x.fillText('obaengma.web.app', W/2, 1010);
   return new Promise(res=>c.toBlob(res,'image/png',0.96));
 }
 window.주간결산공유 = async function(btn){
@@ -2273,10 +2271,10 @@ window.주간결산공유 = async function(btn){
   try{
     const blob=await 주간결산카드그리기();
     const d=주간결산데이터();
-    const fname=`삼대오백마_주간결산_${d.범위.replace('~','-').replace(/\//g,'')}.png`;
+    const fname=`삼대오백마_주간결산_${d.주차.replace(/\s/g,'')}.png`;
     const file=new File([blob],fname,{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
-      await navigator.share({files:[file],title:'삼대오백마 주간 결산',text:`📊 이번 주 결산! 성장 MVP: ${d.mvp?d.mvp.이름:'—'} · 총 PR ${d.총PR}개`});
+      await navigator.share({files:[file],title:'삼대오백마 주간 결산',text:`📊 ${d.주차} 결산! 성장 MVP: ${d.mvp?d.mvp.이름:'—'} · 총 PR ${d.총PR}개`});
     } else {
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
