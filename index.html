@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.78";
+const APP_VERSION = "2026.06.10.79";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2185,12 +2185,11 @@ async function 주간결산카드그리기(){
     x.textAlign='center';
     const cx=bx+bW/2;
     x.fillStyle='#7d8a9c'; x.font=`600 25px ${HF}`; x.fillText(b.label, cx, bY+44);
-    // 값 — 길면 폰트 축소 (출석왕 공동 등)
-    let fs=40;
-    if(b.val.length>4) fs=34;
-    if(b.val.length>7) fs=27;
-    if(b.val.length>11) fs=21;
-    x.fillStyle='#f4f7fb'; x.font=`700 ${fs}px ${HF}`; x.fillText(b.val, cx, bY+100);
+    // 값 — 기본 40px(다른 칸과 동일). 박스 폭을 넘칠 때만 자동 축소
+    let fs=40; const maxW=bW-28;
+    x.font=`700 ${fs}px ${HF}`;
+    while(fs>20 && x.measureText(b.val).width>maxW){ fs-=2; x.font=`700 ${fs}px ${HF}`; }
+    x.fillStyle='#f4f7fb'; x.fillText(b.val, cx, bY+100);
     x.fillStyle='#5a6a7a'; x.font=`500 22px ${HF}`; x.fillText(b.sub, cx, bY+138);
   });
 
