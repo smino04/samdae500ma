@@ -486,6 +486,28 @@
   .acct-bar #acctName{font-weight:700;color:var(--text);}
   .acct-logout{padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;}
   .acct-logout:active{background:var(--panel-light);}
+  /* 대시보드 */
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .dash-stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;text-align:center;}
+  .dash-stat-val{font-size:28px;font-weight:900;color:var(--blue-bright);line-height:1;}
+  .dash-stat-label{font-size:11px;color:var(--text-dim);margin-top:4px;font-weight:600;}
+  .dash-member-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .dash-member-row:last-child{border-bottom:none;}
+  .dash-member-name{font-size:14px;font-weight:700;color:var(--text);min-width:70px;}
+  .dash-member-status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+  .dash-status-power{background:rgba(255,200,61,0.18);color:#ffc83d;}
+  .dash-status-steady{background:rgba(100,220,120,0.15);color:#64dc78;}
+  .dash-status-casual{background:rgba(200,208,220,0.13);color:var(--blue);}
+  .dash-status-dormant{background:rgba(248,113,113,0.13);color:#f87171;}
+  .dash-member-bar-wrap{flex:1;height:5px;background:var(--line);border-radius:3px;margin:0 8px;}
+  .dash-member-bar{height:100%;border-radius:3px;transition:width 0.4s;}
+  .dash-streak{font-size:11px;color:var(--text-dim);flex-shrink:0;min-width:32px;text-align:right;}
+  .dash-retention-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
+  .dash-retention-row:last-child{border-bottom:none;}
+  .dash-retention-label{font-size:12px;color:var(--text-dim);min-width:52px;}
+  .dash-retention-bar-wrap{flex:1;height:7px;background:var(--line);border-radius:4px;}
+  .dash-retention-bar{height:100%;border-radius:4px;background:var(--blue);transition:width 0.4s;}
+  .dash-retention-pct{font-size:12px;font-weight:700;color:var(--blue-bright);min-width:36px;text-align:right;}
   /* 관리자 패널 */
   .admin-card{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;}
   .admin-card .ac-info{min-width:0;}
@@ -862,7 +884,9 @@
     </div>
     <!-- 관리자 전용 -->
     <div id="accountAdmin" style="display:none;">
-      <div class="section-label" style="margin-top:22px;">🛡️ 가입 승인 대기</div>
+      <div class="section-label" style="margin-top:22px;">📊 멤버 현황 대시보드</div>
+      <div class="acct-box" id="dashBoard"></div>
+      <div class="section-label" style="margin-top:18px;">🛡️ 가입 승인 대기</div>
       <div id="adminPending"></div>
       <div class="section-label" style="margin-top:18px;">👥 회원 목록</div>
       <div id="adminMembers"></div>
@@ -1080,7 +1104,7 @@ import { getMessaging, getToken, onMessage, deleteToken, isSupported } from "htt
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.73";
+const APP_VERSION = "2026.06.10.74";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -3742,8 +3766,97 @@ onAuthStateChanged(auth, (user)=>{
 });
 
 // ── 관리자 화면 ──
+function 대시보드그리기(){
+  const el = document.getElementById('dashBoard');
+  if(!el) return;
+  const 멤버들 = 전체멤버목록();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const _ymdD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+  // 각 멤버별 이번주 + 최근2주 기록일 계산
+  const ws = _weekStart(today);
+  const ws1 = new Date(ws); ws1.setDate(ws1.getDate()-7);
+  const ws2 = new Date(ws); ws2.setDate(ws2.getDate()-14);
+  const ws3 = new Date(ws); ws3.setDate(ws3.getDate()-21);
+  const ws4 = new Date(ws); ws4.setDate(ws4.getDate()-28);
+  const 주키 = d => _weekKey(_ymdD(d));
+  const thisWk = 주키(ws), lastWk = 주키(ws1), w2 = 주키(ws2), w3 = 주키(ws3), w4 = 주키(ws4);
+
+  const 멤버데이터 = 멤버들.map(이름 => {
+    const days = new Set();
+    훈련목록.forEach(t=>{ if(t.이름===이름&&t.날짜) days.add(t.날짜); });
+    const cal = 달력목록[이름]||{};
+    Object.entries(cal).forEach(([ds,pts])=>{ if(pts&&pts.length) days.add(ds); });
+    const 주별 = {};
+    days.forEach(ds=>{ const k=_weekKey(ds); 주별[k]=(주별[k]||0)+1; });
+    const tw = 주별[thisWk]||0;
+    const lw = 주별[lastWk]||0;
+    const streak = 스트릭계산(이름);
+    // 상태 분류
+    let 상태;
+    if(tw>=4) 상태='power';
+    else if(tw>=2) 상태='steady';
+    else if(tw>=1||(lw>=2&&tw===0)) 상태='casual';
+    else 상태='dormant';
+    // 최근 기록일
+    const 최근일 = days.size ? [...days].sort().reverse()[0] : null;
+    const 마지막 = 최근일 ? Math.round((today-new Date(최근일))/(86400000)) : 999;
+    return { 이름, tw, lw, streak, 상태, 마지막, 주별 };
+  });
+
+  // 집계
+  const 활성 = 멤버데이터.filter(m=>m.tw>=1).length;
+  const 주4 = 멤버데이터.filter(m=>m.tw>=4).length;
+  const 파워 = 멤버데이터.filter(m=>m.상태==='power').length;
+  const 휴면 = 멤버데이터.filter(m=>m.상태==='dormant').length;
+
+  // 잔존율: 지난 주 활성 멤버 중 이번 주도 기록한 비율
+  const 지난주활성 = 멤버데이터.filter(m=>m.lw>=1);
+  const 잔존 = 지난주활성.length ? Math.round(멤버데이터.filter(m=>m.lw>=1&&m.tw>=1).length/지난주활성.length*100) : 0;
+  const 전주들 = [lastWk, w2, w3, w4];
+  const 주잔존 = 전주들.map((wk,i)=>{
+    const prev = i+1 < 전주들.length ? 전주들[i+1] : null;
+    const 기준 = prev ? 멤버데이터.filter(m=>(m.주별[prev]||0)>=1) : 멤버들.map(n=>({이름:n,주별:{}}));
+    const 유지 = 기준.filter(m=>(m.주별[wk]||0)>=1);
+    return 기준.length ? Math.round(유지.length/기준.length*100) : 0;
+  });
+
+  const 상태라벨 = {power:'파워유저',steady:'꾸준러',casual:'간헐러',dormant:'휴면'};
+  const 상태CSS = {power:'dash-status-power',steady:'dash-status-steady',casual:'dash-status-casual',dormant:'dash-status-dormant'};
+  const 상태색 = {power:'#ffc83d',steady:'#64dc78',casual:'#c8d0dc',dormant:'#f87171'};
+  const sorted = [...멤버데이터].sort((a,b)=>b.tw-a.tw||a.마지막-b.마지막);
+  const 최대일 = Math.max(...멤버데이터.map(m=>m.tw),1);
+
+  el.innerHTML = `
+    <div class="dash-grid">
+      <div class="dash-stat"><div class="dash-stat-val">${활성}<span style="font-size:16px;color:var(--text-dim)">/${멤버들.length}</span></div><div class="dash-stat-label">이번 주 활성</div></div>
+      <div class="dash-stat"><div class="dash-stat-val">${주4}</div><div class="dash-stat-label">주 4회 달성</div></div>
+      <div class="dash-stat"><div class="dash-stat-val" style="color:var(--gold)">${잔존}%</div><div class="dash-stat-label">주간 리텐션</div></div>
+      <div class="dash-stat"><div class="dash-stat-val" style="color:#f87171">${휴면}</div><div class="dash-stat-label">휴면 (요주의)</div></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin:14px 0 8px;letter-spacing:0.5px;">멤버별 이번 주 현황</div>
+    <div>
+      ${sorted.map(m=>`
+        <div class="dash-member-row">
+          <div class="dash-member-name">${escHtml(m.이름)}</div>
+          <div class="dash-member-bar-wrap"><div class="dash-member-bar" style="width:${Math.round(m.tw/최대일*100)}%;background:${상태색[m.상태]};"></div></div>
+          <div class="dash-streak" title="이번주 운동일">${m.tw}일</div>
+          <div class="dash-member-status ${상태CSS[m.상태]}">${상태라벨[m.상태]}</div>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--text-dim);margin:18px 0 8px;letter-spacing:0.5px;">주간 리텐션 추이</div>
+    <div>
+      <div class="dash-retention-row"><div class="dash-retention-label">이번 주</div><div class="dash-retention-bar-wrap"><div class="dash-retention-bar" style="width:${잔존}%"></div></div><div class="dash-retention-pct">${잔존}%</div></div>
+      ${주잔존.map((pct,i)=>`<div class="dash-retention-row"><div class="dash-retention-label">${i+1}주 전</div><div class="dash-retention-bar-wrap"><div class="dash-retention-bar" style="width:${pct}%;opacity:${1-i*0.15}"></div></div><div class="dash-retention-pct">${pct}%</div></div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:12px;line-height:1.6;">
+      <b style="color:var(--gold)">파워유저</b> 주 4회↑ &nbsp;·&nbsp; <b style="color:#64dc78">꾸준러</b> 주 2~3회 &nbsp;·&nbsp; <b style="color:var(--blue)">간헐러</b> 주 1회 &nbsp;·&nbsp; <b style="color:#f87171">휴면</b> 이번 주 0회
+    </div>`;
+}
+
 function 관리자화면그리기(){
   if(!관리자인가()) return;
+  대시보드그리기();
   const pendingEl = document.getElementById('adminPending');
   const memberEl = document.getElementById('adminMembers');
   const 대기 = 회원목록.filter(u=>u.status==='pending').sort((a,b)=>(a.가입시각||0)-(b.가입시각||0));
