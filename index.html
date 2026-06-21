@@ -1080,7 +1080,7 @@ import { getMessaging, getToken, onMessage, deleteToken, isSupported } from "htt
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.72";
+const APP_VERSION = "2026.06.10.73";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1116,7 +1116,7 @@ const pushTokensCol = collection(db, "pushTokens");  // 푸시 알림 토큰 { �
    ⚠️ 아래 VAPID_KEY를 Firebase 콘솔에서 발급받아 붙여넣어야 작동합니다.
    콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서 → 키 쌍 생성 → "키 쌍" 값 복사
 ===================================================== */
-const VAPID_KEY = "여기에_VAPID_공개키_붙여넣기";
+const VAPID_KEY = "BI1yxQGnZRpQHk5i6WJjLr7z3j9DDL39tdcorOntKP6tCgAA5sWjVYFQ_EpiwwkaoBEjUSv2MSflTWIWH_rPVPs";
 let messaging = null;
 (async()=>{
   try{
