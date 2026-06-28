@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.82";
+const APP_VERSION = "2026.06.10.83";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1203,7 +1203,7 @@ let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 
 // ── 로그인 / 권한 상태 ──
-const 관리자이름 = ['신은수','이승민'];   // 이 이름으로 먼저 가입한 계정이 자동 관리자
+const 관리자이름 = ['신은수','이승민','노재헌'];   // 이 이름으로 먼저 가입한 계정이 자동 관리자
 let 현재유저 = null;     // { uid, email, 이름, role:'admin'|'member', status:'pending'|'approved' }
 let 내문서구독 = null;   // 본인 users 문서 실시간 구독 해제 함수
 function 관리자인가(){ return !!(현재유저 && 현재유저.role==='admin'); }
