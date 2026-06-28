@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.83";
+const APP_VERSION = "2026.06.10.84";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1749,8 +1749,13 @@ window.showRanking = function(){
 window.addEventListener('popstate', function(){
   if(document.getElementById('detailView').classList.contains('show')){
     개인화면닫기();
+  } else {
+    // 더 이상 닫을 화면이 없으면 history를 다시 쌓아 앱 종료 방지
+    history.pushState({view:'root'}, '');
   }
 });
+// 앱 진입 시 루트 state를 미리 쌓아둠 → 뒤로가기 여유 1칸 확보
+(function(){ try{ if(!history.state) history.pushState({view:'root'}, ''); }catch(e){} })();
 // 홈화면 설치(standalone) 앱에는 가장자리 스와이프 제스처가 없으므로 직접 구현:
 // 왼쪽 가장자리에서 오른쪽으로 스와이프하면 개인화면 → 이전 화면으로
 (function 스와이프뒤로(){
