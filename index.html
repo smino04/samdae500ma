@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.81";
+const APP_VERSION = "2026.06.10.82";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -3866,7 +3866,7 @@ async function 실명데이터정리(){
 }
 
 // 탈퇴한 부원 데이터 완전 삭제 (관리자 접속 시 1회, 멱등)
-const 탈퇴자명단 = ['상훈.J','장상훈','성욱'];   // 닉네임 + 혹시 남은 실명 (성욱=중복 항목 제거)
+const 탈퇴자명단 = ['상훈.J','장상훈','성욱','시현.L','이시현','익태.C','조익태'];   // 닉네임 + 혹시 남은 실명
 let 탈퇴정리실행중 = false;
 async function 탈퇴자정리(){
   if(탈퇴정리실행중 || !관리자인가()) return;
