@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.86";
+const APP_VERSION = "2026.06.10.87";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -3659,8 +3659,9 @@ async function 사용자라우팅(user){
     return;
   }
   현재유저 = { uid:user.uid, ...snap.data() };
-  // 관리자이름 목록에 있는데 role이 admin이 아니면 자동 승격
-  if(현재유저.이름 && 관리자이름.includes(현재유저.이름) && 현재유저.role !== 'admin'){
+  // 관리자이름(실명) → 닉네임 변환 후 비교해서 admin 자동 승격
+  const 관리자닉네임 = 관리자이름.map(n => 실명닉네임맵[n] || n);
+  if(현재유저.이름 && 관리자닉네임.includes(현재유저.이름) && 현재유저.role !== 'admin'){
     setDoc(doc(db,'users',user.uid), { role:'admin' }, { merge:true }).catch(()=>{});
   }
   // 본인 문서 실시간 감시 (승인/추방 즉시 반영)
