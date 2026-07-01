@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.87";
+const APP_VERSION = "2026.06.10.88";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -2420,8 +2420,8 @@ function 분석캘린더그리기(이름){
   const 권한 = 내권한(이름);
   const recs=훈련목록.filter(t=>t.이름===이름 && t.날짜 && t.날짜.split('-').length===3);
   if(!분석캘린더YM){
-    let base=new Date();
-    if(recs.length){ const p=recs.map(t=>t.날짜).sort().slice(-1)[0].split('-'); base=new Date(+p[0],+p[1]-1,1); }
+    // 기본은 항상 '이번 달' — 달이 넘어가면 자동으로 현재 달을 보여준다
+    const base=new Date();
     분석캘린더YM={y:base.getFullYear(),m:base.getMonth()};
   }
   const {y,m}=분석캘린더YM;
