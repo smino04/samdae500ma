@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.89";
+const APP_VERSION = "2026.06.10.90";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1752,15 +1752,23 @@ window.showRanking = function(){
     개인화면닫기();
   }
 }
-// 뒤로가기(아이폰 가장자리 스와이프 / 안드로이드 뒤로 버튼) → 개인화면 닫기
-// 앱 진입 시 루트 state 2개 쌓기 (안드로이드 뒤로가기 버퍼)
-try{ history.pushState({view:'root'}, ''); history.pushState({view:'root'}, ''); }catch(e){}
+// 뒤로가기(아이폰 가장자리 스와이프 / 안드로이드 뒤로 버튼) → 개인화면 닫기 / 앱 종료 방지
+// ⚠️ Chromium(갤럭시=삼성인터넷/크롬)은 "사용자 상호작용 없이" 쌓은 history 항목을
+//    back 버튼이 통째로 건너뛰어버림(skippable). → 로드 시점이 아니라 '첫 터치 이후' 트랩 설치.
+let _뒤로트랩설치됨 = false;
+function _뒤로트랩설치(){
+  if(_뒤로트랩설치됨) return;
+  _뒤로트랩설치됨 = true;
+  try{ history.pushState({view:'root'}, ''); }catch(e){}
+}
+['pointerdown','touchstart','keydown','click'].forEach(ev=>
+  window.addEventListener(ev, _뒤로트랩설치, { capture:true, passive:true }));
 window.addEventListener('popstate', function(e){
   if(document.getElementById('detailView').classList.contains('show')){
     개인화면닫기();
   }
-  // 항상 state 재보충 → 스택이 바닥나서 앱 종료되는 것 방지
-  setTimeout(()=>{ try{ history.pushState({view:'root'}, ''); }catch(ex){} }, 0);
+  // 이 시점엔 이미 사용자 상호작용 이력이 있으므로 non-skippable → 트랩 유지됨
+  try{ history.pushState({view:'root'}, ''); }catch(ex){}
 });
 // 홈화면 설치(standalone) 앱에는 가장자리 스와이프 제스처가 없으므로 직접 구현:
 // 왼쪽 가장자리에서 오른쪽으로 스와이프하면 개인화면 → 이전 화면으로
