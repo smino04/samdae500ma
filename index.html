@@ -1095,7 +1095,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.88";
+const APP_VERSION = "2026.06.10.89";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1204,9 +1204,16 @@ let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세�
 
 // ── 로그인 / 권한 상태 ──
 const 관리자이름 = ['신은수','이승민','노재헌'];   // 이 이름으로 먼저 가입한 계정이 자동 관리자
+// 관리자 닉네임 집합 (실명·닉네임 모두 포함) — 보안 규칙과 무관하게 클라이언트에서 판별
+const 관리자닉네임집합 = new Set([...관리자이름, ...관리자이름.map(n => 실명닉네임맵[n]).filter(Boolean)]);
 let 현재유저 = null;     // { uid, email, 이름, role:'admin'|'member', status:'pending'|'approved' }
 let 내문서구독 = null;   // 본인 users 문서 실시간 구독 해제 함수
-function 관리자인가(){ return !!(현재유저 && 현재유저.role==='admin'); }
+function 관리자인가(){
+  if(!현재유저) return false;
+  if(현재유저.role==='guest') return false;
+  // 이름이 관리자 목록에 있으면 role 저장값과 무관하게 관리자로 취급
+  return 현재유저.role==='admin' || 관리자닉네임집합.has(현재유저.이름);
+}
 function 게스트인가(){ return !!(현재유저 && 현재유저.role==='guest'); }
 function 내권한(이름){ return !!(현재유저 && 현재유저.role!=='guest' && (현재유저.role==='admin' || 현재유저.이름===이름)); }
 
