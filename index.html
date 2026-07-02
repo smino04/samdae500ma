@@ -1531,8 +1531,8 @@ function 랭킹그리기(){
     // 전월 대비 증감 화살표
     const diff=전월대비(x.member,현재월);
     let diffHtml='';
-    if(diff!==null && diff>0) diffHtml=`<span class="diff up">▲${diff}</span>`;
-    else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.abs(diff)}</span>`;
+    if(diff!==null && diff>0) diffHtml=`<span class="diff up">▲${Math.round(diff)}kg</span>`;
+    else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.round(Math.abs(diff))}kg</span>`;
     else if(diff!==null && diff===0) diffHtml=`<span class="diff same">―</span>`;
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
