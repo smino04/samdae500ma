@@ -173,6 +173,23 @@
   .badge-pop-desc{margin-top:14px;font-size:14px;color:var(--text);line-height:1.5;}
   .badge-pop-prog{margin-top:10px;font-size:13px;font-weight:700;color:var(--blue-bright);}
   /* 종목별 최고기록 카드 */
+  /* 운동 잔디밭 */
+  .grass-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  .grass-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .grass-title{font-size:13px;font-weight:700;color:var(--text);}
+  .grass-sub{font-size:11.5px;color:var(--text-dim);}
+  .grass-wrap{overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .grass-months{display:flex;gap:3px;width:max-content;margin-bottom:3px;margin-left:16px;}
+  .grass-month-lbl{width:11px;flex-shrink:0;font-size:9px;color:var(--text-dim);font-weight:700;white-space:nowrap;}
+  .grass-body{display:flex;gap:3px;width:max-content;}
+  .grass-dow{display:grid;grid-template-rows:repeat(7,11px);gap:3px;margin-right:2px;}
+  .grass-dow span{font-size:8px;color:var(--text-dim);line-height:11px;}
+  .grass-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;width:max-content;}
+  .grass-cell{width:11px;height:11px;border-radius:3px;background:var(--bg);border:1px solid var(--line);}
+  .grass-cell.today{box-shadow:0 0 0 1px var(--blue-bright) inset;}
+  .grass-cell.future{visibility:hidden;}
+  .grass-legend{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:9px;font-size:9.5px;color:var(--text-dim);}
+  .grass-legend .grass-cell{width:9px;height:9px;}
   .pb-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
   .pb-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
   .pb-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);}
@@ -773,6 +790,7 @@
 
     <div id="paneOfficial">
       <div id="pBadges"></div>
+      <div id="pGrass"></div>
       <div id="pBests"></div>
       <div class="section-label">📈 공식 삼대기록 추이</div>
       <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
@@ -1097,7 +1115,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.92";
+const APP_VERSION = "2026.06.10.93";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1637,6 +1655,7 @@ window.showDetail = function(이름){
         }).join('')
       + `</div></div>`;
   }
+  잔디그리기(이름);
   그래프그리기(member);
   setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
 }
@@ -1647,6 +1666,56 @@ function _운동일집합(이름){
   const cal=달력목록[이름]||{};
   Object.entries(cal).forEach(([ds,p])=>{ if(p&&p.length&&ds.split('-').length===3) days.add(ds); });
   return days;
+}
+// ── 운동 잔디밭 (GitHub 컨트리뷰션 그래프 스타일) ──
+function 잔디데이터(이름){
+  const 자동={};  // ds -> Set(부위)
+  훈련목록.forEach(t=>{ if(t.이름===이름 && t.날짜 && t.날짜.split('-').length===3){ (자동[t.날짜]=자동[t.날짜]||new Set()).add(부위(t.종목||'벤치프레스')); } });
+  const cal=달력목록[이름]||{};
+  const 날짜모음=new Set([...Object.keys(자동), ...Object.keys(cal)]);
+  const 결과={};  // ds -> 부위개수(강도)
+  날짜모음.forEach(ds=>{ const parts=그날부위(이름, ds, 자동[ds]); if(parts&&parts.length) 결과[ds]=parts.length; });
+  return 결과;
+}
+function 잔디그리기(이름){
+  const el=document.getElementById('pGrass'); if(!el) return;
+  const WEEKS=26;
+  const 데이터=잔디데이터(이름);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayDs=_ds(today.getFullYear(),today.getMonth(),today.getDate());
+  // 이번 주 일요일(끝)까지, WEEKS*7일 전 월요일(시작)부터
+  const todayDow=(today.getDay()+6)%7;  // 월=0 ~ 일=6
+  const end=new Date(today); end.setDate(end.getDate()+(6-todayDow));  // 이번 주 일요일
+  const start=new Date(end); start.setDate(start.getDate()-(WEEKS*7-1));  // WEEKS주 전 월요일
+  const 강도색=['transparent','rgba(105,219,124,0.35)','rgba(105,219,124,0.55)','rgba(105,219,124,0.78)','rgba(105,219,124,1)'];
+  let cells=[], monthLbls=[], lastMonth=null, 운동일수=0, cur=new Date(start);
+  for(let w=0; w<WEEKS; w++){
+    if(cur.getMonth()!==lastMonth){ monthLbls.push(`${cur.getMonth()+1}월`); lastMonth=cur.getMonth(); }
+    else monthLbls.push('');
+    for(let d=0; d<7; d++){
+      const ds=_ds(cur.getFullYear(),cur.getMonth(),cur.getDate());
+      const isFuture=cur>today;
+      const lvl=Math.min(데이터[ds]||0, 4);
+      if(lvl>0) 운동일수++;
+      const cls=['grass-cell', ds===todayDs?'today':'', isFuture?'future':''].filter(Boolean).join(' ');
+      cells.push(`<div class="${cls}" style="background:${isFuture?'transparent':강도색[lvl]}" title="${ds} · ${lvl?`부위 ${lvl}개`:'기록 없음'}"></div>`);
+      cur.setDate(cur.getDate()+1);
+    }
+  }
+  const _st=스트릭계산(이름);
+  el.innerHTML = `<div class="grass-card">
+    <div class="grass-hd"><span class="grass-title">🌱 운동 잔디밭</span><span class="grass-sub">최근 26주 · ${운동일수}일 운동${_st.연속일>0?` · 🔥 연속 ${_st.연속일}일`:''}</span></div>
+    <div class="grass-wrap">
+      <div class="grass-months">${monthLbls.map(l=>`<span class="grass-month-lbl">${l}</span>`).join('')}</div>
+      <div class="grass-body">
+        <div class="grass-dow"><span></span><span></span><span>수</span><span></span><span>금</span><span></span><span></span></div>
+        <div class="grass-grid">${cells.join('')}</div>
+      </div>
+    </div>
+    <div class="grass-legend">적음<div class="grass-cell" style="background:${강도색[0]}"></div><div class="grass-cell" style="background:${강도색[1]}"></div><div class="grass-cell" style="background:${강도색[2]}"></div><div class="grass-cell" style="background:${강도색[3]}"></div><div class="grass-cell" style="background:${강도색[4]}"></div>많음</div>
+  </div>`;
+  // 오늘(최신 주)이 항상 보이도록 오른쪽 끝으로 스크롤
+  const wrap=el.querySelector('.grass-wrap'); if(wrap) wrap.scrollLeft=wrap.scrollWidth;
 }
 function _누적PR(이름){
   const byEx={};
