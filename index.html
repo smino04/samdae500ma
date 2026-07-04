@@ -1126,7 +1126,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.104";
+const APP_VERSION = "2026.06.10.105";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1559,8 +1559,8 @@ function 성장랭킹그리기(){
         <div class="rank-total"><div class="num">+${x.성장}</div><div class="unit">kg ↑</div></div>
         <div class="chevron">›</div></div>`;
   }).join('');
-  const shareBtn=`<button class="weekly-share-btn" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>`;
-  el.innerHTML = shareBtn + heroHTML + `<div class="rank-section-label">📈 전체 성장 랭킹</div>` + listHTML;
+  const shareBtn=`<button class="weekly-share-btn" style="margin-top:14px;margin-bottom:0;" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>`;
+  el.innerHTML = heroHTML + `<div class="rank-section-label">📈 전체 성장 랭킹</div>` + listHTML + shareBtn;
 }
 // 오늘 기록 유도 배너: 랭킹판에서 개인화면이 닫혀있고, 로그인 회원이 오늘 아직 운동 기록이 없을 때만 노출
 function 오늘기록배너그리기(){
@@ -1579,7 +1579,7 @@ function 랭킹그리기(){
   const pr=document.querySelector('.period-row'), rn=document.querySelector('.role-note');
   if(현재정렬==='growth'){
     if(pr) pr.style.display='none';
-    if(rn){ rn.innerHTML='📈 <b>이번 주</b> 자기 기록을 넘어선 만큼(e1RM)으로 겨뤄요 · 누구나 동등하게!'; rn.style.display=''; }
+    if(rn){ rn.style.display='none'; }
     성장랭킹그리기(); return;
   }
   if(pr) pr.style.display='';
