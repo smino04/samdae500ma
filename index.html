@@ -460,6 +460,17 @@
   .status{text-align:center;padding:40px 0;color:var(--text-dim);}
   /* 하단 고정 탭 */
   .app{padding-bottom:90px;}
+  /* 오늘 기록 유도 배너 (랭킹판 하단 고정) */
+  .today-nudge{position:fixed;left:16px;right:16px;bottom:78px;max-width:448px;margin:0 auto;z-index:49;
+    display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1c2733,#141c28);
+    border:1px solid rgba(220,227,238,0.22);border-radius:16px;padding:13px 14px;cursor:pointer;
+    box-shadow:0 6px 22px rgba(0,0,0,0.35);animation:nudgeIn 0.35s ease-out;}
+  .today-nudge:active{transform:scale(0.98);}
+  .today-nudge .tn-ic{font-size:20px;flex-shrink:0;}
+  .today-nudge .tn-txt{flex:1;font-size:13px;font-weight:700;color:var(--text);line-height:1.35;}
+  .today-nudge .tn-txt small{display:block;font-size:11px;font-weight:500;color:var(--text-dim);margin-top:1px;}
+  .today-nudge .tn-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
+  @keyframes nudgeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -776,6 +787,11 @@
     </div>
     <div class="role-note">🏆 <b>월 1회 공식 측정</b> 기록 · 랭킹·뱃지에 반영돼요</div>
     <div id="rankList"><div class="status">기록을 불러오는 중...</div></div>
+  </div>
+  <div id="todayNudge" class="today-nudge" style="display:none;" onclick="switchMainTab('diary')">
+    <span class="tn-ic">✍️</span>
+    <span class="tn-txt">오늘 아직 기록 전이에요!<small>눌러서 훈련일지에 바로 입력하기</small></span>
+    <span class="tn-arrow">›</span>
   </div>
 
   <div id="detailView" class="detail">
@@ -1115,7 +1131,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.93";
+const APP_VERSION = "2026.06.10.94";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1535,7 +1551,19 @@ function 성장랭킹그리기(){
   const shareBtn=`<button class="weekly-share-btn" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>`;
   el.innerHTML = shareBtn + heroHTML + `<div class="rank-section-label">📈 전체 성장 랭킹</div>` + listHTML;
 }
+// 오늘 기록 유도 배너: 랭킹판에서 개인화면이 닫혀있고, 로그인 회원이 오늘 아직 운동 기록이 없을 때만 노출
+function 오늘기록배너그리기(){
+  const el=document.getElementById('todayNudge'); if(!el) return;
+  const 보임가능 = 현재메인탭==='ranking'
+    && !document.getElementById('detailView').classList.contains('show')
+    && 현재유저 && !게스트인가() && 현재유저.이름;
+  if(!보임가능){ el.style.display='none'; return; }
+  const t=new Date(); const todayDs=_ds(t.getFullYear(),t.getMonth(),t.getDate());
+  const days=_운동일집합(현재유저.이름);
+  el.style.display = days.has(todayDs) ? 'none' : 'flex';
+}
 function 랭킹그리기(){
+  오늘기록배너그리기();
   // 성장 모드: 월 선택/공식측정 안내 숨기고 주간 성장 랭킹 표시
   const pr=document.querySelector('.period-row'), rn=document.querySelector('.role-note');
   if(현재정렬==='growth'){
@@ -1578,6 +1606,7 @@ window.showDetail = function(이름){
   document.getElementById('rankingView').style.display='none';
   document.getElementById('diaryView').style.display='none';
   document.getElementById('detailView').classList.add('show');
+  오늘기록배너그리기();
   // 뒤로가기(아이폰 스와이프/안드로이드 뒤로 버튼) 대응용 히스토리 추가
   // (이미 열린 상태에서의 재렌더링은 중복 추가하지 않음)
   if(!이미열림){ try{ history.pushState({view:'detail'}, ''); }catch(e){} }
@@ -1814,6 +1843,7 @@ function 개인화면닫기(){
   } else {
     document.getElementById('rankingView').style.display='block';
   }
+  오늘기록배너그리기();
 }
 window.showRanking = function(){
   // 히스토리에 쌓인 상태가 있으면 뒤로가기로 처리(아이폰 스와이프와 동일한 흐름)
@@ -1917,6 +1947,7 @@ window.switchMainTab = function(tab){
       selectDiaryMember(일지대상);
     }
   }
+  오늘기록배너그리기();
 }
 window.selectDiaryMember = function(이름){
   const wt = document.getElementById('whyToggle'); if(wt) wt.open = false;  // 사람 바뀌면 토글 접기
