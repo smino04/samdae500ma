@@ -866,7 +866,7 @@
   <div id="calendarView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
       <h1 class="title-main">📅 캘린더</h1>
-      <div class="title-sub">부위별 기록 확인 · 빠짐없이 운동하기</div>
+      <div class="title-sub">부위별 기록 확인</div>
       <div class="header-divider"></div>
     </header>
     <div class="field" style="margin-bottom:16px;">
@@ -901,7 +901,7 @@
     </div>
 
     <div id="memberOnlyAccount">
-    <div id="pMonthly"></div>
+    <div id="pMonthly" style="margin-top:16px;"></div>
     <!-- 관리자 전용 -->
     <div id="accountAdmin" style="display:none;">
       <div class="section-label" style="margin-top:22px;">📊 멤버 현황 대시보드</div>
@@ -1126,7 +1126,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.101";
+const APP_VERSION = "2026.06.10.102";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
