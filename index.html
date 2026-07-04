@@ -149,29 +149,6 @@
   .profile-rank{display:inline-block;margin-top:8px;padding:5px 16px;background:var(--blue);border-radius:8px;font-size:13px;font-weight:700;color:#10141b;box-shadow:0 0 14px var(--blue-glow);}
   .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
-  /* 업적/뱃지 카드 */
-  .ach-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;}
-  .ach-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .ach-title{font-size:13px;font-weight:700;color:var(--text);}
-  .ach-count{font-size:12px;font-weight:700;color:var(--gold);}
-  .ach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 8px;}
-  .ach-item{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;cursor:pointer;}
-  .ach-ic{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.4);}
-  .ach-item.locked .ach-ic{background:var(--bg);border-color:var(--line);filter:grayscale(1);opacity:0.4;}
-  .ach-nm{font-size:10px;font-weight:700;color:var(--text);line-height:1.25;}
-  .ach-item.locked .ach-nm{color:var(--text-dim);}
-  .ach-item:active{transform:scale(0.95);}
-  /* 뱃지 설명 팝업 */
-  .badge-pop{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:32px;animation:fadeIn 0.2s;}
-  .badge-pop-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 26px;text-align:center;max-width:300px;width:100%;animation:prPop 0.4s cubic-bezier(.2,1.4,.4,1) both;}
-  .badge-pop-card.earned{border-color:var(--gold);box-shadow:0 8px 30px rgba(255,200,61,0.18);}
-  .badge-pop-ic{width:76px;height:76px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;background:rgba(255,200,61,0.12);border:1px solid rgba(255,200,61,0.4);}
-  .badge-pop-card.locked .badge-pop-ic{background:var(--bg);border-color:var(--line);filter:grayscale(1);opacity:0.45;}
-  .badge-pop-nm{font-size:20px;font-weight:800;color:var(--text);}
-  .badge-pop-st{margin-top:6px;font-size:13px;font-weight:700;color:var(--gold);}
-  .badge-pop-card.locked .badge-pop-st{color:var(--text-dim);}
-  .badge-pop-desc{margin-top:14px;font-size:14px;color:var(--text);line-height:1.5;}
-  .badge-pop-prog{margin-top:10px;font-size:13px;font-weight:700;color:var(--blue-bright);}
   /* 이달의 리포트 진입 카드 */
   .mrep-entry{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer;}
   .mrep-entry:active{transform:scale(0.98);}
@@ -820,7 +797,6 @@
       <div class="chart-card"><div class="chart-title">골격근량 (kg)</div><div class="chart-wrap"><canvas id="muscleChart"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">체지방률 (%)</div><div class="chart-wrap"><canvas id="fatChart"></canvas></div></div>
       <div class="edit-row" id="pEditBody"></div>
-      <div id="pBadges"></div>
     </div>
   </div>
 
@@ -1138,7 +1114,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.97";
+const APP_VERSION = "2026.06.10.98";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1665,24 +1641,9 @@ window.showDetail = function(이름){
     `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>` : '';
   document.getElementById('pEditBody').innerHTML = 권한 ?
     `<button class="edit-btn" onclick="editRecord('${이름}','body')">✏️ 인바디 기록 수정</button>` : '';
-  // 업적/뱃지
-  const abEl = document.getElementById('pBadges');
-  if(abEl){
-    const list = 업적목록(이름);
-    _현재업적 = list;
-    const 획득 = list.filter(a=>a.earned).length;
-    abEl.innerHTML = `<div class="ach-card"><div class="ach-hd"><span class="ach-title">🎖️ 업적</span><span class="ach-count">${획득} / ${list.length}</span></div>`
-      + `<div class="ach-grid">`
-      + list.map((a,i)=>{
-          return `<div class="ach-item ${a.earned?'':'locked'}" onclick="뱃지팝업(${i})">
-            <div class="ach-ic">${a.icon}</div><div class="ach-nm">${a.name}</div></div>`;
-        }).join('')
-      + `</div></div>`;
-  }
   그래프그리기(member);
   setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
 }
-// ── 업적/뱃지 (기존 데이터 기반 계산, DB 추가 없음) ──
 function _운동일집합(이름){
   const days=new Set();
   훈련목록.forEach(t=>{ if(t.이름===이름 && t.날짜 && t.날짜.split('-').length===3) days.add(t.날짜); });
@@ -1903,78 +1864,6 @@ window.월간리포트공유 = async function(btn){
   }catch(e){ if(!e||e.name!=='AbortError') 토스트('공유 실패: '+((e&&e.message)||e)); }
   finally{ if(btn){btn.disabled=false;btn.textContent=원래||'이미지 공유';} }
 };
-function _누적PR(이름){
-  const byEx={};
-  훈련목록.forEach(t=>{ if(t.이름!==이름||t.중량==null||t.횟수==null) return; const ex=t.종목||'벤치프레스'; (byEx[ex]=byEx[ex]||[]).push(t); });
-  let cnt=0;
-  Object.values(byEx).forEach(arr=>{
-    arr.sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
-    let best=-Infinity;
-    arr.forEach(t=>{ const v=추정1RM(t.중량,t.횟수); if(v>best){ if(best>-Infinity) cnt++; best=v; } });
-  });
-  return cnt;
-}
-function 업적목록(이름){
-  const days=_운동일집합(이름);
-  const 운동일=days.size;
-  const wk={}; days.forEach(ds=>{ const k=_weekKey(ds); wk[k]=(wk[k]||0)+1; });
-  const 최대주횟수=Object.values(wk).reduce((m,v)=>Math.max(m,v),0);
-  const st=스트릭계산(이름);
-  const PR수=_누적PR(이름);
-  const 삼대=멤버삼대최고(이름)||0;
-  const exBest={}; 종목별최고기록(이름).forEach(b=>{ exBest[b.종목]=b.rm; });
-  const bench=exBest['벤치프레스']||0, squat=exBest['스쿼트']||0, dead=exBest['데드리프트']||0;
-  const A=(icon,name,desc,earned,prog)=>({icon,name,desc,earned,prog:earned?null:(prog||null)});
-  return [
-    // 출석형
-    A('👣','첫걸음','첫 운동 기록 남기기', 운동일>=1),
-    A('📅','꾸준함','누적 30일 운동', 운동일>=30, `${운동일}/30일`),
-    A('💯','백일대장정','누적 100일 운동', 운동일>=100, `${운동일}/100일`),
-    A('🔥','주4회 달성','한 주에 4회 이상 운동', 최대주횟수>=4, `최대 ${최대주횟수}회`),
-    A('🛡️','강철 의지','4주 연속 주4회', st.주연속>=4, `${st.주연속}/4주`),
-    // 성장형
-    A('🎉','첫 신기록','첫 PR(예상 1RM 경신)', PR수>=1),
-    // 종목형
-    A('🏋️','벤치 100','벤치프레스 e1RM 100kg', bench>=100, `${Math.round(bench)}/100kg`),
-    A('🦵','스쿼트 150','스쿼트 e1RM 150kg', squat>=150, `${Math.round(squat)}/150kg`),
-    A('🔱','데드 200','데드리프트 e1RM 200kg', dead>=200, `${Math.round(dead)}/200kg`),
-    // 삼대형
-    A('🐎','삼백마','삼대합계 300kg', 삼대>=300, `${Math.round(삼대)}/300kg`),
-    A('🏇','사백마','삼대합계 400kg', 삼대>=400, `${Math.round(삼대)}/400kg`),
-    A('👑','오백마','삼대합계 500kg', 삼대>=500, `${Math.round(삼대)}/500kg`),
-  ];
-}
-let _현재업적 = [];
-window.뱃지팝업 = function(i){
-  const a = _현재업적[i]; if(!a) return;
-  const old=document.getElementById('badgePop'); if(old) old.remove();
-  const pop=document.createElement('div'); pop.id='badgePop'; pop.className='badge-pop';
-  pop.onclick=function(){ pop.remove(); };
-  pop.innerHTML=`<div class="badge-pop-card ${a.earned?'earned':'locked'}">
-      <div class="badge-pop-ic">${a.icon}</div>
-      <div class="badge-pop-nm">${a.name}</div>
-      <div class="badge-pop-st">${a.earned?'✅ 달성!':'🔒 미달성'}</div>
-      <div class="badge-pop-desc">${a.desc}</div>
-      ${(!a.earned&&a.prog)?`<div class="badge-pop-prog">진행률 ${a.prog}</div>`:''}
-    </div>`;
-  document.body.appendChild(pop);
-};
-// 종목별 최고 예상 1RM (메인 3대 우선, 그 다음 e1RM 높은 순)
-function 종목별최고기록(이름){
-  const byEx={};
-  훈련목록.forEach(t=>{
-    if(t.이름!==이름 || t.중량==null || t.횟수==null) return;
-    const ex=t.종목||'벤치프레스'; const rm=추정1RM(t.중량,t.횟수);
-    const cur=byEx[ex];
-    if(!cur || rm>cur.rm) byEx[ex]={종목:ex, rm, 중량:t.중량, 횟수:t.횟수, 날짜:t.날짜};
-  });
-  const 우선=['벤치프레스','스쿼트','데드리프트','오버헤드프레스','OHP'];
-  return Object.values(byEx).sort((a,b)=>{
-    const ai=우선.indexOf(a.종목), bi=우선.indexOf(b.종목);
-    if(ai>=0 || bi>=0){ if(ai<0) return 1; if(bi<0) return -1; return ai-bi; }
-    return b.rm-a.rm;
-  });
-}
 window.editQuote = async function(){
   if(!현재상세이름) return;
   if(!내권한(현재상세이름)){ alert('본인 명언만 수정할 수 있어요.'); return; }
