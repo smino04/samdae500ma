@@ -190,6 +190,38 @@
   .grass-cell.future{visibility:hidden;}
   .grass-legend{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:9px;font-size:9.5px;color:var(--text-dim);}
   .grass-legend .grass-cell{width:9px;height:9px;}
+  /* 이달의 리포트 진입 카드 */
+  .mrep-entry{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer;}
+  .mrep-entry:active{transform:scale(0.98);}
+  .mrep-entry-ic{font-size:24px;flex-shrink:0;}
+  .mrep-entry-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .mrep-entry-txt b{font-size:14px;color:var(--text);}
+  .mrep-entry-txt span{font-size:11.5px;color:var(--text-dim);}
+  .mrep-entry-arrow{font-size:20px;color:var(--text-dim);flex-shrink:0;}
+  /* 이달의 리포트 오버레이 */
+  .mrep-body{flex:1;overflow-y:auto;padding:6px 16px 24px;}
+  .mrep-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;}
+  .mrep-nav button{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;width:36px;height:32px;font-size:14px;cursor:pointer;}
+  .mrep-nav .mrep-period{font-size:15px;font-weight:700;color:var(--text);min-width:96px;text-align:center;}
+  .mrep-highlight{background:linear-gradient(135deg,rgba(255,200,61,0.14),rgba(255,200,61,0.05));border:1px solid rgba(255,200,61,0.32);border-radius:14px;padding:16px;text-align:center;font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;line-height:1.5;}
+  .mrep-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:16px;}
+  .mrep-stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 8px;text-align:center;}
+  .mrep-stat .n{font-size:22px;font-weight:800;color:var(--blue-bright);line-height:1;}
+  .mrep-stat .n small{font-size:11px;font-weight:700;color:var(--text-dim);margin-left:1px;}
+  .mrep-stat .l{font-size:10.5px;color:var(--text-dim);margin-top:6px;font-weight:700;}
+  .mrep-bar-row{display:flex;align-items:center;gap:9px;padding:7px 0;}
+  .mrep-bar-lbl{width:38px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--text);}
+  .mrep-bar-track{flex:1;height:9px;background:var(--bg);border-radius:5px;overflow:hidden;}
+  .mrep-bar-fill{height:100%;border-radius:5px;}
+  .mrep-bar-n{width:34px;flex-shrink:0;text-align:right;font-size:11.5px;color:var(--text-dim);font-weight:700;}
+  .mrep-ex-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line);}
+  .mrep-ex-row:first-of-type{border-top:none;}
+  .mrep-ex-name{flex:1;font-size:13.5px;font-weight:700;color:var(--text);min-width:0;}
+  .mrep-ex-chg{font-size:11.5px;color:var(--text-dim);flex-shrink:0;}
+  .mrep-ex-diff{font-size:13px;font-weight:800;flex-shrink:0;}
+  .mrep-ex-diff.up{color:#69db7c;}
+  .mrep-ex-diff.new{color:var(--blue-bright);}
+  .mrep-empty{text-align:center;color:var(--text-dim);font-size:13px;padding:20px 0;}
   .pb-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
   .pb-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
   .pb-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);}
@@ -807,6 +839,7 @@
     <div id="paneOfficial">
       <div id="pBadges"></div>
       <div id="pGrass"></div>
+      <div id="pMonthly"></div>
       <div id="pBests"></div>
       <div class="section-label">📈 공식 삼대기록 추이</div>
       <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
@@ -1131,7 +1164,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.95";
+const APP_VERSION = "2026.06.10.96";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1689,6 +1722,7 @@ window.showDetail = function(이름){
       + `</div></div>`;
   }
   잔디그리기(이름);
+  월간리포트엔트리그리기(이름);
   그래프그리기(member);
   setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
 }
@@ -1750,6 +1784,219 @@ function 잔디그리기(이름){
   // 오늘(최신 주)이 항상 보이도록 오른쪽 끝으로 스크롤
   const wrap=el.querySelector('.grass-wrap'); if(wrap) wrap.scrollLeft=wrap.scrollWidth;
 }
+// ── 이달의 리포트 (개인 월간 요약) ──
+function 월간리포트데이터(이름, y, m){
+  const 오늘=new Date(); 오늘.setHours(0,0,0,0);
+  const days=new Date(y,m+1,0).getDate();
+  const isFuture = new Date(y,m,1) > 오늘;
+  const isCur = (y===오늘.getFullYear() && m===오늘.getMonth());
+  const cutoff = isFuture ? 0 : (isCur ? 오늘.getDate() : days);
+  // 그 달 자동(훈련일지) 부위 세트
+  const 자동={};
+  훈련목록.forEach(t=>{
+    if(t.이름!==이름 || !t.날짜) return;
+    const p=t.날짜.split('-'); if(p.length!==3) return;
+    if(+p[0]===y && (+p[1]-1)===m){ (자동[t.날짜]=자동[t.날짜]||new Set()).add(부위(t.종목||'벤치프레스')); }
+  });
+  const 부위카운트={}; let 운동일수=0, 최장연속=0, 연속중=0;
+  for(let d=1; d<=cutoff; d++){
+    const ds=_ds(y,m,d);
+    const parts=그날부위(이름, ds, 자동[ds]);
+    if(parts && parts.length){
+      운동일수++; 연속중++; 최장연속=Math.max(최장연속,연속중);
+      parts.forEach(p=>{ 부위카운트[p]=(부위카운트[p]||0)+1; });
+    } else { 연속중=0; }
+  }
+  const 부위분포=부위목록.filter(p=>부위카운트[p]).map(p=>[p,부위카운트[p]]).sort((a,b)=>b[1]-a[1]);
+  // 종목별 e1RM: 월초 이전 최고(prevBest) vs 이 달 최고(monthBest)
+  const monthStartDs=_ds(y,m,1), monthEndDs=_ds(y,m,days);
+  const recs=훈련목록.filter(t=>t.이름===이름 && t.날짜 && t.중량!=null && t.횟수!=null);
+  const prevBest={}, monthBest={};
+  recs.forEach(t=>{
+    const ex=t.종목||'벤치프레스'; const rm=추정1RM(t.중량,t.횟수);
+    if(t.날짜 < monthStartDs){ if(prevBest[ex]==null || rm>prevBest[ex]) prevBest[ex]=rm; }
+    else if(t.날짜 <= monthEndDs){ if(monthBest[ex]==null || rm>monthBest[ex]) monthBest[ex]=rm; }
+  });
+  const 종목성장=Object.keys(monthBest).map(ex=>{
+    const cur=monthBest[ex], prev=prevBest[ex]??null;
+    return { 종목:ex, 현재:cur, 이전:prev, 성장: prev!=null? Math.round((cur-prev)*10)/10 : null };
+  }).sort((a,b)=>(b.성장??-1)-(a.성장??-1));
+  // 이 달 PR 개수 (전체 이력 기준 신기록이 이 달 날짜에 발생한 횟수)
+  const byEx={};
+  recs.forEach(t=>{ const ex=t.종목||'벤치프레스'; (byEx[ex]=byEx[ex]||[]).push(t); });
+  let PR개수=0;
+  Object.values(byEx).forEach(arr=>{
+    arr.sort((a,b)=>a.날짜.localeCompare(b.날짜));
+    let best=-Infinity;
+    arr.forEach(t=>{
+      const v=추정1RM(t.중량,t.횟수);
+      if(v>best){ if(best>-Infinity && t.날짜>=monthStartDs && t.날짜<=monthEndDs) PR개수++; best=v; }
+    });
+  });
+  // 하이라이트 문구
+  let 하이라이트;
+  const topGrowth = 종목성장.find(x=>x.성장!=null && x.성장>0);
+  if(운동일수===0){ 하이라이트 = isFuture ? '아직 시작 전인 달이에요' : '이 달은 기록이 없어요. 지금 시작해볼까요? 💪'; }
+  else if(PR개수>0 && topGrowth){ 하이라이트 = `🎉 이 달 신기록 ${PR개수}개! ${topGrowth.종목} e1RM +${topGrowth.성장}kg`; }
+  else if(PR개수>0){ 하이라이트 = `🎉 이 달 신기록 ${PR개수}개를 세웠어요!`; }
+  else if(topGrowth){ 하이라이트 = `📈 ${topGrowth.종목} e1RM이 +${topGrowth.성장}kg 늘었어요`; }
+  else if(부위분포.length){ 하이라이트 = `이 달 가장 많이 훈련한 부위: ${부위라벨(부위분포[0][0])} (${부위분포[0][1]}일)`; }
+  else { 하이라이트 = `이 달 총 ${운동일수}일 운동했어요`; }
+  return { y, m, 총일수:days, 경과일수:cutoff, 운동일수, 최장연속, 부위분포, 종목성장, PR개수, 하이라이트, isFuture, isCurOrLater: isFuture||isCur };
+}
+function 월간리포트엔트리그리기(이름){
+  const el=document.getElementById('pMonthly'); if(!el) return;
+  const now=new Date();
+  const d=월간리포트데이터(이름, now.getFullYear(), now.getMonth());
+  el.innerHTML = `<div class="mrep-entry" onclick="월간리포트보기('${escHtml(이름)}')">
+    <div class="mrep-entry-ic">📊</div>
+    <div class="mrep-entry-txt"><b>이달의 리포트</b><span>${escHtml(d.하이라이트)}</span></div>
+    <div class="mrep-entry-arrow">›</div>
+  </div>`;
+}
+let 월간리포트대상=null, 월간리포트YM=null;
+window.월간리포트보기 = function(이름){
+  월간리포트대상 = 이름;
+  const now=new Date();
+  월간리포트YM = { y: now.getFullYear(), m: now.getMonth() };
+  const old=document.getElementById('mrepOverlay'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.id='mrepOverlay'; ov.className='kp-ov';
+  document.body.appendChild(ov);
+  월간리포트렌더();
+};
+window.월간리포트이동 = function(delta){
+  let mm=월간리포트YM.m+delta, yy=월간리포트YM.y;
+  if(mm<0){ mm=11; yy--; } else if(mm>11){ mm=0; yy++; }
+  월간리포트YM={y:yy,m:mm};
+  월간리포트렌더();
+};
+function 월간리포트렌더(){
+  const ov=document.getElementById('mrepOverlay'); if(!ov || !월간리포트대상) return;
+  const {y,m}=월간리포트YM;
+  const d=월간리포트데이터(월간리포트대상, y, m);
+  const barsHTML = d.부위분포.length ? d.부위분포.map(([p,n])=>{
+    const pct = d.부위분포[0][1] ? Math.round(n/d.부위분포[0][1]*100) : 0;
+    return `<div class="mrep-bar-row"><span class="mrep-bar-lbl">${escHtml(부위라벨(p))}</span><div class="mrep-bar-track"><div class="mrep-bar-fill" style="width:${pct}%;background:${부위색(p)}"></div></div><span class="mrep-bar-n">${n}일</span></div>`;
+  }).join('') : `<div class="mrep-empty">이 달은 부위 기록이 없어요</div>`;
+  const exHTML = d.종목성장.length ? d.종목성장.map(x=>{
+    const diffHTML = x.성장==null ? `<span class="mrep-ex-diff new">첫 기록</span>`
+      : x.성장>0 ? `<span class="mrep-ex-diff up">▲${x.성장}kg</span>`
+      : `<span class="mrep-ex-diff">―</span>`;
+    return `<div class="mrep-ex-row"><span class="mrep-ex-name">${escHtml(x.종목)}</span><span class="mrep-ex-chg">${x.이전!=null?`${x.이전}→`:''}${x.현재}kg</span>${diffHTML}</div>`;
+  }).join('') : `<div class="mrep-empty">이 달 훈련일지 기록이 없어요</div>`;
+  ov.innerHTML = `<div class="kp-top" style="border-bottom:1px solid var(--line);padding-bottom:14px;">
+      <button class="x" onclick="document.getElementById('mrepOverlay').remove()">✕</button>
+      <div style="flex:1;text-align:center;"><div style="font-size:16px;font-weight:700;">${escHtml(월간리포트대상)}</div><div style="font-size:12px;color:var(--text-dim);margin-top:2px;">이달의 리포트</div></div>
+      <button class="edit-btn" style="padding:7px 10px;font-size:12px;" onclick="월간리포트공유(this)">이미지 공유</button>
+    </div>
+    <div class="mrep-body">
+      <div class="mrep-nav">
+        <button onclick="월간리포트이동(-1)">◀</button>
+        <span class="mrep-period">${y}년 ${m+1}월</span>
+        <button onclick="월간리포트이동(1)" ${d.isCurOrLater?'disabled':''}>▶</button>
+      </div>
+      <div class="mrep-highlight">${escHtml(d.하이라이트)}</div>
+      <div class="mrep-stats">
+        <div class="mrep-stat"><div class="n">${d.운동일수}<small>/${d.경과일수}</small></div><div class="l">운동일수</div></div>
+        <div class="mrep-stat"><div class="n">${d.최장연속}<small>일</small></div><div class="l">최장 연속</div></div>
+        <div class="mrep-stat"><div class="n">${d.PR개수}<small>개</small></div><div class="l">이 달 PR</div></div>
+      </div>
+      <div class="pb-card"><div class="pb-title">💪 부위별 훈련 분포</div>${barsHTML}</div>
+      <div class="pb-card"><div class="pb-title">📈 종목별 e1RM 변화</div>${exHTML}</div>
+    </div>`;
+}
+async function 월간리포트카드그리기(){
+  try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(e){}
+  const 이름=월간리포트대상, {y,m}=월간리포트YM;
+  const d=월간리포트데이터(이름, y, m);
+  const W=1080,H=1080;
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  const HF="'Helvetica Neue',Helvetica,Arial,'Noto Sans KR',sans-serif";
+  const bg=x.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0a0e14'); bg.addColorStop(1,'#141c28');
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+  const gl=x.createRadialGradient(W/2,0,0,W/2,0,540);
+  gl.addColorStop(0,'rgba(200,212,228,0.09)'); gl.addColorStop(1,'rgba(200,212,228,0)');
+  x.fillStyle=gl; x.fillRect(0,0,W,H);
+  x.strokeStyle='rgba(220,227,238,0.22)'; x.lineWidth=3;
+  _둥근사각(x,36,36,W-72,H-72,44); x.stroke();
+  try{ const em=await _이미지로드('emblem.png?v=1'); const es=120; x.save(); x.globalCompositeOperation='screen'; x.drawImage(em,(W-es)/2,56,es,es); x.restore(); }catch(e){}
+  x.textAlign='center';
+  x.fillStyle='#dce3ee'; x.font=`700 36px ${HF}`;
+  x.fillText('삼대오백마', W/2, 216);
+  x.fillStyle='#ffffff'; x.font=`700 48px ${HF}`;
+  x.fillText(`${이름}님의 이달의 리포트`, W/2, 288);
+  x.fillStyle='#6a7a8e'; x.font=`500 30px ${HF}`;
+  x.fillText(`${y}년 ${m+1}월`, W/2, 332);
+  x.strokeStyle='rgba(220,227,238,0.15)'; x.lineWidth=1;
+  x.beginPath(); x.moveTo(80,364); x.lineTo(W-80,364); x.stroke();
+  // 하이라이트
+  x.fillStyle='#ffd43b'; x.font=`700 32px ${HF}`;
+  const hlLines=_줄바꿈(x, d.하이라이트, W-160);
+  hlLines.forEach((line,i)=> x.fillText(line, W/2, 424+i*42));
+  const hlBottom=424+hlLines.length*42;
+  // 스탯 3칸
+  const boxes=[
+    {label:'운동일수', val:`${d.운동일수}일`, sub:`/ ${d.경과일수}일`},
+    {label:'최장 연속', val:`${d.최장연속}일`, sub:'연속 운동'},
+    {label:'이 달 PR', val:`${d.PR개수}개`, sub:'신기록 갱신'},
+  ];
+  const bW=284, bH=160, bY=hlBottom+40, bGap=22, bX0=80;
+  boxes.forEach((b,i)=>{
+    const bx=bX0+i*(bW+bGap);
+    x.fillStyle='rgba(220,227,238,0.05)'; _둥근사각(x,bx,bY,bW,bH,18); x.fill();
+    x.strokeStyle='rgba(220,227,238,0.12)'; x.lineWidth=1; _둥근사각(x,bx,bY,bW,bH,18); x.stroke();
+    x.textAlign='center'; const cx=bx+bW/2;
+    x.fillStyle='#7d8a9c'; x.font=`600 25px ${HF}`; x.fillText(b.label, cx, bY+44);
+    x.fillStyle='#f4f7fb'; x.font=`700 40px ${HF}`; x.fillText(b.val, cx, bY+100);
+    x.fillStyle='#5a6a7a'; x.font=`500 22px ${HF}`; x.fillText(b.sub, cx, bY+138);
+  });
+  // 종목별 성장 top3
+  const top3=d.종목성장.filter(e=>e.성장!=null && e.성장>0).slice(0,3);
+  let ey=bY+bH+70;
+  if(top3.length){
+    x.textAlign='center'; x.fillStyle='#dce3ee'; x.font=`700 26px ${HF}`;
+    x.fillText('📈 종목별 e1RM 성장', W/2, ey); ey+=48;
+    top3.forEach(e=>{
+      x.textAlign='left'; x.fillStyle='#9fb0c4'; x.font=`600 27px ${HF}`; x.fillText(e.종목, 110, ey);
+      x.textAlign='right'; x.fillStyle='#69db7c'; x.font=`700 27px ${HF}`; x.fillText(`+${e.성장}kg`, W-110, ey);
+      ey+=46;
+    });
+  }
+  x.textAlign='center';
+  x.fillStyle='#3a4a5a'; x.font=`500 26px ${HF}`;
+  x.fillText('obaengma.web.app', W/2, 1010);
+  return new Promise(res=>c.toBlob(res,'image/png',0.96));
+}
+function _줄바꿈(ctx, text, maxW){
+  const words=text.split(' '); const lines=[]; let cur='';
+  words.forEach(w=>{
+    const test=cur?cur+' '+w:w;
+    if(ctx.measureText(test).width>maxW && cur){ lines.push(cur); cur=w; } else { cur=test; }
+  });
+  if(cur) lines.push(cur);
+  return lines;
+}
+window.월간리포트공유 = async function(btn){
+  const 원래=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='만드는 중…';}
+  try{
+    const blob=await 월간리포트카드그리기();
+    const {y,m}=월간리포트YM;
+    const fname=`삼대오백마_${월간리포트대상}_${y}${String(m+1).padStart(2,'0')}_리포트.png`;
+    const file=new File([blob],fname,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'삼대오백마 이달의 리포트',text:`📊 ${y}년 ${m+1}월 ${월간리포트대상}님의 운동 리포트`});
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      토스트('리포트 이미지 저장 완료! 📲');
+    }
+  }catch(e){ if(!e||e.name!=='AbortError') 토스트('공유 실패: '+((e&&e.message)||e)); }
+  finally{ if(btn){btn.disabled=false;btn.textContent=원래||'이미지 공유';} }
+};
 function _누적PR(이름){
   const byEx={};
   훈련목록.forEach(t=>{ if(t.이름!==이름||t.중량==null||t.횟수==null) return; const ex=t.종목||'벤치프레스'; (byEx[ex]=byEx[ex]||[]).push(t); });
