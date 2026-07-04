@@ -220,7 +220,8 @@
   .chart-wrap{position:relative;height:240px;}
   /* 운동 달력 */
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-  .cal-nav{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;width:40px;height:34px;font-size:14px;cursor:pointer;}
+  .cal-nav{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;width:56px;height:46px;font-size:18px;cursor:pointer;touch-action:manipulation;}
+  .cal-nav:active{background:var(--panel-light);}
   .cal-title{font-size:15px;font-weight:700;color:var(--text);}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
   .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-dim);padding:4px 0;}
@@ -1125,7 +1126,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.100";
+const APP_VERSION = "2026.06.10.101";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
