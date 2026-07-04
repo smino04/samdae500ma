@@ -102,10 +102,8 @@
   .month-tab{flex-shrink:0;padding:5px 12px;background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--text-dim);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;}
   .month-tab.active{background:var(--blue);border-color:var(--blue-bright);color:#10141b;box-shadow:0 0 16px var(--blue-glow);}
   .sort-toggle{display:flex;gap:6px;margin-top:20px;margin-bottom:12px;}
-  .period-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:16px;}
-  .period-select{padding:6px 28px 6px 14px;background-color:rgba(200,212,228,0.15);border:1px solid var(--blue-bright);border-radius:8px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23dce3ee' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
-  .period-select:focus{border-color:var(--blue-bright);}
-  .period-select option{background:var(--panel);color:var(--text);}
+  .period-row{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:16px;}
+  .period-label{font-size:15px;font-weight:700;color:var(--text);min-width:104px;text-align:center;}
   .sort-btn{flex:1;padding:11px 6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--text-dim);font-size:12.5px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .sort-btn.active{background:var(--panel-light);color:var(--blue-bright);border-color:var(--blue-bright);box-shadow:0 0 16px var(--blue-glow);}
   .rank-card{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:transform 0.15s,border-color 0.2s;animation:slideIn 0.4s backwards;position:relative;overflow:hidden;}
@@ -222,6 +220,7 @@
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .cal-nav{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;width:56px;height:46px;font-size:18px;cursor:pointer;touch-action:manipulation;}
   .cal-nav:active{background:var(--panel-light);}
+  .cal-nav:disabled{opacity:0.3;cursor:default;}
   .cal-title{font-size:15px;font-weight:700;color:var(--text);}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
   .cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-dim);padding:4px 0;}
@@ -777,10 +776,11 @@
       <button class="sort-btn" data-sort="growth" onclick="setSort('growth')">📈 주간성장</button>
     </div>
     <div class="period-row">
-      <select class="period-select" id="yearSelect" onchange="selectYear(parseInt(this.value))"></select>
-      <select class="period-select" id="monthSelect" onchange="selectMonth(this.value)"></select>
+      <button class="cal-nav" id="periodPrev" onclick="기간이동(-1)">◀</button>
+      <span class="period-label" id="periodLabel">-</span>
+      <button class="cal-nav" id="periodNext" onclick="기간이동(1)">▶</button>
     </div>
-    <div class="role-note">🏆 <b>월 1회 공식 측정</b> 기록 · 랭킹·뱃지에 반영돼요</div>
+    <div class="role-note" style="display:none;"></div>
     <div id="rankList"><div class="status">기록을 불러오는 중...</div></div>
   </div>
   <div id="todayNudge" class="today-nudge" style="display:none;" onclick="switchMainTab('diary')">
@@ -1126,7 +1126,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.102";
+const APP_VERSION = "2026.06.10.103";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1340,11 +1340,37 @@ function 데이터연도목록(){
   const s=new Set(); 기록목록.forEach(r=>s.add(연도of(r)));
   return [...s].sort((a,b)=>a-b);
 }
-function 월목록(){
+function 월목록(year){
+  const y = year===undefined ? 현재연도 : year;
   const s=new Set();
   // 삼대(공식 측정)가 있는 달만 → 이번 달 미측정이면 자동으로 전달이 기본으로 잡힘
-  기록목록.forEach(r=>{ if(r.월 && 연도of(r)===현재연도 && 삼대유효(r)) s.add(r.월); });
+  기록목록.forEach(r=>{ if(r.월 && 연도of(r)===y && 삼대유효(r)) s.add(r.월); });
   return [...s].filter(m=>m && 월선택지.includes(m)).sort((a,b)=>월선택지.indexOf(a)-월선택지.indexOf(b));
+}
+// 연도 경계를 넘나드는 이전/다음 달 이동을 위한 전체 (연도,월) 평탄 목록 (오래된→최신 순)
+function 전체기간목록(){
+  const flat=[];
+  데이터연도목록().forEach(y=>{ 월목록(y).forEach(m=>flat.push({y,m})); });
+  return flat;
+}
+window.기간이동 = function(delta){
+  const flat = 전체기간목록();
+  if(!flat.length) return;
+  let idx = flat.findIndex(x=>x.y===현재연도 && x.m===현재월);
+  if(idx<0) idx = flat.length-1;
+  idx = Math.max(0, Math.min(flat.length-1, idx+delta));
+  현재연도 = flat[idx].y; 현재월 = flat[idx].m;
+  랭킹그리기();
+  기간라벨갱신();
+};
+function 기간라벨갱신(){
+  const lbl=document.getElementById('periodLabel'); if(!lbl) return;
+  lbl.textContent = (현재연도 && 현재월) ? `${현재연도}년 ${현재월}` : '-';
+  const flat=전체기간목록();
+  const idx = flat.findIndex(x=>x.y===현재연도 && x.m===현재월);
+  const prevBtn=document.getElementById('periodPrev'), nextBtn=document.getElementById('periodNext');
+  if(prevBtn) prevBtn.disabled = idx<=0;
+  if(nextBtn) nextBtn.disabled = (idx<0) || idx>=flat.length-1;
 }
 function 해당월기록(m,월){ return m.기록.find(r=>r.월===월); }
 function 합계(r){ return r.스쿼트+r.벤치+r.데드; }
@@ -1385,43 +1411,29 @@ function 화면갱신(){
   const years = 데이터연도목록();
   // 기록이 하나도 없을 때
   if(years.length===0){
-    document.getElementById('yearSelect').innerHTML='';
-    document.getElementById('monthSelect').innerHTML='';
     if(현재정렬==='growth'){ 랭킹그리기(); return; }
     document.getElementById('rankList').innerHTML='<div class="status">아직 기록이 없습니다.<br>프로필 탭에서 첫 기록을 입력해보세요!</div>';
+    기간라벨갱신();
     return;
   }
   // 현재 연도 정하기 (없거나 기록 없는 연도면 가장 최근 연도로)
   if(!현재연도 || !years.includes(현재연도)) 현재연도 = years[years.length-1];
-  // 연도 드롭다운 그리기
-  document.getElementById('yearSelect').innerHTML = years.map(y=>
-    `<option value="${y}" ${y===현재연도?'selected':''}>${y} 시즌</option>`).join('');
-  // 그 연도의 월 드롭다운 그리기
   const tabs = 월목록();
   if(tabs.length===0){
-    document.getElementById('monthSelect').innerHTML='';
     if(현재정렬==='growth'){ 랭킹그리기(); return; }
     document.getElementById('rankList').innerHTML='<div class="status">이 시즌 기록이 없습니다.</div>';
+    기간라벨갱신();
     return;
   }
   if(!현재월 || !tabs.includes(현재월)) 현재월 = tabs[tabs.length-1];
-  document.getElementById('monthSelect').innerHTML = tabs.map(m=>
-    `<option value="${m}" ${m===현재월?'selected':''}>${m}</option>`).join('');
   랭킹그리기();
-}
-window.selectYear = function(y){
-  현재연도 = y;
-  현재월 = null;  // 연도 바뀌면 월은 그 연도 최신으로 다시 잡힘
-  화면갱신();
-}
-window.selectMonth = function(m){
-  현재월=m;
-  랭킹그리기();
+  기간라벨갱신();
 }
 window.setSort = function(s){
   현재정렬=s;
   document.querySelectorAll('.sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===s));
   랭킹그리기();
+  기간라벨갱신();
 }
 // ── 성장(우상향) 랭킹: 훈련일지 e1RM 기반, 이번 주 성장폭 ──
 function _weekStart(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
@@ -1571,7 +1583,7 @@ function 랭킹그리기(){
     성장랭킹그리기(); return;
   }
   if(pr) pr.style.display='';
-  if(rn){ rn.innerHTML='🏆 <b>월 1회 공식 측정</b> 기록 · 랭킹·뱃지에 반영돼요'; rn.style.display=''; }
+  if(rn){ rn.style.display='none'; }
   const members = 멤버별데이터();
   let list = members.map(m=>({member:m,rec:해당월기록(m,현재월)})).filter(x=>x.rec && 삼대유효(x.rec));
   list.sort((a,b)=>현재정렬==='total'?합계(b.rec)-합계(a.rec):상대점수(b.rec)-상대점수(a.rec));
