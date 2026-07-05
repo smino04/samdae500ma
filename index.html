@@ -140,6 +140,9 @@
   .detail{display:none;animation:fadeIn 0.3s;}
   .detail.show{display:block;}
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  /* 하단 탭 전환 모션 (랭킹판처럼 살짝 페이드+슬라이드) */
+  .tab-anim{animation:tabIn 0.28s ease-out;}
+  @keyframes tabIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   .back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 18px;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;margin:20px 0;}
   .back-btn:active{background:var(--panel-light);}
   .profile-head{text-align:center;margin-top:32px;margin-bottom:24px;}
@@ -1126,7 +1129,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.107";
+const APP_VERSION = "2026.06.10.108";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1997,6 +2000,10 @@ window.switchMainTab = function(tab){
   document.getElementById('diaryView').style.display = tab==='diary'?'flex':'none';
   document.getElementById('calendarView').style.display = tab==='calendar'?'block':'none';
   document.getElementById('accountView').style.display = tab==='account'?'block':'none';
+  // 전환되는 화면에 짧은 진입 모션 (애니메이션 재실행 위해 리플로우)
+  const _shownId = {ranking:'rankingView',diary:'diaryView',calendar:'calendarView',account:'accountView'}[tab];
+  const _shownEl = _shownId && document.getElementById(_shownId);
+  if(_shownEl){ _shownEl.classList.remove('tab-anim'); void _shownEl.offsetWidth; _shownEl.classList.add('tab-anim'); }
   window.scrollTo(0,0);
   if(tab==='account'){ 계정화면그리기(); }
   if(tab==='calendar'){
