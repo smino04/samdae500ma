@@ -149,6 +149,13 @@
   .profile-name{font-family:'Black Han Sans',sans-serif;font-size:32px;letter-spacing:3px;word-spacing:2px;}
   .profile-rank{display:inline-block;margin-top:8px;padding:5px 16px;background:var(--blue);border-radius:8px;font-size:13px;font-weight:700;color:#10141b;box-shadow:0 0 14px var(--blue-glow);}
   .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
+  /* 목표 태그 (다이어트/벌크/린매스) */
+  .goal-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
+  /* 프로필 목표 선택 */
+  .goal-pick{display:flex;gap:8px;}
+  .goal-pick-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+  .goal-pick-btn .gp-ic{font-size:22px;}
+  .goal-pick-btn.active{color:var(--text);}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
   /* 이달의 리포트 진입 카드 */
   .mrep-entry{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer;}
@@ -905,6 +912,18 @@
 
     <div id="memberOnlyAccount">
     <div id="pMonthly" style="margin-top:16px;"></div>
+
+    <div class="section-label" style="margin-top:22px;">🎯 내 목표</div>
+    <div class="acct-box">
+      <p class="acct-desc" style="margin-bottom:12px;">목표를 정하면 랭킹·프로필에 태그로 표시돼요. (다시 누르면 해제)</p>
+      <div class="goal-pick" id="goalPick">
+        <button class="goal-pick-btn" data-goal="cut" onclick="목표설정('cut')"><span class="gp-ic">🔥</span>다이어트</button>
+        <button class="goal-pick-btn" data-goal="bulk" onclick="목표설정('bulk')"><span class="gp-ic">💪</span>벌크업</button>
+        <button class="goal-pick-btn" data-goal="lean" onclick="목표설정('lean')"><span class="gp-ic">⚖️</span>린매스업</button>
+      </div>
+      <div class="acct-msg" id="goalMsg"></div>
+    </div>
+
     <!-- 관리자 전용 -->
     <div id="accountAdmin" style="display:none;">
       <div class="section-label" style="margin-top:22px;">📊 멤버 현황 대시보드</div>
@@ -1129,7 +1148,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.108";
+const APP_VERSION = "2026.06.10.109";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1241,6 +1260,18 @@ let 운동유형목록 = {};   // { 이름: { 운동명: '복합'|'고립' } } (
 let 달력목록 = {};   // { 이름: { 'YYYY-MM-DD': [부위...] } } (달력 수동 입력/수정)
 let 종목순서목록 = {};   // { 이름: [운동명...] } 사용자가 정한 운동 표시 순서
 let 종목숨김목록 = {};   // { 이름: [운동명...] } 목록에서 없앤(숨긴) 운동
+let 목표목록 = {};   // { 이름: 'cut'|'bulk'|'lean' } 다이어트/벌크업/린매스업 목표
+// 목표 태그 정의 (아이콘·라벨·색)
+const 목표정의 = {
+  cut:  { icon:'🔥', label:'다이어트', short:'컷',   color:'#ff6b6b' },
+  bulk: { icon:'💪', label:'벌크업',   short:'벌크', color:'#4dabf7' },
+  lean: { icon:'⚖️', label:'린매스업', short:'린매스', color:'#69db7c' }
+};
+function 목표태그HTML(이름){
+  const g = 목표정의[목표목록[이름]];
+  if(!g) return '';
+  return `<span class="goal-tag" style="color:${g.color};border-color:${g.color}55;background:${g.color}1a;">${g.icon}${g.short}</span>`;
+}
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 
@@ -1300,8 +1331,8 @@ function 데이터구독시작(){
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
     명언목록 = {}; 레벨목록 = {};
     운동유형목록 = {}; 달력목록 = {};
-    종목순서목록 = {}; 종목숨김목록 = {};
-    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; });
+    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {};
+    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; });
     if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
       const q = 명언목록[현재상세이름];
       const el = document.getElementById('pQuote');
@@ -1313,6 +1344,13 @@ function 데이터구독시작(){
     if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
       분석대상 = 일지대상; 분석그리기();
     }
+    // 랭킹판이 열려있으면 목표 태그 등 실시간 반영
+    if(document.getElementById('rankingView').style.display!=='none'
+       && !document.getElementById('detailView').classList.contains('show')){
+      랭킹그리기();
+    }
+    // 프로필 목표 버튼도 동기화
+    try{ if(document.getElementById('accountView').style.display!=='none') 목표버튼갱신(); }catch(e){}
     // 오늘 기록 유도 배너: 캘린더(달력) 데이터가 뒤늦게 도착해도 즉시 재판정
     try{ 오늘기록배너그리기(); }catch(e){}
   }));
@@ -1565,7 +1603,7 @@ function 성장랭킹그리기(){
     const sub=[`🎯 신기록 ${x.pr}개`, x.streak>=2?`🔥 ${x.streak}주 연속 우상향`:''].filter(Boolean).join(' · ');
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="주간로그보기('${x.이름}')">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}</div>
+        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}${목표태그HTML(x.이름)}</div>
         <div class="rank-detail">${sub||'이번 주 성장 중'}</div></div>
         <div class="rank-total"><div class="num">+${x.성장}</div><div class="unit">kg ↑</div></div>
         <div class="chevron">›</div></div>`;
@@ -1614,7 +1652,7 @@ function 랭킹그리기(){
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
+        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${목표태그HTML(x.member.이름)}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
         <div class="rank-detail">체중 ${x.rec.체중}kg · 상대점수 ${score}</div></div>
         <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div></div>
         <div class="chevron">›</div></div>`;
@@ -1650,7 +1688,7 @@ window.showDetail = function(이름){
   const 근육latest = [...member.기록].reverse().find(r=>r.골격근량!=null) || null;
   const 지방latest = [...member.기록].reverse().find(r=>r.체지방률!=null) || null;
   // 이름 옆에 마일스톤 뱃지 표시 (삼대 기준)
-  document.getElementById('pName').innerHTML = 이름 + (삼대latest ? 뱃지HTML(합계(삼대latest)) : '');
+  document.getElementById('pName').innerHTML = 이름 + 목표태그HTML(이름) + (삼대latest ? 뱃지HTML(합계(삼대latest)) : '');
   document.getElementById('pStats').innerHTML=`
     <div class="stat-box"><div class="label">삼대합계</div><div class="value">${삼대latest?합계(삼대latest):'-'}<small>${삼대latest?'kg':''}</small></div></div>
     <div class="stat-box"><div class="label">골격근량</div><div class="value">${근육latest?근육latest.골격근량:'-'}<small>${근육latest?'kg':''}</small></div></div>
@@ -4133,8 +4171,9 @@ function 계정화면그리기(){
   if(guest) return;
   // 입력칸/메시지 초기화
   ['curPw','newPw','newPw2','delPw','newNick'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['pwMsg','resetMsg','delMsg','nickMsg'].forEach(id=>acctMsg(id,''));
+  ['pwMsg','resetMsg','delMsg','nickMsg','goalMsg'].forEach(id=>acctMsg(id,''));
   월간리포트엔트리그리기(현재유저.이름);
+  목표버튼갱신();
   // 관리자만 회원 관리 섹션 표시
   document.getElementById('accountAdmin').style.display = 관리자인가() ? 'block' : 'none';
   if(관리자인가()) 관리자화면그리기();
@@ -4146,6 +4185,27 @@ function acctMsg(id, text, ok){
 }
 
 // 닉네임 변경 (본인 기록/운동일지/명언도 새 닉네임으로 함께 이전)
+window.목표설정 = async function(g){
+  if(!현재유저 || 게스트인가()) return;
+  const 이름 = 현재유저.이름;
+  const 새값 = (목표목록[이름] === g) ? null : g;   // 같은 목표 다시 누르면 해제
+  if(새값) 목표목록[이름] = 새값; else delete 목표목록[이름];
+  목표버튼갱신();
+  try{
+    await setDoc(doc(db,'quotes',이름), { 목표: 새값 || deleteField() }, { merge:true });
+    acctMsg('goalMsg', 새값 ? `목표 설정: ${목표정의[새값].icon} ${목표정의[새값].label}` : '목표를 해제했어요.', true);
+  }catch(e){ acctMsg('goalMsg','저장 실패: '+(e.code||e.message)); }
+};
+function 목표버튼갱신(){
+  const cur = 현재유저 ? 목표목록[현재유저.이름] : null;
+  document.querySelectorAll('#goalPick .goal-pick-btn').forEach(b=>{
+    const on = b.dataset.goal===cur;
+    b.classList.toggle('active', on);
+    b.style.borderColor = on ? 목표정의[b.dataset.goal].color : '';
+    b.style.background = on ? 목표정의[b.dataset.goal].color+'1a' : '';
+    b.style.color = on ? 목표정의[b.dataset.goal].color : '';
+  });
+}
 window.닉네임변경 = async function(){
   if(!현재유저 || 게스트인가()) return;
   const 새닉 = document.getElementById('newNick').value.trim().replace(/\s+/g,'');
