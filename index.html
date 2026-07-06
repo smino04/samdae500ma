@@ -644,15 +644,19 @@
   .exrow-ops button:disabled{opacity:0.3;}
   .exrow-ops .op-del{color:#f87171;}
   /* 맨몸운동 세트 입력 */
-  .mb-total{text-align:center;font-size:15px;font-weight:800;color:var(--gold);margin:4px 0 12px;}
-  .mb-sets{display:flex;flex-direction:column;gap:9px;padding:0 18px;margin-bottom:10px;overflow-y:auto;}
-  .mb-set{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px;}
-  .mb-set-no{font-size:13px;font-weight:700;color:var(--text-dim);width:46px;flex-shrink:0;}
-  .mb-step{width:42px;height:42px;flex-shrink:0;border-radius:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);font-size:22px;font-weight:700;cursor:pointer;line-height:1;}
+  /* 체측 입력 */
+  .mb-step{width:52px;height:52px;flex-shrink:0;border-radius:13px;background:var(--bg);border:1px solid var(--line);color:var(--text);font-size:26px;font-weight:700;cursor:pointer;line-height:1;}
   .mb-step:active{background:var(--panel-light);}
-  .mb-set-input{flex:1;min-width:0;text-align:center;background:transparent;border:none;color:var(--text);font-family:'Black Han Sans',sans-serif;font-size:26px;outline:none;-webkit-appearance:none;}
-  .mb-set-del{width:30px;height:30px;flex-shrink:0;border-radius:8px;background:none;border:none;color:#f87171;font-size:15px;cursor:pointer;}
-  .mb-add-set{margin:0 18px 12px;padding:12px;width:calc(100% - 36px);background:var(--panel-light);border:1px dashed var(--line);border-radius:11px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:14px;font-weight:700;cursor:pointer;}
+  .cc-sub{text-align:center;font-size:13px;color:var(--text-dim);margin:6px 0 14px;}
+  .cc-count{display:flex;align-items:center;justify-content:center;gap:16px;padding:0 18px;margin-bottom:12px;}
+  .cc-input{width:120px;text-align:center;background:transparent;border:none;border-bottom:2px solid var(--line);color:var(--text);font-family:'Black Han Sans',sans-serif;font-size:52px;outline:none;-webkit-appearance:none;}
+  .cc-grade{text-align:center;font-size:28px;font-weight:900;margin-bottom:16px;min-height:34px;}
+  /* 체측 연령대 선택 칩 */
+  .age-pick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px;}
+  .age-lbl{font-size:12px;font-weight:700;color:var(--text-dim);margin-right:2px;}
+  .age-cur{font-size:13px;font-weight:700;color:var(--blue-bright);}
+  .age-btn{padding:5px 9px;background:var(--panel);border:1px solid var(--line);border-radius:20px;color:var(--text-dim);font-family:'Noto Sans KR';font-size:11px;font-weight:700;cursor:pointer;}
+  .age-btn.active{background:rgba(200,212,228,0.15);color:var(--blue-bright);border-color:var(--blue-bright);}
   #diaryContent.detail-mode>#addExRow,
   #diaryContent.detail-mode>.section-label,
   #diaryContent.detail-mode>#exModeToggle,
@@ -864,7 +868,7 @@
       <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
       <div class="ex-mode-toggle" id="exModeToggle">
         <button class="exm-btn active" data-mode="weight" onclick="운동모드전환('weight')">🏋️ 웨이트</button>
-        <button class="exm-btn" data-mode="body" onclick="운동모드전환('body')">🤸 맨몸</button>
+        <button class="exm-btn" data-mode="body" onclick="운동모드전환('body')">🎖️ 체측</button>
       </div>
       <div id="analysisContent"></div>
       <div id="addExRow" style="display:none;flex-direction:column;margin:8px 0 16px;">
@@ -1177,7 +1181,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.122";
+const APP_VERSION = "2026.06.10.123";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1297,8 +1301,7 @@ let 운동유형목록 = {};   // { 이름: { 운동명: '복합'|'고립' } } (
 let 달력목록 = {};   // { 이름: { 'YYYY-MM-DD': [부위...] } } (달력 수동 입력/수정)
 let 종목순서목록 = {};   // { 이름: [운동명...] } 사용자가 정한 운동 표시 순서
 let 종목숨김목록 = {};   // { 이름: [운동명...] } 목록에서 없앤(숨긴) 운동
-let 맨몸순서목록 = {};   // 맨몸 종목 순서
-let 맨몸숨김목록 = {};   // 맨몸 종목 숨김
+let 연령대목록 = {};   // { 이름: '25이하'|... } 체측 등급 기준용
 let 목표목록 = {};   // { 이름: 'cut'|'bulk'|'lean' } 다이어트/벌크업/린매스업 목표
 // 목표 태그 정의 (아이콘·라벨·색)
 const 목표정의 = {
@@ -1403,8 +1406,8 @@ function 데이터구독시작(){
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
     명언목록 = {}; 레벨목록 = {};
     운동유형목록 = {}; 달력목록 = {};
-    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {}; 맨몸순서목록 = {}; 맨몸숨김목록 = {};
-    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; if(data.맨몸순서) 맨몸순서목록[d.id] = data.맨몸순서; if(data.맨몸숨김) 맨몸숨김목록[d.id] = data.맨몸숨김; });
+    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {}; 연령대목록 = {};
+    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; if(data.연령대) 연령대목록[d.id] = data.연령대; });
     if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
       const q = 명언목록[현재상세이름];
       const el = document.getElementById('pQuote');
@@ -1601,7 +1604,7 @@ function 주차라벨짧게(ws){
 function 성장데이터(offset=0){
   const tStart=_주시작(offset); const tKey=_주키(tStart);
   const byName={};
-  훈련목록.forEach(t=>{ if(!t.이름||!t.날짜||t.맨몸) return; (byName[t.이름]=byName[t.이름]||[]).push(t); });
+  훈련목록.forEach(t=>{ if(!t.이름||!t.날짜||t.체측) return; (byName[t.이름]=byName[t.이름]||[]).push(t); });
   const res=[];
   for(const 이름 in byName){
     if(이름==='test' || 탈퇴자명단.includes(이름) || 실명닉네임맵[이름]) continue;
@@ -1634,15 +1637,15 @@ window.주간로그보기 = function(이름, offset){
     .forEach(t=>{ (byDate[t.날짜]=byDate[t.날짜]||[]).push(t); });
   // 이전 최고 e1RM (이번 주 이전) — 맨몸운동은 제외(무게 기반 아님)
   const prevBest={};
-  훈련목록.filter(t=>t.이름===이름&&t.날짜&&!t.맨몸&&new Date(t.날짜)<tStart)
+  훈련목록.filter(t=>t.이름===이름&&t.날짜&&!t.체측&&new Date(t.날짜)<tStart)
     .forEach(t=>{ const ex=t.종목||'벤치프레스'; const rm=추정1RM(t.중량,t.횟수); if(!prevBest[ex]||rm>prevBest[ex]) prevBest[ex]=rm; });
-  // 총 성장량 (무게형만)
+  // 총 성장량 (웨이트만)
   let 총성장=0, 총PR=0;
   const seenEx=new Set();
-  Object.values(byDate).flat().filter(t=>!t.맨몸).forEach(t=>{
+  Object.values(byDate).flat().filter(t=>!t.체측).forEach(t=>{
     const ex=t.종목||'벤치프레스'; const rm=추정1RM(t.중량,t.횟수);
     if(!seenEx.has(ex)){ seenEx.add(ex);
-      const weekBest=Math.max(...Object.values(byDate).flat().filter(x=>!x.맨몸&&(x.종목||'벤치프레스')===ex).map(x=>추정1RM(x.중량,x.횟수)));
+      const weekBest=Math.max(...Object.values(byDate).flat().filter(x=>!x.체측&&(x.종목||'벤치프레스')===ex).map(x=>추정1RM(x.중량,x.횟수)));
       if(prevBest[ex]!=null&&weekBest>prevBest[ex]){ 총성장+=weekBest-prevBest[ex]; 총PR++; }
     }
   });
@@ -1663,9 +1666,9 @@ window.주간로그보기 = function(이름, offset){
     // 훈련일지 기록
     const exListHTML=recs.map(t=>{
       const ex=t.종목||'벤치프레스';
-      if(t.맨몸){
-        const 총=맨몸총볼륨(t);
-        return `<div class="wlog-ex-row"><span class="wlog-exname">${escHtml(ex)}</span><span class="wlog-exval">${(t.세트||[]).join('·')}</span><span class="wlog-exrm">총 ${총}회</span></div>`;
+      if(t.체측){
+        const g=체측등급(ex, t.개수, 멤버연령대(이름));
+        return `<div class="wlog-ex-row"><span class="wlog-exname">${escHtml(ex)}</span><span class="wlog-exval">${t.개수}개</span><span class="wlog-exrm" style="color:${체측등급색(g)}">${g||''}</span></div>`;
       }
       const rm=추정1RM(t.중량,t.횟수);
       const isPR=prevBest[ex]!=null&&rm>prevBest[ex];
@@ -2215,21 +2218,25 @@ const 종목설정 = {
 };
 const 종목목록 = Object.keys(종목설정);
 const 기본종목설정 = { 목표회수:8, 증가:5, 시작회수:5 }; // 직접 입력 종목용 기본값
-// ── 맨몸운동(세트별 반복 기록, e1RM 아님) ──
-const 맨몸종목 = ['푸시업','풀업','맨몸 스쿼트','크런치'];
-function 맨몸종목인가(ex){ return 맨몸종목.includes(ex); }
-function 맨몸총볼륨(rec){ return (rec.세트||[]).reduce((a,b)=>a+(+b||0),0); }
-// 이 사람의 맨몸 종목 목록(순서/숨김/추가 반영)
-function 맨몸표시종목(이름){
-  const 숨김 = 맨몸숨김목록[이름] || [];
-  const custom=[...new Set(훈련목록.filter(t=>t.이름===이름&&t.맨몸&&t.종목&&!맨몸종목.includes(t.종목)).map(t=>t.종목))];
-  const 후보 = [...맨몸종목, ...custom, ...맨몸추가종목];
-  const 순서 = 맨몸순서목록[이름] || [...맨몸종목];
-  const result=[];
-  순서.forEach(ex=>{ if(!숨김.includes(ex)&&!result.includes(ex)) result.push(ex); });
-  후보.forEach(ex=>{ if(!숨김.includes(ex)&&!result.includes(ex)) result.push(ex); });
-  return result;
+// ── 체측(체력검정) 기록: 2분에 몇 개 → 등급 ──
+const 체측종목 = ['팔굽혀펴기','윗몸일으키기'];
+const 체측연령대 = ['25이하','26-30','31-35','36-40','41-43','44-46','47-49','50-51','52-53','54이상'];
+// 특급 커트라인(연령대별). 1급=T-8, 2급=T-16, 3급=T-24, 불합격=T-25↓ (8개 밴드)
+const 체측특급 = {
+  '팔굽혀펴기':  [72,70,68,65,61,57,54,51,49,47],
+  '윗몸일으키기':[82,80,78,72,68,64,61,58,56,54]
+};
+function 체측등급(종목, 개수, 연령대){
+  const arr=체측특급[종목]; if(!arr || 개수==null) return null;
+  const T=arr[체측연령대.indexOf(연령대||'25이하')]; if(T==null) return null;
+  if(개수>=T) return '특급';
+  if(개수>=T-8) return '1급';
+  if(개수>=T-16) return '2급';
+  if(개수>=T-24) return '3급';
+  return '불합격';
 }
+function 체측등급색(g){ return ({'특급':'#ffc83d','1급':'#69db7c','2급':'#4dabf7','3급':'#c8d0dc','불합격':'#f87171'})[g] || 'var(--text-dim)'; }
+function 멤버연령대(이름){ return 연령대목록[이름] || '25이하'; }
 // 숙련도별 설정 (초보는 높은 반복+작은 증량 → 가벼운 무게로 안전하게)
 // 표시용 라벨/설명 (내부 저장값은 초보/중급, 2단계)
 const 레벨표시 = { '초보':'🔰 입문', '중급':'🔵 일반' };
@@ -2682,9 +2689,7 @@ let 분석대상 = null;
 let 분석차트들 = [];
 let 현재분석종목들 = [];
 let 추가종목들 = [];       // '다른 운동 추가'로 더한, 아직 기록 없는 운동들(이번 화면용)
-let 맨몸추가종목 = [];      // 맨몸 모드에서 추가한, 아직 기록 없는 종목
-let 현재맨몸종목들 = [];    // 현재 표시 중인 맨몸 종목(순서 이동/제거용 idx 기준)
-let 일지운동모드 = 'weight';   // 'weight'=웨이트, 'body'=맨몸
+let 일지운동모드 = 'weight';   // 'weight'=웨이트, 'body'=체측
 window.운동모드전환 = function(mode){
   일지운동모드 = mode;
   상세종목 = null;
@@ -2695,7 +2700,7 @@ let 분석캘린더YM = null;   // {y, m(0-11)} — 보고 있는 달
 // 표시할 운동 목록(사용자 순서/숨김 반영)
 function 표시종목들(이름){
   const 숨김 = 종목숨김목록[이름] || [];
-  const 커스텀 = [...new Set(훈련목록.filter(t=>t.이름===이름 && t.종목 && !t.맨몸 && !맨몸종목.includes(t.종목) && !종목목록.includes(t.종목)).map(t=>t.종목))];
+  const 커스텀 = [...new Set(훈련목록.filter(t=>t.이름===이름 && t.종목 && !t.체측 && !체측종목.includes(t.종목) && !종목목록.includes(t.종목)).map(t=>t.종목))];
   const 후보 = [...종목목록, ...커스텀, ...추가종목들];   // 존재 가능한 모든 운동
   const 순서 = 종목순서목록[이름] || [...종목목록];        // 저장된 순서 or 기본 3대
   const result = [];
@@ -2728,31 +2733,6 @@ window.종목제거 = async function(idx){
   try{ await setDoc(doc(db,'quotes',이름), { 종목숨김:[...숨김], 종목순서:종목순서목록[이름] }, { merge:true }); }
   catch(e){ alert('저장 실패: '+e.message); }
 };
-// 맨몸 종목 순서 이동
-window.맨몸종목이동 = async function(idx, dir){
-  const 이름 = 분석대상; if(!내권한(이름)) return;
-  const list = [...현재맨몸종목들];
-  const j = idx + dir;
-  if(j<0 || j>=list.length) return;
-  [list[idx], list[j]] = [list[j], list[idx]];
-  맨몸순서목록[이름] = list;
-  분석그리기();
-  try{ await setDoc(doc(db,'quotes',이름), { 맨몸순서: list }, { merge:true }); }
-  catch(e){ alert('순서 저장 실패: '+e.message); }
-};
-// 맨몸 종목 숨김(제거)
-window.맨몸종목제거 = async function(idx){
-  const 이름 = 분석대상; if(!내권한(이름)) return;
-  const ex = 현재맨몸종목들[idx]; if(!ex) return;
-  const 기록수 = 훈련목록.filter(t=>t.이름===이름 && t.맨몸 && t.종목===ex).length;
-  if(!confirm(`'${ex}' 운동을 목록에서 없앨까요?${기록수?`\n(기록 ${기록수}개는 남아있고, 다시 추가하면 다시 보여요)`:''}`)) return;
-  const 숨김 = new Set(맨몸숨김목록[이름]||[]); 숨김.add(ex); 맨몸숨김목록[이름]=[...숨김];
-  맨몸순서목록[이름] = 현재맨몸종목들.filter(x=>x!==ex);
-  맨몸추가종목 = 맨몸추가종목.filter(x=>x!==ex);
-  분석그리기();
-  try{ await setDoc(doc(db,'quotes',이름), { 맨몸숨김:[...숨김], 맨몸순서:맨몸순서목록[이름] }, { merge:true }); }
-  catch(e){ alert('저장 실패: '+e.message); }
-};
 // 맨 위 '다른 종목 추가' — 버튼 누르면 입력칸 토글
 window.운동추가토글 = function(){
   const r=document.getElementById('addExInputRow'); if(!r) return;
@@ -2766,18 +2746,6 @@ window.다른운동추가 = async function(){
   if(!v) return;
   const 이름 = 분석대상;
   if(!내권한(이름)){ alert('본인 일지에만 추가할 수 있어요.'); return; }
-  // 맨몸 모드면 맨몸 종목으로 추가 (이름 기반 렌더라 따옴표류 제거)
-  if(일지운동모드==='body'){
-    const bv = v.replace(/['"\\]/g,'').trim();
-    if(!bv) return;
-    let 숨김변경=false;
-    if(맨몸숨김목록[이름] && 맨몸숨김목록[이름].includes(bv)){ 맨몸숨김목록[이름]=맨몸숨김목록[이름].filter(x=>x!==bv); 숨김변경=true; }
-    if(!맨몸종목.includes(bv) && !맨몸추가종목.includes(bv)) 맨몸추가종목.push(bv);
-    inp.value=''; const _r2=document.getElementById('addExInputRow'); if(_r2) _r2.style.display='none';
-    분석그리기();
-    if(숨김변경){ try{ await setDoc(doc(db,'quotes',이름), { 맨몸숨김: 맨몸숨김목록[이름] }, { merge:true }); }catch(e){} }
-    return;
-  }
   // 숨겼던 운동이면 숨김 해제
   let 숨김변경 = false;
   if(종목숨김목록[이름] && 종목숨김목록[이름].includes(v)){
@@ -2804,7 +2772,7 @@ window.selectAnalysisMember = function(이름){
 }
 // 운동명 → 부위 인식 (훈련일지에 입력한 종목 기반)
 function 부위(ex){
-  const 기본={'벤치프레스':'가슴','스쿼트':'하체','데드리프트':'등','오버헤드프레스':'어깨','OHP':'어깨'};
+  const 기본={'벤치프레스':'가슴','스쿼트':'하체','데드리프트':'등','오버헤드프레스':'어깨','OHP':'어깨','팔굽혀펴기':'가슴','윗몸일으키기':'코어'};
   if(기본[ex]) return 기본[ex];
   const 규칙=[
     [/(레그프레스|스쿼트|런지|카프|힙스러스트|레그익스|레그컬|하체)/,'하체'],
@@ -2925,8 +2893,9 @@ window.calDayClick = function(ds){
   if(logEl){
     logEl.innerHTML = logs.length
       ? `<div class="calday-log-t">📒 이 날 훈련일지</div>` + logs.map(t=>{
-          if(t.맨몸){
-            return `<div class="calday-log-row"><b>${escHtml(t.종목||'')}</b> · 총 ${맨몸총볼륨(t)}회</div>`;
+          if(t.체측){
+            const g=체측등급(t.종목, t.개수, 멤버연령대(분석대상));
+            return `<div class="calday-log-row"><b>${escHtml(t.종목||'')}</b> · ${t.개수}개 <span style="color:${체측등급색(g)};font-weight:700">${g||''}</span></div>`;
           }
           const w=t.중량??t.weight, r=t.횟수??t.reps;
           return `<div class="calday-log-row"><b>${escHtml(t.종목||'벤치프레스')}</b> · ${w}kg × ${r}회</div>`;
@@ -3077,27 +3046,27 @@ function 분석리스트그리기(이름, 종목들){
     const hint=다음무게힌트(이름,ex,last);
     return `<div class="exrow" onclick="운동상세열기(${idx})"><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-sub"><b style="color:${c}">${last.중량}kg × ${last.횟수}회</b> → 1RM ${추정1RM(last.중량,last.횟수)}kg</div></div><span class="exrow-right">${스파크라인(recs,c)}<span class="exrow-hint ${hint.up?'up':'keep'}">${hint.txt}</span></span>${ops}<span class="exrow-chev">›</span></div>`;
   }).join('');
-  // ── 맨몸운동 섹션 (세트별 반복) ──
-  const 맨몸목록 = 맨몸표시종목(이름); 현재맨몸종목들 = 맨몸목록;
-  const 맨몸rows = 맨몸목록.map((ex,idx)=>{
-    const recs=훈련목록.filter(t=>t.이름===이름 && t.맨몸 && t.종목===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+  // ── 체측(체력검정) 섹션 ──
+  const 연령대 = 멤버연령대(이름);
+  const 체측rows = 체측종목.map((ex)=>{
+    const recs=훈련목록.filter(t=>t.이름===이름 && t.체측 && t.종목===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
     const c=부위색(부위(ex));
-    const ops=권한?`<span class="exrow-ops"><button onclick="event.stopPropagation();맨몸종목이동(${idx},-1)"${idx===0?' disabled':''}>▲</button><button onclick="event.stopPropagation();맨몸종목이동(${idx},1)"${idx===맨몸목록.length-1?' disabled':''}>▼</button><button class="op-del" onclick="event.stopPropagation();맨몸종목제거(${idx})">✕</button></span>`:'';
     if(!recs.length){
-      return `<div class="exrow exrow-empty"${권한?` onclick="맨몸입력열기('${escHtml(ex)}')"`:''}><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-empty-msg">${자기자신?'아직 기록이 없어요 · 눌러서 첫 기록 💪':'기록이 쌓이면 나타나요'}</div></div>${ops}${권한?'<span class="exrow-chev">＋</span>':''}</div>`;
+      return `<div class="exrow exrow-empty"${권한?` onclick="체측입력열기('${escHtml(ex)}')"`:''}><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-empty-msg">${자기자신?'아직 기록이 없어요 · 눌러서 2분 측정 기록 💪':'기록이 쌓이면 나타나요'}</div></div>${권한?'<span class="exrow-chev">＋</span>':''}</div>`;
     }
     const last=recs[recs.length-1];
-    const 총=맨몸총볼륨(last);
-    const 세트문 = (last.세트||[]).join('·');
-    return `<div class="exrow" onclick="맨몸상세보기('${escHtml(ex)}')"><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-sub"><b style="color:${c}">총 ${총}회</b> · ${세트문}</div></div><span class="exrow-right"><span class="exrow-hint keep">${recs.length}회 기록</span></span>${ops}<span class="exrow-chev">›</span></div>`;
+    const g=체측등급(ex, last.개수, 연령대);
+    return `<div class="exrow" onclick="체측상세보기('${escHtml(ex)}')"><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-sub"><b style="color:${c}">${last.개수}개</b> <span style="color:${체측등급색(g)};font-weight:700">${g||''}</span></div></div><span class="exrow-right"><span class="exrow-hint keep">${recs.length}회 측정</span></span><span class="exrow-chev">›</span></div>`;
   }).join('');
+  const 연령대칩 = `<div class="age-pick"><span class="age-lbl">연령대</span>${권한?체측연령대.map(a=>`<button class="age-btn${a===연령대?' active':''}" onclick="연령대설정('${a}')">${a}</button>`).join(''):`<span class="age-cur">${연령대}</span>`}</div>`;
+  const 맨몸rows = 연령대칩 + 체측rows;
   if(일지운동모드==='body'){
     cont.innerHTML=`<div class="exlist">${맨몸rows}</div>`;
   } else {
     cont.innerHTML=`<div class="exlist">${rows||'<div class="status">표시할 운동이 없어요.</div>'}</div>`;
   }
-  // 다른 종목 추가는 웨이트·맨몸 둘 다 (본인만)
-  const addRow=document.getElementById('addExRow'); if(addRow) addRow.style.display=권한?'flex':'none';
+  // 다른 종목 추가는 웨이트에서만 (체측은 고정 2종목)
+  const addRow=document.getElementById('addExRow'); if(addRow) addRow.style.display=(권한 && 일지운동모드==='weight')?'flex':'none';
 }
 // ── 스트릭(연속 운동일 / 주간 연속) ──
 function _ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -3513,96 +3482,99 @@ async function 훈련기록저장(이름, 종목, 날짜, 중량, 횟수){
   return {신기록, 새1RM, 덮어씀:!!기존};
 }
 
-// ── 맨몸운동(세트별 반복) 입력/상세 ──
-let mb = { 이름:null, ex:null, 날짜:null, 세트:[], editId:null };
-window.맨몸입력열기 = function(ex, editId){
+// ── 체측(체력검정) 입력/상세 ──
+let mb = { 이름:null, ex:null, 날짜:null, 개수:0, editId:null };
+window.연령대설정 = async function(a){
+  const 이름 = 분석대상; if(!내권한(이름)) return;
+  연령대목록[이름] = a;
+  분석그리기();
+  try{ await setDoc(doc(db,'quotes',이름), { 연령대: a }, { merge:true }); }catch(e){}
+};
+window.체측입력열기 = function(ex, editId){
   const 이름 = 분석대상 || (현재유저 && 현재유저.이름);
   if(!이름 || !내권한(이름)){ alert('본인 기록만 추가할 수 있어요.'); return; }
   const rec = editId ? 훈련목록.find(t=>t._id===editId) : null;
-  let 세트;
-  if(rec){ 세트 = (rec.세트||[]).map(v=>+v||0); }
+  let 개수;
+  if(rec){ 개수 = +rec.개수||0; }
   else {
-    const recs=훈련목록.filter(t=>t.이름===이름&&t.맨몸&&t.종목===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+    const recs=훈련목록.filter(t=>t.이름===이름&&t.체측&&t.종목===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
     const last=recs.length?recs[recs.length-1]:null;
-    세트 = last ? (last.세트||[]).map(v=>+v||0) : [10,10,10];
+    개수 = last ? (+last.개수||0) : 0;
   }
-  if(!세트.length) 세트=[10];
-  mb = { 이름, ex, 날짜: rec?rec.날짜:_kpToday(), 세트, editId:editId||null };
+  mb = { 이름, ex, 날짜: rec?rec.날짜:_kpToday(), 개수, editId:editId||null };
   const old=document.getElementById('mbOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='mbOverlay'; ov.className='kp-ov';
-  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="맨몸닫기()">✕</button><h3>${escHtml(ex)}</h3><label class="date">📅 <span id="mbDateLbl"></span><input type="date" class="kp-date-input" value="${mb.날짜}" onchange="맨몸날짜(this.value)"></label></div>`
-    +`<div class="mb-total" id="mbTotal"></div>`
-    +`<div class="mb-sets" id="mbSets"></div>`
-    +`<button class="mb-add-set" onclick="맨몸세트추가()">＋ 세트 추가</button>`
-    +`<button class="kp-save" id="mbSaveBtn" onclick="맨몸저장()">${rec?'수정 저장':'저장하기'}</button>`;
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="체측닫기()">✕</button><h3>${escHtml(ex)}</h3><label class="date">📅 <span id="mbDateLbl"></span><input type="date" class="kp-date-input" value="${mb.날짜}" onchange="체측날짜(this.value)"></label></div>`
+    +`<div class="cc-sub">2분 동안 한 개수를 입력하세요</div>`
+    +`<div class="cc-count"><button class="mb-step" onclick="체측조절(-1)">−</button><input class="cc-input" id="ccInput" type="number" inputmode="numeric" min="0" value="${mb.개수}" oninput="체측입력변경(this.value)"><button class="mb-step" onclick="체측조절(1)">＋</button></div>`
+    +`<div class="cc-grade" id="ccGrade"></div>`
+    +`<button class="kp-save" id="mbSaveBtn" onclick="체측저장()">${rec?'수정 저장':'저장하기'}</button>`;
   document.body.appendChild(ov);
   const l=document.getElementById('mbDateLbl'); if(l) l.textContent=_kpDateFmt(mb.날짜);
-  맨몸세트렌더();
+  체측등급갱신();
 };
-window.맨몸닫기 = function(){ const o=document.getElementById('mbOverlay'); if(o) o.remove(); };
-window.맨몸날짜 = function(v){ mb.날짜=v; const l=document.getElementById('mbDateLbl'); if(l) l.textContent=_kpDateFmt(v); };
-function 맨몸세트렌더(){
-  const el=document.getElementById('mbSets'); if(!el) return;
-  el.innerHTML = mb.세트.map((v,i)=>`<div class="mb-set"><span class="mb-set-no">${i+1}세트</span><button class="mb-step" onclick="맨몸조절(${i},-1)">−</button><input class="mb-set-input" type="number" inputmode="numeric" min="0" value="${v}" oninput="맨몸입력변경(${i},this.value)"><button class="mb-step" onclick="맨몸조절(${i},1)">＋</button>${mb.세트.length>1?`<button class="mb-set-del" onclick="맨몸세트삭제(${i})">✕</button>`:''}</div>`).join('');
-  맨몸총갱신();
+window.체측닫기 = function(){ const o=document.getElementById('mbOverlay'); if(o) o.remove(); };
+window.체측날짜 = function(v){ mb.날짜=v; const l=document.getElementById('mbDateLbl'); if(l) l.textContent=_kpDateFmt(v); };
+window.체측조절 = function(d){ mb.개수=Math.max(0,(+mb.개수||0)+d); const el=document.getElementById('ccInput'); if(el) el.value=mb.개수; 체측등급갱신(); };
+window.체측입력변경 = function(val){ mb.개수=Math.max(0,parseInt(val)||0); 체측등급갱신(); };
+function 체측등급갱신(){
+  const el=document.getElementById('ccGrade'); if(!el) return;
+  const g=체측등급(mb.ex, mb.개수, 멤버연령대(mb.이름));
+  el.innerHTML = mb.개수>0 && g ? `<span style="color:${체측등급색(g)}">${g}</span>` : '<span style="color:var(--text-dim)">개수를 입력하면 등급이 떠요</span>';
 }
-function 맨몸총갱신(){ const t=document.getElementById('mbTotal'); if(t) t.textContent=`총 ${mb.세트.reduce((a,b)=>a+(+b||0),0)}회`; }
-window.맨몸조절 = function(i,d){ mb.세트[i]=Math.max(0,(+mb.세트[i]||0)+d); 맨몸세트렌더(); };
-window.맨몸입력변경 = function(i,val){ mb.세트[i]=Math.max(0,parseInt(val)||0); 맨몸총갱신(); };
-window.맨몸세트추가 = function(){ const last=mb.세트[mb.세트.length-1]; mb.세트.push(+last||10); 맨몸세트렌더(); };
-window.맨몸세트삭제 = function(i){ mb.세트.splice(i,1); 맨몸세트렌더(); };
-window.맨몸저장 = async function(){
-  const 세트 = mb.세트.map(v=>parseInt(v)||0).filter(v=>v>0);
-  if(!세트.length){ 토스트('세트 개수를 입력하세요'); return; }
+window.체측저장 = async function(){
+  const 개수 = parseInt(mb.개수)||0;
+  if(!(개수>0)){ 토스트('개수를 입력하세요'); return; }
   if(!mb.날짜){ 토스트('날짜를 선택하세요'); return; }
   const btn=document.getElementById('mbSaveBtn'); if(btn){btn.disabled=true;btn.textContent='저장 중…';}
   try{
-    const 총 = 세트.reduce((a,b)=>a+b,0);
-    const 기존최고 = Math.max(0, ...훈련목록.filter(t=>t.이름===mb.이름&&t.맨몸&&t.종목===mb.ex&&t.날짜!==mb.날짜).map(맨몸총볼륨));
-    const 신기록 = 기존최고>0 && 총>기존최고;
-    const 기존 = 훈련목록.find(t=>t.이름===mb.이름&&t.맨몸&&t.종목===mb.ex&&t.날짜===mb.날짜);
-    const 데이터 = { 이름:mb.이름, 종목:mb.ex, 날짜:mb.날짜, 맨몸:true, 세트, 등록시각:Date.now() };
+    const 기존최고 = Math.max(0, ...훈련목록.filter(t=>t.이름===mb.이름&&t.체측&&t.종목===mb.ex&&t.날짜!==mb.날짜).map(t=>+t.개수||0));
+    const 신기록 = 기존최고>0 && 개수>기존최고;
+    const g = 체측등급(mb.ex, 개수, 멤버연령대(mb.이름));
+    const 기존 = 훈련목록.find(t=>t.이름===mb.이름&&t.체측&&t.종목===mb.ex&&t.날짜===mb.날짜);
+    const 데이터 = { 이름:mb.이름, 종목:mb.ex, 날짜:mb.날짜, 체측:true, 개수, 등록시각:Date.now() };
     if(기존) await setDoc(doc(db,'training',기존._id), 데이터);
     else await addDoc(trainingCol, 데이터);
-    맨몸닫기();
+    체측닫기();
     const dov=document.getElementById('mbDetailOv'); if(dov) dov.remove();
-    if(신기록){ try{효과음신기록();}catch(e){} 토스트(`🎉 신기록! 총 ${총}회 🔥`); }
-    else { try{효과음저장();}catch(e){} 토스트(기존?'✅ 기록! (같은 날짜 덮어씀)':'✅ 기록 완료!'); }
+    if(신기록){ try{효과음신기록();}catch(e){} 토스트(`🎉 최고 기록! ${개수}개 (${g}) 🔥`); }
+    else { try{효과음저장();}catch(e){} 토스트(기존?`✅ ${g} 기록! (덮어씀)`:`✅ ${g} 기록 완료!`); }
   }catch(e){ alert('저장 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='저장하기';} }
 };
-window.맨몸삭제 = async function(id){
+window.체측삭제 = async function(id){
   if(!confirm('이 기록을 삭제할까요?')) return;
   try{ await deleteDoc(doc(db,'training',id)); const o=document.getElementById('mbDetailOv'); if(o) o.remove(); 토스트('삭제됐어요'); }
   catch(e){ alert('삭제 실패: '+e.message); }
 };
-window.맨몸상세보기 = function(ex){
+window.체측상세보기 = function(ex){
   const 이름 = 분석대상 || (현재유저 && 현재유저.이름); if(!이름) return;
-  const 권한 = 내권한(이름);
-  const recs=훈련목록.filter(t=>t.이름===이름&&t.맨몸&&t.종목===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+  const 권한 = 내권한(이름); const 연령대 = 멤버연령대(이름);
+  const recs=훈련목록.filter(t=>t.이름===이름&&t.체측&&t.종목===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
   const c=부위색(부위(ex));
-  const vols=recs.map(맨몸총볼륨);
-  let bestIdx=-1; if(vols.length>=2){ const mx=Math.max(...vols); for(let i=0;i<vols.length;i++) if(vols[i]>=mx) bestIdx=i; }
-  const cur=vols.length?vols[vols.length-1]:0, best=vols.length?Math.max(...vols):0;
-  const hist=recs.map((t,i)=>({t,pr:i===bestIdx,v:vols[i]})).reverse();
-  const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${(t.세트||[]).join('·')} <i>· 총 ${v}회</i>${pr?' <b style="color:var(--gold)">PR</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="document.getElementById('mbDetailOv').remove();맨몸입력열기('${escHtml(ex)}','${t._id}')">수정</button><button class="ana-rec-del" onclick="맨몸삭제('${t._id}')">삭제</button></span>`:''}</div>`).join('');
+  const vals=recs.map(t=>+t.개수||0);
+  let bestIdx=-1; if(vals.length>=2){ const mx=Math.max(...vals); for(let i=0;i<vals.length;i++) if(vals[i]>=mx) bestIdx=i; }
+  const cur=vals.length?vals[vals.length-1]:0, best=vals.length?Math.max(...vals):0;
+  const curG=체측등급(ex,cur,연령대), bestG=체측등급(ex,best,연령대);
+  const hist=recs.map((t,i)=>({t,pr:i===bestIdx,v:vals[i]})).reverse();
+  const histHTML=hist.map(({t,pr,v})=>{ const g=체측등급(ex,v,연령대); return `<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${v}개 <b style="color:${체측등급색(g)}">${g||''}</b>${pr?' <b style="color:var(--gold)">최고</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="document.getElementById('mbDetailOv').remove();체측입력열기('${escHtml(ex)}','${t._id}')">수정</button><button class="ana-rec-del" onclick="체측삭제('${t._id}')">삭제</button></span>`:''}</div>`; }).join('');
   const old=document.getElementById('mbDetailOv'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='mbDetailOv'; ov.className='kp-ov';
   ov.innerHTML=`<div class="kp-top"><button class="x" onclick="document.getElementById('mbDetailOv').remove()">✕</button><h3>${escHtml(ex)}</h3><div style="width:32px"></div></div>`
     +`<div class="wlog-body">`
-    +`<div class="detail-stats"><div class="detail-stat"><div class="l">최근 총볼륨</div><div class="v" style="color:${c}">${cur}<small>회</small></div></div><div class="detail-stat"><div class="l">역대 최고</div><div class="v" style="color:var(--gold)">${best}<small>회</small></div></div></div>`
+    +`<div class="detail-stats"><div class="detail-stat"><div class="l">최근 (${연령대})</div><div class="v" style="color:${c}">${cur}<small>개</small></div><div style="font-size:13px;font-weight:800;color:${체측등급색(curG)}">${curG||'-'}</div></div><div class="detail-stat"><div class="l">역대 최고</div><div class="v" style="color:var(--gold)">${best}<small>개</small></div><div style="font-size:13px;font-weight:800;color:${체측등급색(bestG)}">${bestG||'-'}</div></div></div>`
     +`<div class="chart-card"><div class="chart-wrap"><canvas id="mbChart"></canvas></div></div>`
-    +`${권한?`<button class="detail-record-btn" onclick="document.getElementById('mbDetailOv').remove();맨몸입력열기('${escHtml(ex)}')">＋ 기록하기</button>`:''}`
+    +`${권한?`<button class="detail-record-btn" onclick="document.getElementById('mbDetailOv').remove();체측입력열기('${escHtml(ex)}')">＋ 기록하기</button>`:''}`
     +`<div class="section-label" style="margin-top:4px">📋 기록 히스토리</div><div class="ana-rec-list" style="max-height:none">${histHTML||'<div class="status">기록이 없어요.</div>'}</div>`
     +`</div>`;
   document.body.appendChild(ov);
-  if(vols.length){
+  if(vals.length){
     const css=getComputedStyle(document.documentElement);
     const textDim=css.getPropertyValue('--text-dim').trim(), line=css.getPropertyValue('--line').trim();
     const labels=recs.map(t=>{const p=(t.날짜||'').split('-');return p.length===3?`${p[1]}/${p[2]}`:t.날짜;});
-    const ys=yScale(vols);
-    const ptC=vols.map((v,i)=>i===bestIdx?'#ffc83d':c), ptR=vols.map((v,i)=>i===bestIdx?5:3.5);
+    const ys=yScale(vals);
+    const ptC=vals.map((v,i)=>i===bestIdx?'#ffc83d':c), ptR=vals.map((v,i)=>i===bestIdx?5:3.5);
     const ch=new Chart(document.getElementById('mbChart'),{type:'line',
-      data:{labels,datasets:[{data:vols,borderColor:c,backgroundColor:영역채움(c),fill:true,tension:0.35,borderWidth:2.5,pointRadius:ptR,pointHoverRadius:6,pointBackgroundColor:ptC,pointBorderColor:ptC}]},
+      data:{labels,datasets:[{data:vals,borderColor:c,backgroundColor:영역채움(c),fill:true,tension:0.35,borderWidth:2.5,pointRadius:ptR,pointHoverRadius:6,pointBackgroundColor:ptC,pointBorderColor:ptC}]},
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20,left:12,right:16}},plugins:{legend:{display:false}},scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step},grid:{color:line}}}}});
     분석차트들.push(ch);
   }
