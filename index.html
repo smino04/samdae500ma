@@ -1158,7 +1158,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.112";
+const APP_VERSION = "2026.06.10.113";
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
@@ -1734,7 +1734,7 @@ function 랭킹그리기(){
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
         <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
-        <div class="rank-detail">${목표태그HTML(x.member.이름)}체중 ${x.rec.체중}kg · 상대점수 ${score}</div></div>
+        <div class="rank-detail">${목표태그HTML(x.member.이름)}</div></div>
         <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div></div>
         <div class="chevron">›</div></div>`;
   }).join('');
