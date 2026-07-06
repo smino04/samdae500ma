@@ -1177,7 +1177,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.121";
+const APP_VERSION = "2026.06.10.122";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1763,7 +1763,6 @@ function 랭킹그리기(){
     let diffHtml='';
     if(diff!==null && diff>0) diffHtml=`<span class="diff up">▲${Math.round(diff)}kg</span>`;
     else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.round(Math.abs(diff))}kg</span>`;
-    else if(diff!==null && diff===0) diffHtml=`<span class="diff same">―</span>`;
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
