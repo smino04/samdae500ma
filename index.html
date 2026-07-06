@@ -1158,24 +1158,32 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.113";
+const APP_VERSION = "2026.06.10.114";
+// 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
+// iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{ try{ reg.update(); }catch(e){} }).catch(()=>{});
+  });
+}
 (async function 버전확인(){
   try{
     const res = await fetch('version.json?t=' + Date.now(), { cache:'no-store' });
     if(!res.ok) return;
     const data = await res.json();
     if(!data.v || data.v === APP_VERSION) return;   // 이미 최신이면 끝
-    // 새 버전이 있는데 옛 코드가 돌고 있음 → 갱신 필요.
     // 무한 리로드 방지: 이번 세션에 같은 버전으로 최대 3번까지만 시도
     const key = 'uv_' + data.v;
     const n = parseInt(sessionStorage.getItem(key) || '0', 10);
-    if(n >= 3) return;   // 3번 시도해도 안 잡히면 포기(설치형 앱 캐시 → 수동 재설치 필요)
+    if(n >= 3) return;
     sessionStorage.setItem(key, String(n + 1));
-    // 캐시 저장소/서비스워커가 있으면 정리
-    try{ if(window.caches){ const ks = await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch(e){}
-    try{ if(navigator.serviceWorker){ const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r=>r.unregister())); } }catch(e){}
-    // 매번 유니크한 URL로 리로드 → HTTP 캐시를 확실히 우회해 새 HTML을 강제로 받음
-    location.replace(location.pathname + '?v=' + encodeURIComponent(data.v) + '&_=' + Date.now());
+    if(navigator.serviceWorker && navigator.serviceWorker.controller){
+      // 서비스워커가 제어 중이면 HTML을 network-first로 새로 받으므로 단순 새로고침이면 충분
+      location.reload();
+    } else {
+      // 서비스워커 없는 첫 로드/일반 브라우저: 유니크 URL로 캐시 우회
+      location.replace(location.pathname + '?v=' + encodeURIComponent(data.v) + '&_=' + Date.now());
+    }
   }catch(e){ /* 네트워크 문제면 그냥 통과 */ }
 })();
 
