@@ -866,10 +866,6 @@
     </div>
     <div id="diaryContent">
       <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
-      <div class="ex-mode-toggle" id="exModeToggle">
-        <button class="exm-btn active" data-mode="weight" onclick="운동모드전환('weight')">🏋️ 웨이트</button>
-        <button class="exm-btn" data-mode="body" onclick="운동모드전환('body')">🎖️ 체측</button>
-      </div>
       <div id="analysisContent"></div>
       <div id="addExRow" style="display:none;flex-direction:column;margin:8px 0 16px;">
         <button class="add-ex-btn add-ex-toggle" onclick="운동추가토글()">＋ 다른 종목 추가</button>
@@ -1181,7 +1177,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.123";
+const APP_VERSION = "2026.06.10.124";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2236,7 +2232,7 @@ function 체측등급(종목, 개수, 연령대){
   return '불합격';
 }
 function 체측등급색(g){ return ({'특급':'#ffc83d','1급':'#69db7c','2급':'#4dabf7','3급':'#c8d0dc','불합격':'#f87171'})[g] || 'var(--text-dim)'; }
-function 멤버연령대(이름){ return 연령대목록[이름] || '25이하'; }
+function 멤버연령대(이름){ return '25이하'; }   // 부대 기준: 전원 25이하
 // 숙련도별 설정 (초보는 높은 반복+작은 증량 → 가벼운 무게로 안전하게)
 // 표시용 라벨/설명 (내부 저장값은 초보/중급, 2단계)
 const 레벨표시 = { '초보':'🔰 입문', '중급':'🔵 일반' };
@@ -2689,13 +2685,6 @@ let 분석대상 = null;
 let 분석차트들 = [];
 let 현재분석종목들 = [];
 let 추가종목들 = [];       // '다른 운동 추가'로 더한, 아직 기록 없는 운동들(이번 화면용)
-let 일지운동모드 = 'weight';   // 'weight'=웨이트, 'body'=체측
-window.운동모드전환 = function(mode){
-  일지운동모드 = mode;
-  상세종목 = null;
-  document.querySelectorAll('#exModeToggle .exm-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
-  분석그리기();
-};
 let 분석캘린더YM = null;   // {y, m(0-11)} — 보고 있는 달
 // 표시할 운동 목록(사용자 순서/숨김 반영)
 function 표시종목들(이름){
@@ -3034,7 +3023,6 @@ function 분석리스트그리기(이름, 종목들){
   const cont=document.getElementById('analysisContent');
   const 자기자신=!!(현재유저&&현재유저.이름===이름);
   const 권한=내권한(이름);
-  document.querySelectorAll('#exModeToggle .exm-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===일지운동모드));
   const rows=종목들.map((ex,idx)=>{
     const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
     const c=종목컴러(ex);
@@ -3058,15 +3046,10 @@ function 분석리스트그리기(이름, 종목들){
     const g=체측등급(ex, last.개수, 연령대);
     return `<div class="exrow" onclick="체측상세보기('${escHtml(ex)}')"><span class="exrow-bar" style="background:${c}"></span><div class="exrow-main"><div class="exrow-name">${escHtml(ex)}</div><div class="exrow-sub"><b style="color:${c}">${last.개수}개</b> <span style="color:${체측등급색(g)};font-weight:700">${g||''}</span></div></div><span class="exrow-right"><span class="exrow-hint keep">${recs.length}회 측정</span></span><span class="exrow-chev">›</span></div>`;
   }).join('');
-  const 연령대칩 = `<div class="age-pick"><span class="age-lbl">연령대</span>${권한?체측연령대.map(a=>`<button class="age-btn${a===연령대?' active':''}" onclick="연령대설정('${a}')">${a}</button>`).join(''):`<span class="age-cur">${연령대}</span>`}</div>`;
-  const 맨몸rows = 연령대칩 + 체측rows;
-  if(일지운동모드==='body'){
-    cont.innerHTML=`<div class="exlist">${맨몸rows}</div>`;
-  } else {
-    cont.innerHTML=`<div class="exlist">${rows||'<div class="status">표시할 운동이 없어요.</div>'}</div>`;
-  }
-  // 다른 종목 추가는 웨이트에서만 (체측은 고정 2종목)
-  const addRow=document.getElementById('addExRow'); if(addRow) addRow.style.display=(권한 && 일지운동모드==='weight')?'flex':'none';
+  cont.innerHTML=`<div class="exlist">${rows||'<div class="status">표시할 운동이 없어요.</div>'}</div>`
+    + `<div class="section-label" style="margin-top:22px;">🎖️ 체측 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 2분 개수로 등급</span></div>`
+    + `<div class="exlist">${체측rows}</div>`;
+  const addRow=document.getElementById('addExRow'); if(addRow) addRow.style.display=권한?'flex':'none';
 }
 // ── 스트릭(연속 운동일 / 주간 연속) ──
 function _ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -3484,12 +3467,6 @@ async function 훈련기록저장(이름, 종목, 날짜, 중량, 횟수){
 
 // ── 체측(체력검정) 입력/상세 ──
 let mb = { 이름:null, ex:null, 날짜:null, 개수:0, editId:null };
-window.연령대설정 = async function(a){
-  const 이름 = 분석대상; if(!내권한(이름)) return;
-  연령대목록[이름] = a;
-  분석그리기();
-  try{ await setDoc(doc(db,'quotes',이름), { 연령대: a }, { merge:true }); }catch(e){}
-};
 window.체측입력열기 = function(ex, editId){
   const 이름 = 분석대상 || (현재유저 && 현재유저.이름);
   if(!이름 || !내권한(이름)){ alert('본인 기록만 추가할 수 있어요.'); return; }
