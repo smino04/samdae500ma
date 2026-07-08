@@ -484,6 +484,18 @@
   .today-nudge .tn-txt small{display:block;font-size:11px;font-weight:500;color:var(--text-dim);margin-top:1px;}
   .today-nudge .tn-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
   @keyframes nudgeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  /* 내 요약 스트립 (랭킹 최상단) */
+  .my-strip{display:flex;align-items:center;gap:12px;margin:2px 0 14px;padding:13px 15px;border-radius:15px;cursor:pointer;
+    background:linear-gradient(135deg,rgba(200,212,228,0.14),rgba(200,212,228,0.04));border:1px solid rgba(220,227,238,0.28);}
+  .my-strip:active{transform:scale(0.99);}
+  .my-strip .ms-name{font-family:'Black Han Sans',sans-serif;font-size:19px;letter-spacing:1px;color:var(--text);flex-shrink:0;display:flex;align-items:center;gap:5px;}
+  .my-strip .ms-stats{flex:1;display:flex;justify-content:space-around;gap:8px;min-width:0;}
+  .my-strip .ms-cell{text-align:center;min-width:0;}
+  .my-strip .ms-v{font-size:16px;font-weight:800;color:var(--blue-bright);line-height:1.1;white-space:nowrap;}
+  .my-strip .ms-v .ms-up{color:#69db7c;font-size:12px;margin-left:2px;}
+  .my-strip .ms-v small{font-size:11px;font-weight:700;color:var(--text-dim);}
+  .my-strip .ms-l{font-size:10.5px;color:var(--text-dim);margin-top:3px;font-weight:700;}
+  .my-strip .ms-chev{color:var(--text-dim);font-size:18px;flex-shrink:0;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -832,6 +844,7 @@
       <div class="header-divider"></div>
     </header>
     <div class="acct-bar"><span id="acctName"></span><button class="acct-logout" onclick="로그아웃버튼()">로그아웃</button></div>
+    <div id="myStrip" class="my-strip" style="display:none;"></div>
     <div class="guest-banner" id="guestBanner" style="display:none;">
       <div class="gb-text">👀 <b>게스트 모드</b>로 둘러보는 중이에요.<br>회원들의 성장 그래프, 마음에 드시나요? 함께 3대 500을 향해 달려봐요! 💪</div>
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
@@ -1207,7 +1220,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.128";
+const APP_VERSION = "2026.06.10.129";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1773,8 +1786,35 @@ function 오늘기록배너그리기(){
   const days=_운동일집합(현재유저.이름);
   el.style.display = days.has(todayDs) ? 'none' : 'flex';
 }
+// 내 요약 스트립: 랭킹 최상단에 "내 순위·이번주·삼대" 3초 요약
+function 내요약스트립그리기(){
+  const el=document.getElementById('myStrip'); if(!el) return;
+  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; return; }
+  const 이름=현재유저.이름;
+  // 이번 주 운동일수
+  const 이번주 = 스트릭계산(이름).이번주;
+  // 이번 달 삼대 순위/합계/전월대비
+  const members = 멤버별데이터();
+  const list = members.map(m=>({member:m,rec:해당월기록(m,현재월)})).filter(x=>x.rec && 삼대유효(x.rec)).sort((a,b)=>합계(b.rec)-합계(a.rec));
+  const idx = list.findIndex(x=>x.member.이름===이름);
+  const 내rec = idx>=0 ? list[idx].rec : null;
+  const 순위 = idx>=0 ? `${idx+1}위` : '-';
+  const 삼대 = 내rec ? 합계(내rec) : null;
+  const diff = 내rec ? 전월대비(members.find(m=>m.이름===이름), 현재월) : null;
+  const diffHtml = (diff!==null && diff>0) ? ` <span class="ms-up">▲${Math.round(diff)}</span>` : '';
+  el.innerHTML = `<div class="ms-name">${escHtml(이름)}${목표태그HTML(이름)}</div>
+    <div class="ms-stats">
+      <div class="ms-cell"><div class="ms-v">${이번주}<small>/4</small></div><div class="ms-l">이번주</div></div>
+      <div class="ms-cell"><div class="ms-v">${삼대!=null?삼대:'-'}${diffHtml}</div><div class="ms-l">삼대합계</div></div>
+      <div class="ms-cell"><div class="ms-v">${순위}</div><div class="ms-l">${현재월||''} 순위</div></div>
+    </div>
+    <span class="ms-chev">›</span>`;
+  el.onclick = ()=> showDetail(이름);
+  el.style.display = 'flex';
+}
 function 랭킹그리기(){
   오늘기록배너그리기();
+  내요약스트립그리기();
   // 성장 모드: 주차 이동 UI 표시, 공식측정 안내는 숨김
   const pr=document.querySelector('.period-row'), rn=document.querySelector('.role-note');
   if(현재정렬==='growth'){
@@ -2223,6 +2263,7 @@ window.switchMainTab = function(tab){
       selectDiaryMember(일지대상);
     }
   }
+  if(tab==='ranking'){ try{ 내요약스트립그리기(); }catch(e){} }
   오늘기록배너그리기();
 }
 window.selectDiaryMember = function(이름){
