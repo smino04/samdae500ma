@@ -538,8 +538,9 @@
   .print-bar .pb-month{color:#fff;font-size:15px;font-weight:700;min-width:120px;text-align:center;}
   .print-bar .pb-close{background:transparent;color:#cfd6de;}
   .a4-sheet{background:#fff;color:#111;width:210mm;max-width:96vw;height:297mm;margin:16px auto;padding:14mm 12mm;box-shadow:0 4px 24px rgba(0,0,0,0.4);box-sizing:border-box;display:flex;flex-direction:column;}
-  .a4-logo{display:block;margin:0 auto;height:26mm;width:auto;filter:invert(1);}
-  .a4-title{text-align:center;font-family:'Noto Sans KR';font-weight:900;font-size:30px;color:#111;letter-spacing:1px;margin-top:8mm;margin-bottom:12mm;}
+  .a4-logo{display:block;margin:0 auto;height:42mm;width:auto;filter:invert(1);}
+  .a4-brand{text-align:center;font-family:'Noto Sans KR';font-weight:900;font-size:40px;color:#111;letter-spacing:2px;margin-top:6mm;}
+  .a4-title{text-align:center;font-family:'Noto Sans KR';font-weight:700;font-size:22px;color:#333;letter-spacing:1px;margin-top:3mm;margin-bottom:10mm;}
   .a4-table{width:100%;height:100%;border-collapse:collapse;color:#111;flex:1;table-layout:fixed;}
   .a4-table th,.a4-table td{border:1.5px solid #222;padding:0;text-align:center;font-size:20px;}
   .a4-table th{background:#e8e8e8;font-weight:800;padding:10px 4px;}
@@ -1206,7 +1207,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.127";
+const APP_VERSION = "2026.06.10.128";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1274,7 +1275,7 @@ const 실명닉네임맵 = {
   '노재헌':'재헌.N','이승민':'승민.L','장상훈':'상훈.J','김태규':'태규.K','이동희':'동희.L',
   '이시현':'시현.L','강승제':'승제.K','남윤호':'윤호.N','서유찬':'유찬.S','한재희':'재희.H',
   '안서진':'서진.A','장성욱':'성욱.J','조익태':'익태.C','신은수':'은수.S','호예권':'예권.H',
-  '병장성욱.O':'성욱.J','병장성욱':'성욱.J'
+  '병장성욱.O':'성욱.J','병장성욱':'성욱.J','유민형':'민형.Y'
 };
 /* ===================================================== */
 
@@ -4241,7 +4242,7 @@ async function 사용자라우팅(user){
   데이터구독시작();
   // 모두가 읽는 명단(quotes)에 본인 등록 → 신규 가입자도 모든 사람의 드롭다운에 자동 표시
   if(현재유저.이름){ try{ await setDoc(doc(db,'quotes',현재유저.이름), { 가입:true }, { merge:true }); }catch(_){} }
-  if(관리자인가()) 실명데이터정리().then(탈퇴자정리);   // 실명→닉네임 정리 후 탈퇴자 데이터 삭제(1회)
+  if(관리자인가()) 실명데이터정리().then(탈퇴자정리).then(실명초기입력);   // 실명→닉네임 정리 → 탈퇴자 삭제 → A4용 실명 초기 입력(1회)
   // 일반 회원은 기록 입력 이름을 본인으로 고정
   const inName = document.getElementById('inName');
   if(!관리자인가()){ inName.innerHTML = `<option>${escHtml(현재유저.이름)}</option>`; inName.value = 현재유저.이름; inName.disabled = true; }
@@ -4293,7 +4294,7 @@ function 월결산인쇄렌더(){
   const trs=rows.map((r,i)=>`<tr>
       <td>${i+1}</td>
       <td class="nm">${escHtml(실명목록[r.이름]||r.이름)}</td>
-      <td>${r.출석}일</td>
+      <td><b>${r.출석}일</b></td>
       <td>${r.스??'-'}</td>
       <td>${r.벤??'-'}</td>
       <td>${r.데??'-'}</td>
@@ -4311,6 +4312,7 @@ function 월결산인쇄렌더(){
     </div>
     <div class="a4-sheet">
       <img class="a4-logo" src="emblem.png?v=1" alt="삼대오백마">
+      <div class="a4-brand">삼대오백마</div>
       <div class="a4-title">${y}년 ${m+1}월 결산</div>
       <table class="a4-table">
         <thead><tr><th style="width:8%">순위</th><th style="width:24%">이름</th><th style="width:14%">출석일</th><th>스쿼트</th><th>벤치</th><th>데드</th><th>삼대합계</th></tr></thead>
@@ -4497,7 +4499,7 @@ async function 실명데이터정리(){
 }
 
 // 탈퇴한 부원 데이터 완전 삭제 (관리자 접속 시 1회, 멱등)
-const 탈퇴자명단 = ['상훈.J','장상훈','성욱','시현.L','이시현','익태.C','조익태'];   // 닉네임 + 혹시 남은 실명
+const 탈퇴자명단 = ['상훈.J','장상훈','성욱','시현.L','이시현','익태.C','조익태','서진.A','안서진'];   // 닉네임 + 혹시 남은 실명
 let 탈퇴정리실행중 = false;
 async function 탈퇴자정리(){
   if(탈퇴정리실행중 || !관리자인가()) return;
@@ -4513,6 +4515,26 @@ async function 탈퇴자정리(){
       for(const d of us.docs){ await deleteDoc(doc(db,'users',d.id)); }
     }
   }catch(e){ console.warn('탈퇴자 정리 오류:', e); }
+}
+
+// A4 결산 인쇄용 실명 초기값 (관리자가 요청한 목록) — 이미 입력된 닉네임은 건드리지 않음(멱등)
+const 실명초기값 = {
+  '민형.Y':'유민형', '은수.S':'신은수', '승민.L':'이승민', '동희.L':'이동희', '태규.K':'김태규',
+  '재헌.N':'노재헌', '윤호.N':'남윤호', '유찬.S':'서유찬', '예권.H':'호예권', '재희.H':'한재희',
+  '승제.K':'강승제', '성욱.J':'장성욱'
+};
+let 실명초기입력실행중 = false;
+async function 실명초기입력(){
+  if(실명초기입력실행중 || !관리자인가()) return;
+  실명초기입력실행중 = true;
+  try{
+    for(const 닉 in 실명초기값){
+      try{
+        const d = await getDoc(doc(db,'realNames',닉));
+        if(!d.exists()){ await setDoc(doc(db,'realNames',닉), { 실명: 실명초기값[닉] }); }
+      }catch(e){ /* 규칙 미적용 등으로 실패해도 다음 닉네임 계속 */ }
+    }
+  }catch(e){ console.warn('실명 초기입력 오류:', e); }
 }
 
 // ── 계정 탭 ──
