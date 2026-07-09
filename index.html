@@ -119,11 +119,14 @@
   .rank-num{font-family:'Black Han Sans',sans-serif;font-size:26px;width:42px;text-align:center;flex-shrink:0;color:var(--text-dim);}
   .top1 .rank-num{color:var(--gold);}.top2 .rank-num{color:var(--silver);}.top3 .rank-num{color:var(--bronze);}
   .rank-info{flex:1;min-width:0;}
-  .rank-name{font-size:17px;font-weight:700;margin-bottom:3px;}
-  .rank-detail{font-size:12px;color:var(--text-dim);}
+  .rank-name{font-size:17px;font-weight:700;}
+  .rank-detail{font-size:12px;color:var(--text-dim);margin-top:4px;}
   .rank-total{text-align:right;flex-shrink:0;}
   .rank-total .num{font-family:'Black Han Sans',sans-serif;font-size:24px;color:var(--blue-bright);line-height:1;}
   .rank-total .unit{font-size:11px;color:var(--text-dim);}
+  .rank-diff{margin-top:3px;font-size:11px;font-weight:700;}
+  .rank-diff.up{color:#69db7c;}
+  .rank-diff.down{color:#f87171;}
   .chevron{color:var(--text-dim);font-size:20px;flex-shrink:0;}
   /* 주간 성장 MVP 히어로 카드 */
   .mvp-hero{position:relative;overflow:hidden;border-radius:16px;padding:22px 20px 20px;margin-bottom:18px;text-align:center;cursor:pointer;border:1px solid var(--gold);background:linear-gradient(150deg,rgba(255,200,61,0.18),rgba(255,146,43,0.06) 60%,var(--panel));box-shadow:0 6px 28px rgba(255,200,61,0.14);animation:slideIn 0.4s backwards;}
@@ -718,6 +721,7 @@
   .detail-record-btn{width:100%;margin:14px 0 28px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.45);}
   .detail-record-btn:active{transform:scale(0.99);}
   .kp-ov{position:fixed;inset:0;z-index:240;background:var(--bg);display:flex;flex-direction:column;animation:kpUp .26s cubic-bezier(.4,0,.2,1);}
+  #kpBody{display:flex;flex-direction:column;flex:1;min-height:0;}
   @keyframes kpUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   /* 주간 운동 로그 오버레이 */
   .wlog-body{flex:1;overflow-y:auto;padding:14px 16px;}
@@ -742,7 +746,21 @@
   .kp-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:18px 18px 8px;}
   .kp-top .x{font-size:18px;color:var(--text-dim);cursor:pointer;background:none;border:none;}
   .kp-top h3{font-size:16px;font-weight:700;flex:1;text-align:center;}
-  .kp-top .date{font-size:12px;color:var(--blue-bright);background:none;border:none;cursor:pointer;white-space:nowrap;position:relative;overflow:hidden;}
+  .kp-top .date{font-size:14px;font-weight:700;color:var(--blue-bright);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;white-space:nowrap;}
+  .kp-top .date:active{background:var(--panel-light);}
+  /* 기록 입력용 인라인 미니 캘린더 (오버레이 안에 큼직하게) */
+  .mini-cal{display:none;flex-direction:column;flex:1;padding:8px 18px 18px;overflow-y:auto;}
+  .mini-cal .mc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .mini-cal .mc-head button{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;width:44px;height:44px;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .mini-cal .mc-head button:active{background:var(--panel-light);}
+  .mini-cal .mc-title{font-size:17px;font-weight:700;color:var(--text);}
+  .mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .mc-dow{text-align:center;font-size:12px;font-weight:700;color:var(--text-dim);padding:4px 0 8px;}
+  .mc-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:11px;font-size:16px;font-weight:600;color:var(--text);cursor:pointer;}
+  .mc-cell.empty{background:transparent;border:none;cursor:default;}
+  .mc-cell.today{border-color:var(--blue-bright);color:var(--blue-bright);font-weight:800;}
+  .mc-cell.sel{background:var(--blue);border-color:var(--blue);color:#10141b;font-weight:800;}
+  .mc-cell:active{transform:scale(0.92);}
   .kp-chips{display:flex;gap:6px;padding:4px 18px 2px;overflow-x:auto;}
   .kp-chip{flex-shrink:0;padding:6px 13px;border-radius:15px;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--text-dim);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR';}
   .kp-disp{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:120px;}
@@ -762,7 +780,6 @@
   .kp-key:active{background:var(--panel-light);}
   .kp-save{margin:0 18px 18px;background:var(--blue);border:none;border-radius:13px;padding:15px;color:#10141b;font-family:'Noto Sans KR';font-size:15px;font-weight:700;cursor:pointer;}
   .kp-save:disabled{opacity:0.5;}
-  .kp-date-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -1220,7 +1237,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.129";
+const APP_VERSION = "2026.06.10.131";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1836,17 +1853,17 @@ function 랭킹그리기(){
     const score=상대점수(x.rec).toFixed(2);
     const mainNum=현재정렬==='total'?합계(x.rec):score;
     const mainUnit=현재정렬==='total'?'kg':'점';
-    // 전월 대비 증감 화살표
+    // 전월 대비 증감 → 이름 옆이 아니라 결과 숫자 쪽에 붙임(결과와 한 묶음)
     const diff=전월대비(x.member,현재월);
     let diffHtml='';
-    if(diff!==null && diff>0) diffHtml=`<span class="diff up">▲${Math.round(diff)}kg</span>`;
-    else if(diff!==null && diff<0) diffHtml=`<span class="diff down">▼${Math.round(Math.abs(diff))}kg</span>`;
+    if(diff!==null && diff>0) diffHtml=`<div class="rank-diff up">▲${Math.round(diff)}kg</div>`;
+    else if(diff!==null && diff<0) diffHtml=`<div class="rank-diff down">▼${Math.round(Math.abs(diff))}kg</div>`;
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))} ${diffHtml}</div>
+        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))}</div>
         <div class="rank-detail">${목표태그HTML(x.member.이름)}체중 ${x.rec.체중}kg</div></div>
-        <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div></div>
+        <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div>${diffHtml}</div>
         <div class="chevron">›</div></div>`;
   }).join('');
 }
@@ -3285,6 +3302,46 @@ let kp종목들 = [];
 function _kpToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function _kpDateFmt(s){ if(!s)return ''; const p=s.split('-'); return p.length===3?`${+p[1]}/${+p[2]}`:s; }
 window.kpSetDate = function(v){ kp.날짜=v; const el=document.getElementById('kpDateLbl'); if(el)el.textContent=_kpDateFmt(v); };
+// ── 기록 입력 오버레이 안에 크게 띄우는 공용 미니 캘린더 (네이티브 날짜피커 대체) ──
+let mc = { y:0, m:0, sel:null, onPick:null, bodyId:null };
+window.미니캘린더토글 = function(onPick, selDs, bodyId){
+  const panel=document.getElementById('miniCalPanel'); if(!panel) return;
+  const body=document.getElementById(bodyId);
+  const opening = panel.style.display!=='flex';
+  if(!opening){ panel.style.display='none'; if(body) body.style.display=''; return; }
+  const base = selDs ? new Date(selDs) : new Date();
+  mc = { y:base.getFullYear(), m:base.getMonth(), sel:selDs||null, onPick, bodyId };
+  if(body) body.style.display='none';
+  panel.style.display='flex';
+  미니캘린더렌더();
+};
+function 미니캘린더렌더(){
+  const panel=document.getElementById('miniCalPanel'); if(!panel) return;
+  const {y,m}=mc;
+  const first=(new Date(y,m,1).getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayDs=_ds(today.getFullYear(),today.getMonth(),today.getDate());
+  let cells=['월','화','수','목','금','토','일'].map(d=>`<div class="mc-dow">${d}</div>`).join('');
+  for(let i=0;i<first;i++) cells+=`<div class="mc-cell empty"></div>`;
+  for(let d=1; d<=days; d++){
+    const ds=_ds(y,m,d);
+    const cls=['mc-cell', ds===todayDs?'today':'', ds===mc.sel?'sel':''].filter(Boolean).join(' ');
+    cells+=`<div class="${cls}" onclick="미니캘린더선택('${ds}')">${d}</div>`;
+  }
+  panel.innerHTML = `<div class="mc-head"><button onclick="미니캘린더이동(-1)">◀</button><span class="mc-title">${y}년 ${m+1}월</span><button onclick="미니캘린더이동(1)">▶</button></div><div class="mc-grid">${cells}</div>`;
+}
+window.미니캘린더이동 = function(d){
+  let m=mc.m+d, y=mc.y;
+  if(m<0){ m=11; y--; } else if(m>11){ m=0; y++; }
+  mc.y=y; mc.m=m;
+  미니캘린더렌더();
+};
+window.미니캘린더선택 = function(ds){
+  const panel=document.getElementById('miniCalPanel'); if(panel) panel.style.display='none';
+  const body=document.getElementById(mc.bodyId); if(body) body.style.display='';
+  mc.sel=ds;
+  if(mc.onPick) mc.onPick(ds);
+};
 window.키패드열기 = function(idx, editId){
   const 이름 = 분석대상 || (현재유저 && 현재유저.이름);
   if(!이름 || !내권한(이름)){ alert('본인 기록만 추가할 수 있어요.'); return; }
@@ -3297,13 +3354,16 @@ window.키패드열기 = function(idx, editId){
   kp={이름,ex,날짜:rec?rec.날짜:_kpToday(),w:String(rec?rec.중량:''),r:String(rec?rec.횟수:''),focus:'w',dirty:rec?{w:true,r:true}:{w:false,r:false},editId:editId||null,last};
   const old=document.getElementById('kpOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='kpOverlay'; ov.className='kp-ov';
-  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><label class="date">📅 <span id="kpDateLbl"></span><input type="date" id="kpDate" class="kp-date-input" value="${kp.날짜}" onchange="kpSetDate(this.value)"></label></div>`+
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><button class="date" onclick="미니캘린더토글(kpSetDate, kp.날짜, 'kpBody')">📅 <span id="kpDateLbl"></span></button></div>`+
+    `<div class="mini-cal" id="miniCalPanel"></div>`+
+    `<div id="kpBody">`+
     `<div class="kp-chips" id="kpChips"></div>`+
     `<div class="kp-disp"><div class="kp-fields"><div class="kp-field" id="kpFW" onclick="kpFocus('w')"><div class="big" id="kpWv">0</div><div class="cap">무게 (kg)</div></div><div class="kp-x">×</div><div class="kp-field" id="kpFR" onclick="kpFocus('r')"><div class="big" id="kpRv">0</div><div class="cap">횟수</div></div></div><div class="kp-1rm" id="kp1rm">예상 1RM —</div></div>`+
     `<div class="kp-last" id="kpLast"></div>`+
     `<div class="kp-quick"><button class="kp-q" onclick="kpAdj(-5)">−5</button><button class="kp-q" onclick="kpAdj(-2.5)">−2.5</button><button class="kp-q" onclick="kpAdj(2.5)">+2.5</button><button class="kp-q" onclick="kpAdj(5)">+5</button></div>`+
     `<div class="kp-pad">${[1,2,3,4,5,6,7,8,9,'.',0,'⌫'].map(k=>`<button class="kp-key" onclick="kpKey('${k}')">${k}</button>`).join('')}</div>`+
-    `<button class="kp-save" id="kpSaveBtn" onclick="kpSave()">${rec?'수정 저장':'저장하기'}</button>`;
+    `<button class="kp-save" id="kpSaveBtn" onclick="kpSave()">${rec?'수정 저장':'저장하기'}</button>`+
+    `</div>`;
   document.body.appendChild(ov);
   const lbl=document.getElementById('kpDateLbl'); if(lbl)lbl.textContent=_kpDateFmt(kp.날짜);
   키패드칩렌더(); kpUpdate();
@@ -3570,11 +3630,14 @@ window.체측입력열기 = function(ex, editId){
   mb = { 이름, ex, 날짜: rec?rec.날짜:_kpToday(), 개수, editId:editId||null };
   const old=document.getElementById('mbOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='mbOverlay'; ov.className='kp-ov';
-  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="체측닫기()">✕</button><h3>${escHtml(ex)}</h3><label class="date">📅 <span id="mbDateLbl"></span><input type="date" class="kp-date-input" value="${mb.날짜}" onchange="체측날짜(this.value)"></label></div>`
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="체측닫기()">✕</button><h3>${escHtml(ex)}</h3><button class="date" onclick="미니캘린더토글(체측날짜, mb.날짜, 'mbBody')">📅 <span id="mbDateLbl"></span></button></div>`
+    +`<div class="mini-cal" id="miniCalPanel"></div>`
+    +`<div id="mbBody">`
     +`<div class="cc-sub">2분 동안 한 개수를 입력하세요</div>`
     +`<div class="cc-count"><button class="mb-step" onclick="체측조절(-1)">−</button><input class="cc-input" id="ccInput" type="number" inputmode="numeric" min="0" value="${mb.개수}" oninput="체측입력변경(this.value)"><button class="mb-step" onclick="체측조절(1)">＋</button></div>`
     +`<div class="cc-grade" id="ccGrade"></div>`
-    +`<button class="kp-save" id="mbSaveBtn" onclick="체측저장()">${rec?'수정 저장':'저장하기'}</button>`;
+    +`<button class="kp-save" id="mbSaveBtn" onclick="체측저장()">${rec?'수정 저장':'저장하기'}</button>`
+    +`</div>`;
   document.body.appendChild(ov);
   const l=document.getElementById('mbDateLbl'); if(l) l.textContent=_kpDateFmt(mb.날짜);
   체측등급갱신();
