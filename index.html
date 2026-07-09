@@ -451,6 +451,10 @@
   .modal .sub{font-size:12px;color:var(--text-dim);margin-bottom:20px;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:6px;}
+  .member-switch-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .member-switch-label{font-size:14px;font-weight:700;color:var(--text);}
+  .member-switch-btn{flex-shrink:0;background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--blue-bright);font-family:'Noto Sans KR';font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer;}
+  .member-switch-btn:active{transform:scale(0.97);}
   .field input,.field select{width:100%;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'Noto Sans KR';font-size:15px;}
   .field input:focus,.field select:focus{outline:none;border-color:var(--blue-bright);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -906,8 +910,11 @@
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
     </div>
     <div class="field" style="margin-bottom:16px;">
-      <label>누구의 일지를 볼까요?</label>
-      <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)"></select>
+      <div class="member-switch-row">
+        <span class="member-switch-label" id="diaryOwnerLabel">📒 내 훈련일지</span>
+        <button type="button" class="member-switch-btn" id="diaryOtherBtn" onclick="일지멤버토글()">다른 부원 일지 보기</button>
+      </div>
+      <select id="diaryMemberSelect" onchange="selectDiaryMember(this.value)" style="display:none;margin-top:8px;"></select>
     </div>
     <div id="diaryContent">
       <div class="section-label" style="margin-top:8px;">📈 운동별 그래프 <span style="font-weight:400;color:var(--text-dim);font-size:12px;">— 누르면 바로 기록</span></div>
@@ -954,8 +961,11 @@
       <div class="header-divider"></div>
     </header>
     <div class="field" style="margin-bottom:16px;">
-      <label>누구의 캘린더를 볼까요?</label>
-      <select id="calMemberSelect" onchange="selectCalendarMember(this.value)"></select>
+      <div class="member-switch-row">
+        <span class="member-switch-label" id="calOwnerLabel">📅 내 캘린더</span>
+        <button type="button" class="member-switch-btn" id="calOtherBtn" onclick="캘린더멤버토글()">다른 부원 캘린더 보기</button>
+      </div>
+      <select id="calMemberSelect" onchange="selectCalendarMember(this.value)" style="display:none;margin-top:8px;"></select>
     </div>
     <div id="analysisCalendar"></div>
   </div>
@@ -1224,7 +1234,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.134";
+const APP_VERSION = "2026.07.09.135";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2219,6 +2229,9 @@ window.addEventListener('popstate', function(e){
 // ── 메인 하단 탭 ──
 let 현재메인탭 = 'ranking';
 let 일지대상 = null;
+let 일지드롭모드 = false;    // true면 "다른 부원 일지 보기" 드롭다운 노출 중
+let 캘린더드롭모드 = false;  // true면 "다른 부원 캘린더 보기" 드롭다운 노출 중
+let 일지탭유지 = false;      // true인 동안은 switchMainTab이 일지드롭모드를 기본값으로 리셋하지 않음(특정 부원 일지로 바로 점프할 때 사용)
 window.switchMainTab = function(tab){
   현재메인탭 = tab;
   // 개인화면이 열린 채로 하단 탭을 누르면, 쌓아둔 뒤로가기 히스토리도 정리
@@ -2245,9 +2258,10 @@ window.switchMainTab = function(tab){
     const sel = document.getElementById('calMemberSelect');
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
       전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
-    let 대상 = 분석대상 || 일지대상 || (현재유저 && !게스트인가() ? 현재유저.이름 : null);
-    sel.value = 대상 || '';
-    if(대상){ 분석대상 = 대상; 분석캘린더그리기(대상); }
+    const 회원임 = 현재유저 && !게스트인가();
+    캘린더드롭모드 = !회원임;   // 게스트는 고를 사람이 없으니 항상 드롭다운, 회원은 매번 내 캘린더로 리셋
+    캘린더헤더그리기();
+    if(회원임){ selectCalendarMember(현재유저.이름); }
     else { document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; }
   }
   if(tab==='diary'){
@@ -2256,16 +2270,12 @@ window.switchMainTab = function(tab){
     const sel = document.getElementById('diaryMemberSelect');
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
       전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
-    // 처음 들어오면 본인 일지를 기본으로 보여줌
-    if(!일지대상 && 현재유저 && !게스트인가()){ 일지대상 = 현재유저.이름; }
-    if(!일지대상){
-      sel.value = '';
-      document.getElementById('diaryContent').style.display = 'none';
-    } else {
-      sel.value = 일지대상;
-      document.getElementById('diaryContent').style.display = 'flex';
-      selectDiaryMember(일지대상);
-    }
+    const 회원임 = 현재유저 && !게스트인가();
+    if(!일지탭유지){ 일지드롭모드 = !회원임; }   // 게스트는 고를 사람이 없으니 항상 드롭다운, 회원은 보통 매번 내 일지로 리셋
+    일지헤더그리기();
+    if(회원임 && !일지드롭모드){ selectDiaryMember(현재유저.이름); }
+    else if(일지대상){ sel.value = 일지대상; selectDiaryMember(일지대상); }
+    else { document.getElementById('diaryContent').style.display = 'none'; }
   }
   if(tab==='ranking'){ try{ 내요약스트립그리기(); }catch(e){} }
   오늘기록배너그리기();
@@ -2288,6 +2298,37 @@ window.selectCalendarMember = function(이름){
   document.getElementById('calMemberSelect').value = 이름 || '';
   if(!이름){ document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; return; }
   분석대상 = 이름; 분석캘린더YM = null; 분석캘린더그리기(이름);
+}
+// 일지/캘린더 헤더: 평소엔 "내 OO" 라벨만, 버튼 누르면 부원 선택 드롭다운으로 전환
+function 일지헤더그리기(){
+  const sel = document.getElementById('diaryMemberSelect'), label = document.getElementById('diaryOwnerLabel'), btn = document.getElementById('diaryOtherBtn');
+  const 회원임 = 현재유저 && !게스트인가();
+  if(!회원임){ sel.style.display=''; label.style.display='none'; btn.style.display='none'; return; }
+  btn.style.display = '';
+  sel.style.display = 일지드롭모드 ? '' : 'none';
+  label.style.display = 일지드롭모드 ? 'none' : '';
+  btn.textContent = 일지드롭모드 ? '내 일지 보기' : '다른 부원 일지 보기';
+}
+window.일지멤버토글 = function(){
+  일지드롭모드 = !일지드롭모드;
+  일지헤더그리기();
+  if(일지드롭모드){ document.getElementById('diaryMemberSelect').value = ''; selectDiaryMember(null); }
+  else { selectDiaryMember(현재유저.이름); }
+}
+function 캘린더헤더그리기(){
+  const sel = document.getElementById('calMemberSelect'), label = document.getElementById('calOwnerLabel'), btn = document.getElementById('calOtherBtn');
+  const 회원임 = 현재유저 && !게스트인가();
+  if(!회원임){ sel.style.display=''; label.style.display='none'; btn.style.display='none'; return; }
+  btn.style.display = '';
+  sel.style.display = 캘린더드롭모드 ? '' : 'none';
+  label.style.display = 캘린더드롭모드 ? 'none' : '';
+  btn.textContent = 캘린더드롭모드 ? '내 캘린더 보기' : '다른 부원 캘린더 보기';
+}
+window.캘린더멤버토글 = function(){
+  캘린더드롭모드 = !캘린더드롭모드;
+  캘린더헤더그리기();
+  if(캘린더드롭모드){ document.getElementById('calMemberSelect').value = ''; selectCalendarMember(null); }
+  else { selectCalendarMember(현재유저.이름); }
 }
 // ── 주간 훈련 일지 ──
 // 종목별 설정: 목표회수 채우면 무게 올림(증가), 다시 시작회수부터
@@ -3361,7 +3402,10 @@ window.분석운동시작 = function(idx){
   const 이름 = 분석대상 || (현재유저 && 현재유저.이름);
   if(!이름) return;
   일지대상 = 이름;
+  일지드롭모드 = !!(현재유저 && 이름 !== 현재유저.이름);   // 남의 일지로 점프하는 거면 드롭다운 상태로 유지
+  일지탭유지 = true;
   switchMainTab('diary');   // selectDiaryMember가 현재종목=null로 초기화함
+  일지탭유지 = false;
   현재종목 = ex;
   직접입력모드 = false;
   훈련일지그리기(이름);
