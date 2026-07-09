@@ -756,7 +756,7 @@
   .mini-cal .mc-title{font-size:17px;font-weight:700;color:var(--text);}
   .mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
   .mc-dow{text-align:center;font-size:12px;font-weight:700;color:var(--text-dim);padding:4px 0 8px;}
-  .mc-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:11px;font-size:16px;font-weight:600;color:var(--text);cursor:pointer;}
+  .mc-cell{min-height:44px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:11px;font-size:16px;font-weight:600;color:var(--text);cursor:pointer;}
   .mc-cell.empty{background:transparent;border:none;cursor:default;}
   .mc-cell.today{border-color:var(--blue-bright);color:var(--blue-bright);font-weight:800;}
   .mc-cell.sel{background:var(--blue);border-color:var(--blue);color:#10141b;font-weight:800;}
@@ -1237,7 +1237,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.132";
+const APP_VERSION = "2026.06.10.133";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
