@@ -1237,7 +1237,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.06.10.131";
+const APP_VERSION = "2026.06.10.132";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3303,20 +3303,23 @@ function _kpToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.g
 function _kpDateFmt(s){ if(!s)return ''; const p=s.split('-'); return p.length===3?`${+p[1]}/${+p[2]}`:s; }
 window.kpSetDate = function(v){ kp.날짜=v; const el=document.getElementById('kpDateLbl'); if(el)el.textContent=_kpDateFmt(v); };
 // ── 기록 입력 오버레이 안에 크게 띄우는 공용 미니 캘린더 (네이티브 날짜피커 대체) ──
-let mc = { y:0, m:0, sel:null, onPick:null, bodyId:null };
-window.미니캘린더토글 = function(onPick, selDs, bodyId){
-  const panel=document.getElementById('miniCalPanel'); if(!panel) return;
+// ⚠️ panelId를 오버레이마다 다르게 받아야 함(같은 id를 여러 오버레이가 공유하면
+//    뒤로가기 등으로 이전 오버레이가 DOM에 남아있을 때 getElementById가 엉뚱한
+//    패널을 집어서 화면엔 아무것도 안 뜨는 버그가 생김)
+let mc = { y:0, m:0, sel:null, onPick:null, bodyId:null, panelId:null };
+window.미니캘린더토글 = function(onPick, selDs, bodyId, panelId){
+  const panel=document.getElementById(panelId); if(!panel) return;
   const body=document.getElementById(bodyId);
   const opening = panel.style.display!=='flex';
   if(!opening){ panel.style.display='none'; if(body) body.style.display=''; return; }
   const base = selDs ? new Date(selDs) : new Date();
-  mc = { y:base.getFullYear(), m:base.getMonth(), sel:selDs||null, onPick, bodyId };
+  mc = { y:base.getFullYear(), m:base.getMonth(), sel:selDs||null, onPick, bodyId, panelId };
   if(body) body.style.display='none';
   panel.style.display='flex';
   미니캘린더렌더();
 };
 function 미니캘린더렌더(){
-  const panel=document.getElementById('miniCalPanel'); if(!panel) return;
+  const panel=document.getElementById(mc.panelId); if(!panel) return;
   const {y,m}=mc;
   const first=(new Date(y,m,1).getDay()+6)%7, days=new Date(y,m+1,0).getDate();
   const today=new Date(); today.setHours(0,0,0,0);
@@ -3328,7 +3331,7 @@ function 미니캘린더렌더(){
     const cls=['mc-cell', ds===todayDs?'today':'', ds===mc.sel?'sel':''].filter(Boolean).join(' ');
     cells+=`<div class="${cls}" onclick="미니캘린더선택('${ds}')">${d}</div>`;
   }
-  panel.innerHTML = `<div class="mc-head"><button onclick="미니캘린더이동(-1)">◀</button><span class="mc-title">${y}년 ${m+1}월</span><button onclick="미니캘린더이동(1)">▶</button></div><div class="mc-grid">${cells}</div>`;
+  panel.innerHTML = `<div class="mc-head"><button type="button" onclick="미니캘린더이동(-1)">◀</button><span class="mc-title">${y}년 ${m+1}월</span><button type="button" onclick="미니캘린더이동(1)">▶</button></div><div class="mc-grid">${cells}</div>`;
 }
 window.미니캘린더이동 = function(d){
   let m=mc.m+d, y=mc.y;
@@ -3337,7 +3340,7 @@ window.미니캘린더이동 = function(d){
   미니캘린더렌더();
 };
 window.미니캘린더선택 = function(ds){
-  const panel=document.getElementById('miniCalPanel'); if(panel) panel.style.display='none';
+  const panel=document.getElementById(mc.panelId); if(panel) panel.style.display='none';
   const body=document.getElementById(mc.bodyId); if(body) body.style.display='';
   mc.sel=ds;
   if(mc.onPick) mc.onPick(ds);
@@ -3354,8 +3357,8 @@ window.키패드열기 = function(idx, editId){
   kp={이름,ex,날짜:rec?rec.날짜:_kpToday(),w:String(rec?rec.중량:''),r:String(rec?rec.횟수:''),focus:'w',dirty:rec?{w:true,r:true}:{w:false,r:false},editId:editId||null,last};
   const old=document.getElementById('kpOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='kpOverlay'; ov.className='kp-ov';
-  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><button class="date" onclick="미니캘린더토글(kpSetDate, kp.날짜, 'kpBody')">📅 <span id="kpDateLbl"></span></button></div>`+
-    `<div class="mini-cal" id="miniCalPanel"></div>`+
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><button type="button" class="date" onclick="미니캘린더토글(kpSetDate, kp.날짜, 'kpBody', 'kpCalPanel')">📅 <span id="kpDateLbl"></span></button></div>`+
+    `<div class="mini-cal" id="kpCalPanel"></div>`+
     `<div id="kpBody">`+
     `<div class="kp-chips" id="kpChips"></div>`+
     `<div class="kp-disp"><div class="kp-fields"><div class="kp-field" id="kpFW" onclick="kpFocus('w')"><div class="big" id="kpWv">0</div><div class="cap">무게 (kg)</div></div><div class="kp-x">×</div><div class="kp-field" id="kpFR" onclick="kpFocus('r')"><div class="big" id="kpRv">0</div><div class="cap">횟수</div></div></div><div class="kp-1rm" id="kp1rm">예상 1RM —</div></div>`+
@@ -3630,8 +3633,8 @@ window.체측입력열기 = function(ex, editId){
   mb = { 이름, ex, 날짜: rec?rec.날짜:_kpToday(), 개수, editId:editId||null };
   const old=document.getElementById('mbOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='mbOverlay'; ov.className='kp-ov';
-  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="체측닫기()">✕</button><h3>${escHtml(ex)}</h3><button class="date" onclick="미니캘린더토글(체측날짜, mb.날짜, 'mbBody')">📅 <span id="mbDateLbl"></span></button></div>`
-    +`<div class="mini-cal" id="miniCalPanel"></div>`
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="체측닫기()">✕</button><h3>${escHtml(ex)}</h3><button type="button" class="date" onclick="미니캘린더토글(체측날짜, mb.날짜, 'mbBody', 'mbCalPanel')">📅 <span id="mbDateLbl"></span></button></div>`
+    +`<div class="mini-cal" id="mbCalPanel"></div>`
     +`<div id="mbBody">`
     +`<div class="cc-sub">2분 동안 한 개수를 입력하세요</div>`
     +`<div class="cc-count"><button class="mb-step" onclick="체측조절(-1)">−</button><input class="cc-input" id="ccInput" type="number" inputmode="numeric" min="0" value="${mb.개수}" oninput="체측입력변경(this.value)"><button class="mb-step" onclick="체측조절(1)">＋</button></div>`
