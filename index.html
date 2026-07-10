@@ -875,6 +875,10 @@
     </div>
     <div class="stat-row" id="pStats"></div>
     <div id="pGoal" class="goal-box"></div>
+    <div class="edit-row">
+      <button class="edit-btn" onclick="상세훈련일지보기()">📒 훈련일지 보기</button>
+      <button class="edit-btn" onclick="상세캘린더보기()">📅 캘린더 보기</button>
+    </div>
 
     <div id="paneOfficial">
       <div class="section-label">📈 공식 삼대기록 추이</div>
@@ -891,7 +895,7 @@
   <div id="diaryView" style="display:none;">
     <header style="padding:24px 0 16px;text-align:center;">
       <h1 class="title-main">📒 훈련 일지</h1>
-      <div class="title-sub">예상 1RM 추적 · 매주 강해지기</div>
+      <div class="title-sub">예상 1RM 추적</div>
       <div class="header-divider"></div>
     </header>
     <div class="guest-banner" style="display:none;">
@@ -1223,7 +1227,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.10.137";
+const APP_VERSION = "2026.07.10.138";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1908,6 +1912,23 @@ window.showDetail = function(이름){
   그래프그리기(member);
   setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
 }
+// 랭킹 상세 페이지에서 그 부원의 훈련일지/캘린더로 바로 이동
+window.상세훈련일지보기 = function(){
+  const 이름 = 현재상세이름; if(!이름) return;
+  일지대상 = 이름;
+  일지드롭모드 = !!(현재유저 && 이름 !== 현재유저.이름);
+  일지탭유지 = true;
+  switchMainTab('diary');
+  일지탭유지 = false;
+}
+window.상세캘린더보기 = function(){
+  const 이름 = 현재상세이름; if(!이름) return;
+  분석대상 = 이름;
+  캘린더드롭모드 = !!(현재유저 && 이름 !== 현재유저.이름);
+  캘린더탭유지 = true;
+  switchMainTab('calendar');
+  캘린더탭유지 = false;
+}
 function _운동일집합(이름){
   const days=new Set();
   훈련목록.forEach(t=>{ if(t.이름===이름 && t.날짜 && t.날짜.split('-').length===3) days.add(t.날짜); });
@@ -2216,6 +2237,7 @@ let 일지대상 = null;
 let 일지드롭모드 = false;    // true면 "다른 부원 일지 보기" 드롭다운 노출 중
 let 캘린더드롭모드 = false;  // true면 "다른 부원 캘린더 보기" 드롭다운 노출 중
 let 일지탭유지 = false;      // true인 동안은 switchMainTab이 일지드롭모드를 기본값으로 리셋하지 않음(특정 부원 일지로 바로 점프할 때 사용)
+let 캘린더탭유지 = false;    // true인 동안은 switchMainTab이 캘린더드롭모드를 기본값으로 리셋하지 않음(특정 부원 캘린더로 바로 점프할 때 사용)
 window.switchMainTab = function(tab){
   현재메인탭 = tab;
   // 개인화면이 열린 채로 하단 탭을 누르면, 쌓아둔 뒤로가기 히스토리도 정리
@@ -2243,9 +2265,10 @@ window.switchMainTab = function(tab){
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
       전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
     const 회원임 = 현재유저 && !게스트인가();
-    캘린더드롭모드 = !회원임;   // 게스트는 고를 사람이 없으니 항상 드롭다운, 회원은 매번 내 캘린더로 리셋
+    if(!캘린더탭유지){ 캘린더드롭모드 = !회원임; }   // 게스트는 고를 사람이 없으니 항상 드롭다운, 회원은 보통 매번 내 캘린더로 리셋
     캘린더헤더그리기();
-    if(회원임){ selectCalendarMember(현재유저.이름); }
+    if(회원임 && !캘린더드롭모드){ selectCalendarMember(현재유저.이름); }
+    else if(분석대상){ sel.value = 분석대상; selectCalendarMember(분석대상); }
     else { document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; }
   }
   if(tab==='diary'){
@@ -2293,10 +2316,20 @@ function 일지헤더그리기(){
   label.style.display = 일지드롭모드 ? 'none' : '';
   btn.textContent = 일지드롭모드 ? '내 일지 보기' : '다른 부원 일지 보기';
 }
+// 드롭다운 노출과 동시에 iOS/Android 네이티브 선택 휠을 바로 띄운다
+function 네이티브피커열기(sel){
+  if(!sel) return;
+  sel.focus();
+  if(sel.showPicker){ try{ sel.showPicker(); }catch(e){} }
+}
 window.일지멤버토글 = function(){
   일지드롭모드 = !일지드롭모드;
   일지헤더그리기();
-  if(일지드롭모드){ document.getElementById('diaryMemberSelect').value = ''; selectDiaryMember(null); }
+  if(일지드롭모드){
+    const sel = document.getElementById('diaryMemberSelect');
+    sel.value = ''; selectDiaryMember(null);
+    네이티브피커열기(sel);
+  }
   else { selectDiaryMember(현재유저.이름); }
 }
 function 캘린더헤더그리기(){
@@ -2311,7 +2344,11 @@ function 캘린더헤더그리기(){
 window.캘린더멤버토글 = function(){
   캘린더드롭모드 = !캘린더드롭모드;
   캘린더헤더그리기();
-  if(캘린더드롭모드){ document.getElementById('calMemberSelect').value = ''; selectCalendarMember(null); }
+  if(캘린더드롭모드){
+    const sel = document.getElementById('calMemberSelect');
+    sel.value = ''; selectCalendarMember(null);
+    네이티브피커열기(sel);
+  }
   else { selectCalendarMember(현재유저.이름); }
 }
 // ── 주간 훈련 일지 ──
