@@ -1228,7 +1228,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.10.141";
+const APP_VERSION = "2026.07.10.142";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2319,20 +2319,12 @@ function 일지헤더그리기(){
   label.style.display = 일지드롭모드 ? 'none' : '';
   btn.textContent = 일지드롭모드 ? '내 일지 보기' : '다른 부원 일지 보기';
 }
-// 드롭다운 노출과 동시에 iOS/Android 네이티브 선택 휠을 바로 띄운다
-function 네이티브피커열기(sel){
-  if(!sel) return;
-  sel.focus();
-  if(sel.showPicker){ try{ sel.showPicker(); }catch(e){} }
-}
 window.일지멤버토글 = function(){
   일지드롭모드 = !일지드롭모드;
   일지헤더그리기();
   if(일지드롭모드){
-    // 선택 전까지는 지금 보던 내용을 그대로 두고, select만 비운 채 피커를 띄운다(페이지 전환처럼 안 보이게)
-    const sel = document.getElementById('diaryMemberSelect');
-    sel.value = '';
-    네이티브피커열기(sel);
+    // 선택 전까지는 지금 보던 내용을 그대로 두고, select만 비워서 드롭다운으로 보여준다
+    document.getElementById('diaryMemberSelect').value = '';
   }
   else { selectDiaryMember(현재유저.이름); }
 }
@@ -2349,10 +2341,8 @@ window.캘린더멤버토글 = function(){
   캘린더드롭모드 = !캘린더드롭모드;
   캘린더헤더그리기();
   if(캘린더드롭모드){
-    // 선택 전까지는 지금 보던 캘린더를 그대로 두고, select만 비운 채 피커를 띄운다(페이지 전환처럼 안 보이게)
-    const sel = document.getElementById('calMemberSelect');
-    sel.value = '';
-    네이티브피커열기(sel);
+    // 선택 전까지는 지금 보던 캘린더를 그대로 두고, select만 비워서 드롭다운으로 보여준다
+    document.getElementById('calMemberSelect').value = '';
   }
   else { selectCalendarMember(현재유저.이름); }
 }
