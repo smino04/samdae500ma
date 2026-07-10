@@ -1219,6 +1219,7 @@
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getAnalytics, isSupported as 애널리틱스지원됨 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
 import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, getDoc, getDocs, query, where, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail, signInAnonymously, sendEmailVerification, verifyBeforeUpdateEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
@@ -1227,7 +1228,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.10.140";
+const APP_VERSION = "2026.07.10.141";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1266,6 +1267,8 @@ const firebaseConfig = {
   measurementId: "G-GS92TRPC2X"
 };
 const app = initializeApp(firebaseConfig);
+// 실시간 사용자 수 확인용(Firebase 콘솔 Analytics > 실시간). 미지원 환경(구형 웹뷰 등)에서도 앱이 안 죽게 안전 처리.
+애널리틱스지원됨().then(ok=>{ if(ok){ try{ getAnalytics(app); }catch(e){} } }).catch(()=>{});
 const db = getFirestore(app);
 const auth = getAuth(app);
 const recordsCol = collection(db, "records");
