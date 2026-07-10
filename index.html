@@ -559,13 +559,13 @@
   .print-bar .pb-nav{background:#3a3f44;color:#fff;width:40px;padding:9px 0;}
   .print-bar .pb-month{color:#fff;font-size:15px;font-weight:700;min-width:120px;text-align:center;}
   .print-bar .pb-close{background:transparent;color:#cfd6de;}
-  .a4-sheet{background:#fff;color:#111;width:210mm;max-width:96vw;height:297mm;margin:16px auto;padding:14mm 12mm;box-shadow:0 4px 24px rgba(0,0,0,0.4);box-sizing:border-box;display:flex;flex-direction:column;}
+  .a4-sheet{background:#fff;color:#111;width:210mm;max-width:96vw;min-height:297mm;margin:16px auto;padding:14mm 12mm;box-shadow:0 4px 24px rgba(0,0,0,0.4);box-sizing:border-box;}
   .a4-logo{display:block;margin:0 auto;height:42mm;width:auto;filter:invert(1);}
   .a4-brand{text-align:center;font-family:'Noto Sans KR';font-weight:900;font-size:40px;color:#111;letter-spacing:2px;margin-top:6mm;}
   .a4-title{text-align:center;font-family:'Noto Sans KR';font-weight:700;font-size:22px;color:#333;letter-spacing:1px;margin-top:3mm;margin-bottom:10mm;}
-  .a4-table{width:100%;height:100%;border-collapse:collapse;color:#111;flex:1;table-layout:fixed;}
-  .a4-table th,.a4-table td{border:1.5px solid #222;padding:0;text-align:center;font-size:20px;}
-  .a4-table th{background:#e8e8e8;font-weight:800;padding:10px 4px;}
+  .a4-table{width:100%;border-collapse:collapse;color:#111;table-layout:fixed;}
+  .a4-table th,.a4-table td{border:1.5px solid #222;padding:10px 4px;text-align:center;font-size:20px;}
+  .a4-table th{background:#e8e8e8;font-weight:800;}
   .a4-table td.nm{text-align:left;font-weight:700;padding-left:16px;}
   .a4-table tr:nth-child(even) td{background:#f6f6f6;}
   @media print{
@@ -574,7 +574,7 @@
     body>*{ display:none !important; }
     #printOverlay{ display:block !important; position:static;background:#fff;overflow:visible; }
     .print-bar{ display:none !important; }
-    .a4-sheet{ box-shadow:none;margin:0;width:210mm;max-width:none;height:297mm;padding:14mm 12mm; }
+    .a4-sheet{ box-shadow:none;margin:0;width:210mm;max-width:none;min-height:297mm;padding:14mm 12mm; }
   }
   /* 대시보드 */
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
@@ -1227,7 +1227,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.10.139";
+const APP_VERSION = "2026.07.10.140";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
