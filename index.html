@@ -431,6 +431,7 @@
   .pr-badge{font-size:30px;font-weight:900;color:#ffd43b;text-shadow:0 2px 18px rgba(255,212,59,0.7),0 0 2px #000;letter-spacing:0.5px;font-family:'Black Han Sans','Noto Sans KR',sans-serif;}
   .pr-rm{margin-top:10px;font-size:17px;color:#fff;font-weight:700;}
   .pr-rm b{color:#ffd43b;font-size:22px;}
+  .pr-detail{margin-top:4px;font-size:13px;color:rgba(255,255,255,0.65);font-weight:600;}
   .pr-sub{margin-top:6px;font-size:14px;font-weight:700;color:#ff8a80;}
   .pr-card{pointer-events:auto;}
   .pr-actions{margin-top:22px;display:flex;flex-direction:column;gap:10px;align-items:center;}
@@ -1227,7 +1228,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.13.147";
+const APP_VERSION = "2026.07.13.148";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2458,7 +2459,8 @@ function 신기록연출(info){
   const actionsHTML = 공유가능
     ? `<div class="pr-actions"><button class="pr-share" onclick="PR카드공유(this)">📸 이미지로 자랑하기</button><button class="pr-close" onclick="PR연출닫기()">닫기</button></div>`
     : '';
-  fx.innerHTML=`<div class="pr-burst">${conf}</div><div class="pr-card"><div class="pr-badge">🎉 NEW RECORD! 🎉</div>${rm!=null?`<div class="pr-rm">예상 1RM <b>${rm}kg</b></div>`:''}<div class="pr-sub">신기록 경신! 🔥</div>${actionsHTML}</div>`;
+  const detailHTML = (info.중량!=null && info.횟수!=null) ? `<div class="pr-detail">${info.중량}kg × ${info.횟수}회</div>` : '';
+  fx.innerHTML=`<div class="pr-burst">${conf}</div><div class="pr-card"><div class="pr-badge">🎉 NEW RECORD! 🎉</div>${rm!=null?`<div class="pr-rm">예상 1RM <b>${rm}kg</b></div>`:''}${detailHTML}<div class="pr-sub">신기록 경신! 🔥</div>${actionsHTML}</div>`;
   document.body.appendChild(fx);
   if(공유가능){
     // 공유 버튼이 있으면 카드는 유지, 색종이만 사라지게. 바깥 탭하면 닫힘.
