@@ -1227,7 +1227,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.13.145";
+const APP_VERSION = "2026.07.13.146";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2729,7 +2729,6 @@ const 점값플러그인 = {
     ctx.textAlign='center';
     chart.data.datasets.forEach((ds,di)=>{
       const below = ds.belowLabels;   // 탑세트 중량×횟수 (점 아래 흐릿하게)
-      const reasons = ds.reasonLabels;   // 중량 하락 사유 (있는 점 옆에 작은 태그 아이콘)
       chart.getDatasetMeta(di).data.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null) return;
         const r=(pt.options&&pt.options.radius)||ds.pointRadius||4;
@@ -2750,13 +2749,6 @@ const 점값플러그인 = {
           if(bx+bhw>ca.right) bx=ca.right-bhw;
           const by=pt.y + r + 5;
           if(by+11 <= ca.bottom){ ctx.fillStyle='rgba(173,181,189,0.55)'; ctx.fillText(below[i], bx, by); }
-        }
-        // 옆: 중량 하락 사유가 있으면 작은 태그 아이콘 (탭하면 툴팁에 전체 사유 텍스트)
-        if(reasons && reasons[i]){
-          ctx.font="11px sans-serif"; ctx.textBaseline='middle';
-          let ix = pt.x + r + 9;
-          if(ix > ca.right - 6) ix = pt.x - r - 9;
-          ctx.fillText('🏷️', ix, pt.y);
         }
       });
     });
@@ -3180,16 +3172,13 @@ function 운동상세그리기(이름, ex){
   const below=recs.map(t=>`${t.중량}×${t.횟수}`);
   const 사유들=recs.map(t=>t.사유||null);
   const ys=yScale(vals);
-  const REASON_COLOR='#f0a860';
-  const ptColors=vals.map((v,i)=> prFlags[i]?'#ffc83d':(사유들[i]?REASON_COLOR:c));
-  const ptR=vals.map((v,i)=> prFlags[i]?5:(사유들[i]?4.5:3.5));
-  const ptStyle=vals.map((v,i)=> 사유들[i]?'rectRot':'circle');
+  const ptColors=vals.map((v,i)=> prFlags[i]?'#ffc83d':(사유들[i]?'#f0a860':c));
+  const ptR=vals.map((v,i)=> prFlags[i]?5:3.5);
   if(vals.length){
     const ch=new Chart(document.getElementById('detailChart'),{type:'line',
-      data:{labels,datasets:[{label:ex,data:vals,belowLabels:below,reasonLabels:사유들,borderColor:c,backgroundColor:영역채움(c),fill:true,tension:0.35,borderWidth:2.5,pointRadius:ptR,pointHoverRadius:6,pointBackgroundColor:ptColors,pointBorderColor:ptColors,pointStyle:ptStyle}]},
+      data:{labels,datasets:[{label:ex,data:vals,belowLabels:below,borderColor:c,backgroundColor:영역채움(c),fill:true,tension:0.35,borderWidth:2.5,pointRadius:ptR,pointHoverRadius:6,pointBackgroundColor:ptColors,pointBorderColor:ptColors,pointStyle:'circle'}]},
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
-        plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:(ctx)=>{ const t=recs[ctx.dataIndex]; let s=`${t.중량}kg × ${t.횟수}회 · 1RM ${ctx.formattedValue}kg`; if(t.사유) s+=` · ${t.사유}`; return s; }}}},
+        plugins:{legend:{display:false}},
         scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step},grid:{color:line}}}},
       plugins:[점값플러그인]});
     분석차트들.push(ch);
