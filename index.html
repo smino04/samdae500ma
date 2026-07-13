@@ -326,6 +326,7 @@
   .ana-rec-date{flex-shrink:0;width:42px;color:var(--text-dim);font-weight:700;font-size:12px;}
   .ana-rec-val{flex:1;min-width:0;color:var(--text);}
   .ana-rec-val i{color:var(--text-dim);font-style:normal;font-size:11.5px;}
+  .ana-rec-reason{display:inline-block;margin-left:5px;padding:1px 8px;border-radius:10px;background:rgba(240,168,96,0.15);color:#f0a860;font-size:11px;font-weight:700;white-space:nowrap;}
   .ana-rec-act{flex-shrink:0;display:flex;gap:6px;}
   .ana-rec-act button{padding:5px 9px;border-radius:7px;font-family:'Noto Sans KR';font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--bg);}
   .ana-rec-edit{color:var(--blue-bright);border-color:var(--blue-bright)!important;}
@@ -748,6 +749,14 @@
   .kp-x{font-size:26px;color:var(--line);align-self:center;padding-bottom:16px;}
   .kp-1rm{background:rgba(220,227,238,0.07);border:1px solid var(--line);border-radius:11px;padding:9px 16px;font-size:12.5px;color:var(--blue-bright);}
   .kp-last{font-size:11px;color:var(--text-dim);text-align:center;padding:0 18px;}
+  .kp-drop{display:none;padding:10px 18px 0;}
+  .kp-drop.show{display:block;}
+  .kp-drop-msg{font-size:11.5px;color:#f0a860;text-align:center;margin-bottom:6px;}
+  .kp-drop-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+  .kp-drop-chip{flex-shrink:0;padding:6px 12px;border-radius:15px;font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--text-dim);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR';}
+  .kp-drop-chip.on{background:#f0a860;border-color:#f0a860;color:#10141b;font-weight:700;}
+  .kp-drop-etc{display:none;width:100%;margin-top:8px;padding:9px 12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:'Noto Sans KR';font-size:13px;box-sizing:border-box;}
+  .kp-drop-etc.show{display:block;}
   .kp-quick{display:flex;gap:7px;padding:0 18px 10px;}
   .kp-q{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:11px 0;text-align:center;font-size:13px;color:var(--text);font-weight:600;cursor:pointer;font-family:'Noto Sans KR';}
   .kp-q:active{background:var(--panel-light);}
@@ -1218,7 +1227,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.10.143";
+const APP_VERSION = "2026.07.12.144";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3151,7 +3160,7 @@ function 운동상세그리기(이름, ex){
   const prFlags=vals.map((v,i)=> i===bestIdx);
   const firstId = recs.length ? recs[0]._id : null;
   const hist=recs.map((t,i)=>({t,pr:prFlags[i],v:vals[i]})).reverse();
-  const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${v}</i>${pr?' <b style="color:var(--gold)">PR</b>':''}${t._id===firstId?' <b style="color:var(--text-dim)">시작</b>':''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="키패드열기(null,'${t._id}')">수정</button><button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button></span>`:''}</div>`).join('');
+  const histHTML=hist.map(({t,pr,v})=>`<div class="ana-rec"><span class="ana-rec-date">${(t.날짜||'').slice(5).replace('-','/')}</span><span class="ana-rec-val">${t.중량}kg × ${t.횟수}회 <i>· 1RM ${v}</i>${pr?' <b style="color:var(--gold)">PR</b>':''}${t._id===firstId?' <b style="color:var(--text-dim)">시작</b>':''}${t.사유?` <span class="ana-rec-reason">${escHtml(t.사유)}</span>`:''}</span>${권한?`<span class="ana-rec-act"><button class="ana-rec-edit" onclick="키패드열기(null,'${t._id}')">수정</button><button class="ana-rec-del" onclick="deleteTraining('${t._id}')">삭제</button></span>`:''}</div>`).join('');
   cont.innerHTML=`<div class="detail-head"><button class="detail-back" onclick="운동상세닫기()">‹</button><span class="detail-bar" style="background:${c}"></span><h2>${escHtml(ex)}</h2></div>`+
     `<div class="detail-stats"><div class="detail-stat"><div class="l">현재 추정 1RM</div><div class="v" style="color:${c}">${cur}<small>kg</small></div></div><div class="detail-stat"><div class="l">누적 성장</div><div class="v" style="color:var(--gold)">${grow>=0?'+':''}${grow}<small>kg</small></div></div></div>`+
     `<div class="chart-card"><div class="chart-wrap"><canvas id="detailChart"></canvas></div></div>`+
@@ -3259,8 +3268,9 @@ function 분석그리기(){
 // ===== 새 흐름: 상세 열기/닫기 + 키패드 =====
 window.운동상세열기 = function(idx){ 상세종목 = 현재분석종목들[idx]; if(!상세종목) return; 분석그리기(); };
 window.운동상세닫기 = function(){ 상세종목 = null; 분석그리기(); };
-let kp = {이름:null,ex:null,날짜:null,w:'',r:'',focus:'w',dirty:{w:false,r:false},editId:null,last:null};
+let kp = {이름:null,ex:null,날짜:null,w:'',r:'',focus:'w',dirty:{w:false,r:false},editId:null,last:null,사유:null,사유기타:''};
 let kp종목들 = [];
+const 중량하락사유목록 = ['🥗 다이어트 중','🤕 부상/컨디션 난조','😴 오래 쉬었음','🧘 폼 교정 중'];
 function _kpToday(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function _kpDateFmt(s){ if(!s)return ''; const p=s.split('-'); return p.length===3?`${+p[1]}/${+p[2]}`:s; }
 window.kpSetDate = function(v){ kp.날짜=v; const el=document.getElementById('kpDateLbl'); if(el)el.textContent=_kpDateFmt(v); };
@@ -3270,10 +3280,14 @@ window.키패드열기 = function(idx, editId){
   const ex = (typeof idx==='number') ? 현재분석종목들[idx] : 상세종목;
   if(!ex) return;
   kp종목들 = 표시종목들(이름);
-  const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
+  // 수정 중인 기록 자신은 '지난 기록' 비교에서 제외(그래야 최신 기록을 수정할 때도 하락 여부를 제대로 판단함)
+  const recs=훈련목록.filter(t=>t.이름===이름&&(t.종목||'벤치프레스')===ex&&t._id!==editId).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||''));
   const last=recs.length?recs[recs.length-1]:null;
   const rec=editId?훈련목록.find(t=>t._id===editId):null;
-  kp={이름,ex,날짜:rec?rec.날짜:_kpToday(),w:String(rec?rec.중량:''),r:String(rec?rec.횟수:''),focus:'w',dirty:rec?{w:true,r:true}:{w:false,r:false},editId:editId||null,last};
+  const 기존사유 = rec?(rec.사유||null):null;
+  const 기존사유프리셋 = 기존사유 && 중량하락사유목록.includes(기존사유);
+  kp={이름,ex,날짜:rec?rec.날짜:_kpToday(),w:String(rec?rec.중량:''),r:String(rec?rec.횟수:''),focus:'w',dirty:rec?{w:true,r:true}:{w:false,r:false},editId:editId||null,last,
+    사유: 기존사유 ? (기존사유프리셋?기존사유:'기타') : null, 사유기타: (기존사유 && !기존사유프리셋) ? 기존사유 : ''};
   const old=document.getElementById('kpOverlay'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='kpOverlay'; ov.className='kp-ov';
   ov.innerHTML=`<div class="kp-top"><button class="x" onclick="키패드닫기()">✕</button><h3>${rec?'기록 수정':'기록 입력'}</h3><label class="date">📅 <span id="kpDateLbl"></span><input type="date" id="kpDate" class="kp-date-input" value="${kp.날짜}" onchange="kpSetDate(this.value)"></label></div>`+
@@ -3281,6 +3295,7 @@ window.키패드열기 = function(idx, editId){
     `<div class="kp-chips" id="kpChips"></div>`+
     `<div class="kp-disp"><div class="kp-fields"><div class="kp-field" id="kpFW" onclick="kpFocus('w')"><div class="big" id="kpWv">0</div><div class="cap">무게 (kg)</div></div><div class="kp-x">×</div><div class="kp-field" id="kpFR" onclick="kpFocus('r')"><div class="big" id="kpRv">0</div><div class="cap">횟수</div></div></div><div class="kp-1rm" id="kp1rm">예상 1RM —</div></div>`+
     `<div class="kp-last" id="kpLast"></div>`+
+    `<div class="kp-drop" id="kpDrop"><div class="kp-drop-msg">📉 지난 기록보다 줄었어요. 이유가 있나요? (선택)</div><div class="kp-drop-chips" id="kpDropChips"></div><input type="text" class="kp-drop-etc" id="kpDropEtc" placeholder="이유를 적어주세요" maxlength="30" oninput="kpDropEtcInput(this.value)"></div>`+
     `<div class="kp-quick"><button class="kp-q" onclick="kpAdj(-5)">−5</button><button class="kp-q" onclick="kpAdj(-2.5)">−2.5</button><button class="kp-q" onclick="kpAdj(2.5)">+2.5</button><button class="kp-q" onclick="kpAdj(5)">+5</button></div>`+
     `<div class="kp-pad">${[1,2,3,4,5,6,7,8,9,'.',0,'⌫'].map(k=>`<button class="kp-key" onclick="kpKey('${k}')">${k}</button>`).join('')}</div>`+
     `<button class="kp-save" id="kpSaveBtn" onclick="kpSave()">${rec?'수정 저장':'저장하기'}</button>`+
@@ -3294,7 +3309,7 @@ function 키패드칩렌더(){
   const el=document.getElementById('kpChips'); if(!el) return;
   el.innerHTML=kp종목들.map((ex,i)=>{ const c=종목컴러(ex); const on=ex===kp.ex; return `<button class="kp-chip" style="${on?`background:${c};border-color:${c};color:#0a0d12;font-weight:700`:''}" onclick="키패드칩선택(${i})">${escHtml(ex)}</button>`; }).join('');
 }
-window.키패드칩선택 = function(i){ const ex=kp종목들[i]; if(!ex)return; kp.ex=ex; const recs=훈련목록.filter(t=>t.이름===kp.이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||'')); kp.last=recs.length?recs[recs.length-1]:null; kp.w=''; kp.r=''; kp.dirty={w:false,r:false}; kp.editId=null; 키패드칩렌더(); kpUpdate(); };
+window.키패드칩선택 = function(i){ const ex=kp종목들[i]; if(!ex)return; kp.ex=ex; const recs=훈련목록.filter(t=>t.이름===kp.이름&&(t.종목||'벤치프레스')===ex).sort((a,b)=>(a.날짜||'').localeCompare(b.날짜||'')); kp.last=recs.length?recs[recs.length-1]:null; kp.w=''; kp.r=''; kp.dirty={w:false,r:false}; kp.editId=null; kp.사유=null; kp.사유기타=''; 키패드칩렌더(); kpUpdate(); };
 window.kpFocus = function(f){ kp.focus=f; kpUpdate(); };
 window.kpKey = function(k){
   const f=kp.focus;
@@ -3317,14 +3332,35 @@ function kpUpdate(){
   if(w>0&&r>0){ const c=종목컴러(kp.ex); el.innerHTML=`예상 1RM <b style="color:${c}">${추정1RM(w,r)}kg</b>`; } else el.textContent='예상 1RM —';
   const lastEl=document.getElementById('kpLast');
   if(lastEl) lastEl.textContent = kp.last?`🕒 지난 기록 ${kp.last.중량}kg × ${kp.last.횟수}회 · 숫자를 누르면 새로 입력돼요`:'첫 기록을 남겨보세요 💪';
+  const dropEl=document.getElementById('kpDrop');
+  if(dropEl){
+    const isDrop = w>0 && r>0 && kp.last && 추정1RM(w,r) < 추정1RM(kp.last.중량, kp.last.횟수);
+    if(!isDrop){ kp.사유=null; kp.사유기타=''; }
+    dropEl.classList.toggle('show', isDrop);
+    if(isDrop) kpDrop렌더();
+  }
 }
+function kpDrop렌더(){
+  const el=document.getElementById('kpDropChips'); if(!el) return;
+  el.innerHTML = 중량하락사유목록.map(s=>
+    `<button class="kp-drop-chip${kp.사유===s?' on':''}" onclick="kpDropSelect('${s}')">${s}</button>`
+  ).join('') + `<button class="kp-drop-chip${kp.사유==='기타'?' on':''}" onclick="kpDropSelect('기타')">✏️ 기타</button>`;
+  const etc=document.getElementById('kpDropEtc');
+  if(etc){ etc.classList.toggle('show', kp.사유==='기타'); if(document.activeElement!==etc) etc.value = kp.사유기타||''; }
+}
+window.kpDropSelect = function(s){
+  kp.사유 = (kp.사유===s) ? null : s;   // 같은 걸 다시 누르면 선택 해제
+  kpDrop렌더();
+}
+window.kpDropEtcInput = function(v){ kp.사유기타 = v; }
 window.kpSave = async function(){
   const w=parseFloat(kp.w),r=parseInt(kp.r);
   if(!(w>0)||!(r>0)){ 토스트('무게와 횟수를 입력하세요'); return; }
   if(!kp.날짜){ 토스트('날짜를 선택하세요'); return; }
   const btn=document.getElementById('kpSaveBtn'); if(btn){btn.disabled=true;btn.textContent='저장 중…';}
   try{
-    const {신기록,새1RM,덮어쓀}=await 훈련기록저장(kp.이름,kp.ex,kp.날짜,w,r);
+    const 사유 = kp.사유==='기타' ? (kp.사유기타||'').trim() : (kp.사유||'');
+    const {신기록,새1RM,덮어쓀}=await 훈련기록저장(kp.이름,kp.ex,kp.날짜,w,r,사유);
     상세종목=kp.ex;
     키패드닫기();
     if(신기록){ try{효과음신기록();}catch(e){} try{신기록연출({이름:kp.이름, 운동명:kp.ex, 중량:w, 횟수:r, rm:새1RM, 날짜:kp.날짜});}catch(e){} 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
@@ -3509,7 +3545,7 @@ window.onCustomExerciseInput = function(val){
 }
 
 // 훈련 기록 저장(공유) — 훈련일지·분석 그래프 빠른입력이 같은 training 컬렉션에 쓴다
-async function 훈련기록저장(이름, 종목, 날짜, 중량, 횟수){
+async function 훈련기록저장(이름, 종목, 날짜, 중량, 횟수, 사유){
   // 같은 사람+같은 종목+같은 날짜면 덮어쓰기
   const 기존 = 훈련목록.find(t=>t.이름===이름 && (t.종목||'벤치프레스')===종목 && t.날짜===날짜);
   // 신기록 판정: 이 운동의 기존 최고 1RM(덮어쓸 날짜 제외)과 비교
@@ -3519,6 +3555,7 @@ async function 훈련기록저장(이름, 종목, 날짜, 중량, 횟수){
     .map(t=>추정1RM(t.중량, t.횟수)));
   const 신기록 = 기존최고>0 && 새1RM>기존최고;
   const 데이터 = {이름,종목,날짜,중량,횟수,등록시각:Date.now()};
+  if(사유) 데이터.사유 = 사유;
   if(기존){
     await setDoc(doc(db,"training",기존._id), 데이터);
   } else {
