@@ -846,7 +846,7 @@
     </div>
 
     <div id="pendingBox" style="display:none;">
-      <div class="auth-pending">⏳ <b>가입 신청 완료!</b><br>관리자(신은수·이승민)의 승인을 기다리는 중입니다.<br>승인되면 자동으로 입장돼요.</div>
+      <div class="auth-pending">⏳ <b>가입 신청 완료!</b><br>관리자(신은수·이승민·노재헌)의 승인을 기다리는 중입니다.<br>승인되면 자동으로 입장돼요.</div>
       <button class="auth-btn auth-btn-ghost" onclick="로그아웃()">로그아웃</button>
     </div>
   </div>
@@ -1311,7 +1311,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.15.154";
+const APP_VERSION = "2026.07.15.155";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3445,11 +3445,11 @@ window.kpSave = async function(){
   const btn=document.getElementById('kpSaveBtn'); if(btn){btn.disabled=true;btn.textContent='저장 중…';}
   try{
     const 사유 = kp.사유==='기타' ? (kp.사유기타||'').trim() : (kp.사유||'');
-    const {신기록,새1RM,덮어쓀}=await 훈련기록저장(kp.이름,kp.ex,kp.날짜,w,r,사유);
+    const {신기록,새1RM,덮어씀}=await 훈련기록저장(kp.이름,kp.ex,kp.날짜,w,r,사유);
     상세종목=kp.ex;
     키패드닫기();
     if(신기록){ try{효과음신기록();}catch(e){} try{신기록연출({이름:kp.이름, 운동명:kp.ex, 중량:w, 횟수:r, rm:새1RM, 날짜:kp.날짜});}catch(e){} 토스트(`🎉 신기록! 예상 1RM ${새1RM}kg 🔥`); }
-    else { try{효과음저장();}catch(e){} 토스트(덮어쓀?'✅ 기록! (같은 날짜 덮어쓀)':'✅ 기록 완료!'); }
+    else { try{효과음저장();}catch(e){} 토스트(덮어씀?'✅ 기록! (같은 날짜 덮어씀)':'✅ 기록 완료!'); }
   }catch(e){ alert('저장 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='저장하기';} }
 };
 window.분석운동시작 = function(idx){
@@ -4618,7 +4618,7 @@ function 계정화면그리기(){
   if(관리자인가()) 관리자화면그리기();
 }
 window.계정설정열기 = function(){
-  if(게스트인가()) return;   // 게스트는 닉네임/비번/탈퇴 설정 자체가 없음
+  if(게스트인가()){ 토스트('게스트는 계정 설정이 없어요. 회원가입하면 이용할 수 있어요!'); return; }
   const ov = document.getElementById('acctSettingsOverlay'); if(ov) ov.style.display = 'flex';
 };
 window.계정설정닫기 = function(){
@@ -4699,9 +4699,9 @@ window.닉네임변경 = async function(){
     현재유저.이름 = 새닉;  // 이후 단계의 권한 검사를 위해 즉시 반영
     // 5) 새 닉네임으로 명언 문서 재생성
     if(명언내용!==null){ try{ await setDoc(doc(db,'quotes',새닉), 명언내용); }catch(_){} }
-    acctMsg('nickMsg','✅ 닉네임이 "' + 새닉 + '"(으)로 변경되었습니다.', true);
-    document.getElementById('newNick').value='';
     권한UI적용();
+    계정화면그리기();   // 프로필 행·계정 설정 화면의 이름 표시도 즉시 갱신 (아래서 입력칸·메시지를 초기화하므로 성공 메시지는 그 다음에 설정)
+    acctMsg('nickMsg','✅ 닉네임이 "' + 새닉 + '"(으)로 변경되었습니다.', true);
   }catch(e){ acctMsg('nickMsg', '변경 실패: ' + (e.code||e.message)); }
 };
 
