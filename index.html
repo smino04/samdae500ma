@@ -673,6 +673,21 @@
   .danger-label{color:#f87171;}
   .danger-box{border-color:rgba(248,113,113,0.35);}
   .danger-btn{background:#f87171;color:#1a0e0e;}
+  /* 더보기(프로필) 스타일 리스트 */
+  .more-profile-row{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;margin-bottom:14px;transition:transform .14s;}
+  .more-profile-row:active{transform:scale(0.985);}
+  .more-avatar{width:50px;height:50px;border-radius:50%;background:var(--panel-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .more-profile-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .more-profile-name{font-size:17px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .more-profile-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--panel-light);color:var(--blue-bright);white-space:nowrap;}
+  .more-profile-chev{color:var(--text-dim);font-size:20px;flex-shrink:0;}
+  .more-section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:0 0 14px;margin-bottom:14px;}
+  .more-section-title{font-size:12.5px;font-weight:700;color:var(--text-dim);padding:14px 16px 8px;letter-spacing:0.3px;}
+  .more-row{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .14s;}
+  .more-row:active{background:var(--panel-light);}
+  .more-icon{width:32px;height:32px;border-radius:10px;background:var(--panel-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .more-row-label{flex:1;font-size:15px;font-weight:600;color:var(--text);}
+  .more-row-chev{color:var(--text-dim);font-size:18px;flex-shrink:0;}
   /* ===== 훈련일지 새 흐름: 리스트 / 상세 / 키패드 ===== */
   .exlist{display:flex;flex-direction:column;gap:9px;}
   .exrow{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 14px;cursor:pointer;transition:transform .14s,border-color .14s;}
@@ -971,13 +986,22 @@
       <div class="header-divider"></div>
     </header>
 
-    <div class="acct-info-card">
-      <div class="acct-info-row"><span>이름</span><b id="accName">-</b></div>
-      <div class="acct-info-row"><span>이메일</span><b id="accEmail">-</b></div>
-      <div class="acct-info-row"><span>역할</span><b id="accRole">-</b></div>
+    <div class="more-profile-row" onclick="계정설정열기()">
+      <div class="more-avatar">👤</div>
+      <div class="more-profile-main">
+        <span class="more-profile-name" id="accNameRow">-</span>
+        <span class="more-profile-badge" id="accRoleRow">-</span>
+      </div>
+      <span class="more-profile-chev">›</span>
     </div>
-    <button class="acct-btn" id="accFirstRecordBtn" onclick="openNewModal('all')" style="margin-bottom:10px;display:none;">➕ 첫 삼대·인바디 기록 입력하기</button>
-    <button class="acct-btn acct-btn-sub" id="accLogout" onclick="로그아웃버튼()">로그아웃</button>
+    <button class="acct-btn" id="accFirstRecordBtn" onclick="openNewModal('all')" style="margin-bottom:14px;display:none;">➕ 첫 삼대·인바디 기록 입력하기</button>
+    <div class="more-section" style="padding-bottom:0;">
+      <div class="more-row" onclick="로그아웃버튼()">
+        <span class="more-icon">🚪</span>
+        <span class="more-row-label" id="accLogout">로그아웃</span>
+        <span class="more-row-chev">›</span>
+      </div>
+    </div>
 
     <!-- 게스트 전용 가입 유도 -->
     <div id="guestProfile" style="display:none;">
@@ -988,75 +1012,104 @@
     </div>
 
     <div id="memberOnlyAccount">
-    <div id="pMonthly" style="margin-top:16px;"></div>
+    <div class="more-section">
+      <div class="more-section-title">📈 이번 달 리포트</div>
+      <div id="pMonthly" style="padding:0 16px;"></div>
+    </div>
 
-    <div class="section-label" style="margin-top:22px;">🎯 내 목표</div>
-    <div class="acct-box">
-      <p class="acct-desc" style="margin-bottom:12px;">목표를 정하면 랭킹·프로필에 태그로 표시돼요. (다시 누르면 해제)</p>
-      <div class="goal-pick" id="goalPick">
-        <button class="goal-pick-btn" data-goal="cut" onclick="목표설정('cut')"><span class="gp-ic">🔥</span>다이어트</button>
-        <button class="goal-pick-btn" data-goal="bulk" onclick="목표설정('bulk')"><span class="gp-ic">💪</span>벌크업</button>
-        <button class="goal-pick-btn" data-goal="lean" onclick="목표설정('lean')"><span class="gp-ic">⚖️</span>린매스업</button>
+    <div class="more-section">
+      <div class="more-section-title">🎯 목표 설정</div>
+      <div style="padding:0 16px;">
+        <p class="acct-desc" style="margin-bottom:12px;">목표를 정하면 랭킹·프로필에 태그로 표시돼요. (다시 누르면 해제)</p>
+        <div class="goal-pick" id="goalPick">
+          <button class="goal-pick-btn" data-goal="cut" onclick="목표설정('cut')"><span class="gp-ic">🔥</span>다이어트</button>
+          <button class="goal-pick-btn" data-goal="bulk" onclick="목표설정('bulk')"><span class="gp-ic">💪</span>벌크업</button>
+          <button class="goal-pick-btn" data-goal="lean" onclick="목표설정('lean')"><span class="gp-ic">⚖️</span>린매스업</button>
+        </div>
+        <div class="acct-msg" id="goalMsg"></div>
       </div>
-      <div class="acct-msg" id="goalMsg"></div>
     </div>
 
     <!-- 관리자 전용 -->
     <div id="accountAdmin" style="display:none;">
-      <div class="section-label" style="margin-top:22px;">📄 월간 결산 (행정반 게시용)</div>
-      <button class="acct-btn" onclick="월결산인쇄열기()" style="margin-bottom:6px;">📄 월간 결산 A4 인쇄</button>
-      <div class="section-label" style="margin-top:22px;">📊 멤버 현황 대시보드</div>
-      <div class="acct-box" id="dashBoard"></div>
-      <div class="section-label" style="margin-top:18px;">🛡️ 가입 승인 대기</div>
-      <div id="adminPending"></div>
-      <div class="section-label" style="margin-top:18px;">👥 회원 목록</div>
-      <div id="adminMembers"></div>
+      <div class="more-section" style="padding-bottom:0;">
+        <div class="more-section-title">🛡️ 관리자</div>
+        <div class="more-row" onclick="월결산인쇄열기()">
+          <span class="more-icon">🖨️</span>
+          <span class="more-row-label">월간 결산 A4 인쇄</span>
+          <span class="more-row-chev">›</span>
+        </div>
+      </div>
+      <div class="more-section">
+        <div class="more-section-title">📊 멤버 현황 대시보드</div>
+        <div class="acct-box" id="dashBoard" style="margin:0 16px;width:auto;"></div>
+      </div>
+      <div class="more-section">
+        <div class="more-section-title">🛡️ 가입 승인 대기</div>
+        <div id="adminPending" style="padding:0 16px;"></div>
+      </div>
+      <div class="more-section">
+        <div class="more-section-title">👥 회원 목록</div>
+        <div id="adminMembers" style="padding:0 16px;"></div>
+      </div>
     </div>
-
-    <details class="acct-toggle" style="margin-top:22px;">
-      <summary>🏷️ 닉네임 변경 <span class="why-arrow">▼</span></summary>
-      <div class="why-content acct-toggle-content">
-        <input type="text" id="newNick" class="acct-input" placeholder="새 닉네임 (예: 길동.H)" maxlength="16" autocomplete="off" onkeydown="if(event.key==='Enter')닉네임변경()">
-        <div class="spam-note">⚠️ <b>실명 사용 금지</b> — 닉네임에 실명을 적지 마세요. (이름 + 성 이니셜 형태 권장)</div>
-        <div class="acct-msg" id="nickMsg"></div>
-        <button class="acct-btn" onclick="닉네임변경()">닉네임 변경</button>
-        <details class="why-toggle" style="margin-top:12px;">
-          <summary>💡 왜 실명이 금지되나요? <span class="why-arrow">▼</span></summary>
-          <div class="why-content">
-            <p><b>국방 보안 규정 준수</b></p>
-            <p>외부 클라우드 서버(Firebase)를 활용하는 서비스 특성상, 부대원의 실명과 소속이 연달아 노출될 경우 군 보안 및 개인정보 보호 규정에 위배될 수 있습니다.</p>
-            <p style="margin-top:12px;">본 서비스는 장병 여러분의 안전한 이용을 위해 <b>'완전 비식별화'</b>를 원칙으로 합니다. 실명 대신 은수.S, 승민.L과 같은 <b>[이름 + 성 이니셜]</b> 형태의 닉네임을 권장합니다.</p>
-          </div>
-        </details>
-      </div>
-    </details>
-
-    <details class="acct-toggle" style="margin-top:16px;">
-      <summary>🔒 비밀번호 변경 / 재설정 <span class="why-arrow">▼</span></summary>
-      <div class="why-content acct-toggle-content">
-        <div class="pw-wrap"><input type="password" id="curPw" class="acct-input" placeholder="현재 비밀번호" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
-        <div class="pw-wrap"><input type="password" id="newPw" class="acct-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
-        <div class="pw-wrap"><input type="password" id="newPw2" class="acct-input" placeholder="새 비밀번호 확인" autocomplete="new-password" onkeydown="if(event.key==='Enter')비밀번호변경()"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
-        <div class="acct-msg" id="pwMsg"></div>
-        <button class="acct-btn" onclick="비밀번호변경()">비밀번호 변경</button>
-        <div class="acct-toggle-divider"></div>
-        <p class="acct-desc">비밀번호가 기억나지 않으면, 가입한 이메일로 재설정 링크를 보내드려요.</p>
-        <div class="spam-note">⚠️ 메일이 안 보이면 <b>스팸함(정크 메일함)</b>을 꼭 확인해주세요!</div>
-        <div class="acct-msg" id="resetMsg"></div>
-        <button class="acct-btn acct-btn-sub" onclick="비밀번호재설정()">재설정 메일 보내기</button>
-      </div>
-    </details>
-
-    <details class="acct-toggle danger" style="margin-top:16px;">
-      <summary>⚠️ 회원 탈퇴 <span class="why-arrow">▼</span></summary>
-      <div class="why-content acct-toggle-content">
-        <p class="acct-desc">계정과 내 모든 기록(삼대·운동일지·명언)이 <b>영구 삭제</b>되며 되돌릴 수 없습니다.</p>
-        <div class="pw-wrap"><input type="password" id="delPw" class="acct-input" placeholder="현재 비밀번호 확인" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
-        <div class="acct-msg" id="delMsg"></div>
-        <button class="acct-btn danger-btn" onclick="회원탈퇴()">회원 탈퇴</button>
-      </div>
-    </details>
     </div><!-- /memberOnlyAccount -->
+  </div>
+
+  <!-- 계정 설정 오버레이 -->
+  <div id="acctSettingsOverlay" class="kp-ov" style="display:none;">
+    <div class="kp-top"><button class="x" onclick="계정설정닫기()">✕</button><h3>계정 설정</h3><div style="width:32px"></div></div>
+    <div style="flex:1;overflow-y:auto;padding:14px 18px 24px;">
+      <div class="acct-info-card">
+        <div class="acct-info-row"><span>이름</span><b id="accName">-</b></div>
+        <div class="acct-info-row"><span>이메일</span><b id="accEmail">-</b></div>
+        <div class="acct-info-row"><span>역할</span><b id="accRole">-</b></div>
+      </div>
+
+      <details class="acct-toggle" style="margin-top:16px;">
+        <summary>🏷️ 닉네임 변경 <span class="why-arrow">▼</span></summary>
+        <div class="why-content acct-toggle-content">
+          <input type="text" id="newNick" class="acct-input" placeholder="새 닉네임 (예: 길동.H)" maxlength="16" autocomplete="off" onkeydown="if(event.key==='Enter')닉네임변경()">
+          <div class="spam-note">⚠️ <b>실명 사용 금지</b> — 닉네임에 실명을 적지 마세요. (이름 + 성 이니셜 형태 권장)</div>
+          <div class="acct-msg" id="nickMsg"></div>
+          <button class="acct-btn" onclick="닉네임변경()">닉네임 변경</button>
+          <details class="why-toggle" style="margin-top:12px;">
+            <summary>💡 왜 실명이 금지되나요? <span class="why-arrow">▼</span></summary>
+            <div class="why-content">
+              <p><b>국방 보안 규정 준수</b></p>
+              <p>외부 클라우드 서버(Firebase)를 활용하는 서비스 특성상, 부대원의 실명과 소속이 연달아 노출될 경우 군 보안 및 개인정보 보호 규정에 위배될 수 있습니다.</p>
+              <p style="margin-top:12px;">본 서비스는 장병 여러분의 안전한 이용을 위해 <b>'완전 비식별화'</b>를 원칙으로 합니다. 실명 대신 은수.S, 승민.L과 같은 <b>[이름 + 성 이니셜]</b> 형태의 닉네임을 권장합니다.</p>
+            </div>
+          </details>
+        </div>
+      </details>
+
+      <details class="acct-toggle" style="margin-top:16px;">
+        <summary>🔒 비밀번호 변경 / 재설정 <span class="why-arrow">▼</span></summary>
+        <div class="why-content acct-toggle-content">
+          <div class="pw-wrap"><input type="password" id="curPw" class="acct-input" placeholder="현재 비밀번호" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+          <div class="pw-wrap"><input type="password" id="newPw" class="acct-input" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+          <div class="pw-wrap"><input type="password" id="newPw2" class="acct-input" placeholder="새 비밀번호 확인" autocomplete="new-password" onkeydown="if(event.key==='Enter')비밀번호변경()"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+          <div class="acct-msg" id="pwMsg"></div>
+          <button class="acct-btn" onclick="비밀번호변경()">비밀번호 변경</button>
+          <div class="acct-toggle-divider"></div>
+          <p class="acct-desc">비밀번호가 기억나지 않으면, 가입한 이메일로 재설정 링크를 보내드려요.</p>
+          <div class="spam-note">⚠️ 메일이 안 보이면 <b>스팸함(정크 메일함)</b>을 꼭 확인해주세요!</div>
+          <div class="acct-msg" id="resetMsg"></div>
+          <button class="acct-btn acct-btn-sub" onclick="비밀번호재설정()">재설정 메일 보내기</button>
+        </div>
+      </details>
+
+      <details class="acct-toggle danger" style="margin-top:16px;">
+        <summary>⚠️ 회원 탈퇴 <span class="why-arrow">▼</span></summary>
+        <div class="why-content acct-toggle-content">
+          <p class="acct-desc">계정과 내 모든 기록(삼대·운동일지·명언)이 <b>영구 삭제</b>되며 되돌릴 수 없습니다.</p>
+          <div class="pw-wrap"><input type="password" id="delPw" class="acct-input" placeholder="현재 비밀번호 확인" autocomplete="current-password"><button type="button" class="pw-eye" onclick="비번토글(this)" tabindex="-1">👁</button></div>
+          <div class="acct-msg" id="delMsg"></div>
+          <button class="acct-btn danger-btn" onclick="회원탈퇴()">회원 탈퇴</button>
+        </div>
+      </details>
+    </div>
   </div>
 
   <footer>백절불굴의 정신으로 무장하라</footer>
@@ -1228,7 +1281,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.13.151";
+const APP_VERSION = "2026.07.13.152";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -4513,6 +4566,8 @@ function 계정화면그리기(){
   document.getElementById('accName').textContent = guest ? '게스트' : (현재유저.이름 || '-');
   document.getElementById('accEmail').textContent = guest ? '-' : (현재유저.email || '-');
   document.getElementById('accRole').textContent = guest ? '👀 게스트 (보기 전용)' : (관리자인가() ? '🛡️ 관리자' : '일반 회원');
+  document.getElementById('accNameRow').textContent = guest ? '게스트' : (현재유저.이름 || '-');
+  document.getElementById('accRoleRow').textContent = guest ? '👀 게스트' : (관리자인가() ? '🛡️ 관리자' : '일반 회원');
   // 게스트: 가입 유도만 표시, 회원 전용 섹션 숨김
   document.getElementById('guestProfile').style.display = guest ? 'block' : 'none';
   document.getElementById('memberOnlyAccount').style.display = guest ? 'none' : 'block';
@@ -4532,6 +4587,13 @@ function 계정화면그리기(){
   document.getElementById('accountAdmin').style.display = 관리자인가() ? 'block' : 'none';
   if(관리자인가()) 관리자화면그리기();
 }
+window.계정설정열기 = function(){
+  if(게스트인가()) return;   // 게스트는 닉네임/비번/탈퇴 설정 자체가 없음
+  const ov = document.getElementById('acctSettingsOverlay'); if(ov) ov.style.display = 'flex';
+};
+window.계정설정닫기 = function(){
+  const ov = document.getElementById('acctSettingsOverlay'); if(ov) ov.style.display = 'none';
+};
 function acctMsg(id, text, ok){
   const el = document.getElementById(id);
   if(!el) return;
