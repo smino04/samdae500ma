@@ -504,6 +504,23 @@
   .my-strip .ms-v small{font-size:11px;font-weight:700;color:var(--text-dim);}
   .my-strip .ms-l{font-size:10.5px;color:var(--text-dim);margin-top:3px;font-weight:700;}
   .my-strip .ms-chev{color:var(--text-dim);font-size:18px;flex-shrink:0;}
+  /* 오늘 운동 현황 스트립 (부원별 오늘 출석) */
+  .today-att{margin:0 0 14px;padding:12px 14px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
+  .today-att .ta-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+  .today-att .ta-title{font-size:13px;font-weight:800;color:var(--text);}
+  .today-att .ta-count{font-size:12px;font-weight:700;color:var(--text-dim);}
+  .today-att .ta-count b{color:var(--gold);font-size:15px;}
+  .today-att .ta-empty{font-size:12.5px;color:var(--text-dim);text-align:center;padding:2px 0 4px;}
+  .today-att .ta-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+  .today-att .ta-scroll::-webkit-scrollbar{display:none;}
+  .ta-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:0;width:52px;font-family:'Noto Sans KR';}
+  .ta-chip:active{transform:scale(0.94);}
+  .ta-avatar{position:relative;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;background:var(--panel-light);color:var(--text-dim);border:2px solid transparent;opacity:0.5;}
+  .ta-chip.done .ta-avatar{background:rgba(255,200,61,0.14);color:var(--gold);border-color:var(--gold);opacity:1;}
+  .ta-chip.me .ta-avatar{box-shadow:0 0 0 2px var(--blue-bright);}
+  .ta-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#69db7c;color:#0a2a12;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
+  .ta-name{font-size:10.5px;font-weight:700;color:var(--text-dim);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ta-chip.done .ta-name{color:var(--text);}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -864,6 +881,7 @@
     </header>
     <div class="acct-bar"><span id="acctName"></span><button class="acct-logout" onclick="로그아웃버튼()">로그아웃</button></div>
     <div id="myStrip" class="my-strip" style="display:none;"></div>
+    <div id="todayAttendance" class="today-att" style="display:none;"></div>
     <div class="guest-banner" id="guestBanner" style="display:none;">
       <div class="gb-text">👀 <b>게스트 모드</b>로 둘러보는 중이에요.<br>회원들의 성장 그래프, 마음에 드시나요? 함께 3대 500을 향해 달려봐요! 💪</div>
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
@@ -1310,7 +1328,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.15.156";
+const APP_VERSION = "2026.07.15.157";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1534,6 +1552,8 @@ function 데이터구독시작(){
     }
     // 오늘 기록 유도 배너: 훈련일지 데이터가 뒤늦게 도착해도 즉시 재판정
     try{ 오늘기록배너그리기(); }catch(e){}
+    // 오늘 운동 현황: 부원이 방금 기록하면 랭킹 화면에서 즉시 반영
+    try{ if(document.getElementById('rankingView').style.display!=='none' && !document.getElementById('detailView').classList.contains('show')) 오늘출석그리기(); }catch(e){}
   }));
   // 명언 실시간 수신 (문서 id = 멤버 이름)
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
@@ -1899,9 +1919,39 @@ function 내요약스트립그리기(){
   el.onclick = ()=> showDetail(이름);
   el.style.display = 'flex';
 }
+// 오늘 운동 현황: 부원별로 오늘 운동했는지(훈련일지 or 캘린더 기록) 아바타로 한눈에
+function 오늘출석그리기(){
+  const el=document.getElementById('todayAttendance'); if(!el) return;
+  if(!현재유저){ el.style.display='none'; return; }
+  const 멤버들=전체멤버목록();
+  if(!멤버들.length){ el.style.display='none'; return; }
+  const t=new Date(); const todayDs=_ds(t.getFullYear(),t.getMonth(),t.getDate());
+  const 내이름 = (현재유저 && !게스트인가()) ? 현재유저.이름 : null;
+  const rows=멤버들.map(이름=>({이름, done:_운동일집합(이름).has(todayDs)}));
+  // 정렬: 운동한 사람 먼저 → 그 안에서 나 먼저 → 가나다
+  rows.sort((a,b)=> (b.done-a.done) || ((b.이름===내이름)-(a.이름===내이름)) || a.이름.localeCompare(b.이름,'ko'));
+  const 완료수=rows.filter(r=>r.done).length;
+  const chips = rows.map(r=>{
+    const 초성 = (r.이름||'?').charAt(0);
+    const me = r.이름===내이름;
+    return `<button class="ta-chip${r.done?' done':''}${me?' me':''}" onclick="부원일지열기('${escHtml(r.이름)}')">`
+      + `<span class="ta-avatar">${escHtml(초성)}${r.done?'<span class="ta-badge">✔</span>':''}</span>`
+      + `<span class="ta-name">${me?'나':escHtml(r.이름)}</span></button>`;
+  }).join('');
+  el.innerHTML = `<div class="ta-head"><span class="ta-title">🔥 오늘 운동</span><span class="ta-count"><b>${완료수}</b> / ${rows.length}명</span></div>`
+    + (완료수===0 ? `<div class="ta-empty">아직 아무도 운동 안 했어요. 1등으로 인증해봐요! 💪</div>` : '')
+    + `<div class="ta-scroll">${chips}</div>`;
+  el.style.display='block';
+}
+// 아바타 탭 → 그 부원의 훈련일지로 이동
+window.부원일지열기 = function(이름){
+  일지대상 = 이름;
+  switchMainTab('diary');
+};
 function 랭킹그리기(){
   오늘기록배너그리기();
   내요약스트립그리기();
+  try{ 오늘출석그리기(); }catch(e){}
   // 성장 모드: 주차 이동 UI 표시, 공식측정 안내는 숨김
   const pr=document.querySelector('.period-row'), rn=document.querySelector('.role-note');
   if(현재정렬==='growth'){
@@ -2361,7 +2411,7 @@ window.switchMainTab = function(tab){
       selectDiaryMember(일지대상);
     }
   }
-  if(tab==='ranking'){ try{ 내요약스트립그리기(); }catch(e){} }
+  if(tab==='ranking'){ try{ 내요약스트립그리기(); }catch(e){} try{ 오늘출석그리기(); }catch(e){} }
   오늘기록배너그리기();
 }
 window.selectDiaryMember = function(이름){
