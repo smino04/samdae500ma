@@ -220,11 +220,6 @@
   .b300 .bhorse{filter:brightness(0) saturate(100%) invert(58%) sepia(36%) saturate(958%) hue-rotate(338deg) brightness(91%) contrast(89%);}   /* 동 */
   .b400 .bhorse{filter:brightness(0) saturate(100%) invert(85%) brightness(0.96);}                                                          /* 은 */
   .b500 .bhorse{filter:brightness(0) saturate(100%) invert(78%) sepia(55%) saturate(900%) hue-rotate(357deg) brightness(102%) contrast(101%);} /* 금 */
-  .profile-quote{display:block;margin:10px auto 14px;font-size:18px;font-weight:500;color:var(--text-dim);font-style:italic;cursor:pointer;line-height:1.5;transition:opacity 0.2s;}
-  .profile-quote:active{opacity:0.6;}
-  .profile-quote:not(.empty)::before{content:'“';}
-  .profile-quote:not(.empty)::after{content:'”';}
-  .profile-quote.empty{color:var(--text-dim);font-weight:400;}
   .chart-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 16px 12px;margin-bottom:16px;}
   .chart-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
   .chart-title::before{content:'';width:4px;height:16px;background:var(--blue-bright);border-radius:2px;}
@@ -894,7 +889,6 @@
       <div class="balance-period-row" id="balancePeriodRow">
         <button class="goal-pick-btn" data-period="week" onclick="운동균형기간변경('week')">1주</button>
         <button class="goal-pick-btn" data-period="month" onclick="운동균형기간변경('month')">1달</button>
-        <button class="goal-pick-btn" data-period="year" onclick="운동균형기간변경('year')">1년</button>
         <button class="goal-pick-btn" data-period="all" onclick="운동균형기간변경('all')">전체</button>
       </div>
     </div>
@@ -933,7 +927,6 @@
         <span id="pGoalTag"></span>
         <span id="pSplitTag" style="margin-left:6px;"></span>
       </div>
-      <div class="profile-quote" id="pQuote" onclick="editQuote()"></div>
     </div>
     <div id="pGoal" class="goal-box"></div>
 
@@ -1246,19 +1239,6 @@
   </div>
 </div>
 
-<!-- 한마디(명언) 입력 모달 -->
-<div class="modal-bg" id="quoteModalBg">
-  <div class="modal">
-    <h2>💬 한마디 입력</h2>
-    <div class="sub">좌우명, 각오, 명언 등 자유롭게!</div>
-    <div class="field"><input type="text" id="quoteInput" maxlength="40" placeholder="예: 백절불굴" onkeydown="if(event.key==='Enter')quoteModalSave()"></div>
-    <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="quoteModalClose()">취소</button>
-      <button class="btn btn-save" onclick="quoteModalSave()">저장</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2 id="modalTitle">기록 입력</h2>
@@ -1360,7 +1340,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.178";
+const APP_VERSION = "2026.07.17.179";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1629,14 +1609,6 @@ function 데이터구독시작(){
     운동유형목록 = {}; 달력목록 = {};
     종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {}; 분할목록 = {};
     snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; if(data.분할) 분할목록[d.id] = data.분할; });
-    if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
-      const q = 명언목록[현재상세이름];
-      const el = document.getElementById('pQuote');
-      if(el){
-        el.textContent = q || (내권한(현재상세이름) ? '+ 한마디를 입력하세요' : '');
-        el.classList.toggle('empty', !q);
-      }
-    }
     if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
       분석대상 = 일지대상; 분석그리기();
     }
@@ -2061,7 +2033,6 @@ function 운동균형기간범위(period){
   const toDs=_ymd(today);
   if(period==='week') return {from:_ymd(_weekStart(today)), to:toDs};
   if(period==='month') return {from:_ds(today.getFullYear(),today.getMonth(),1), to:toDs};
-  if(period==='year') return {from:_ds(today.getFullYear(),0,1), to:toDs};
   return {from:null, to:null};  // 전체
 }
 window.운동균형기간변경 = function(p){
@@ -2158,12 +2129,6 @@ window.showDetail = function(이름){
   setTimeout(()=>{ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }, 0);
   document.getElementById('pName').textContent=이름;
   const 권한 = 내권한(이름);
-  // 명언 표시 (없으면 안내 문구 — 본인/관리자만)
-  const 내명언 = 명언목록[이름];
-  const qEl = document.getElementById('pQuote');
-  qEl.textContent = 내명언 || (권한 ? '+ 한마디를 입력하세요' : '');
-  qEl.classList.toggle('empty', !내명언);
-  qEl.style.cursor = 권한 ? 'pointer' : 'default';
   let list=members.map(m=>({m,rec:해당월기록(m,현재월)})).filter(x=>x.rec && 삼대유효(x.rec)).sort((a,b)=>합계(b.rec)-합계(a.rec));
   const ri=list.findIndex(x=>x.m.이름===이름);
   // 삼대 있는 가장 최근 기록 (인바디/성장 추이는 아래 그래프에서 확인)
@@ -2417,24 +2382,6 @@ window.월간리포트공유 = async function(btn){
   }catch(e){ if(!e||e.name!=='AbortError') 토스트('공유 실패: '+((e&&e.message)||e)); }
   finally{ if(btn){btn.disabled=false;btn.textContent=원래||'이미지 공유';} }
 };
-window.editQuote = async function(){
-  if(!현재상세이름) return;
-  if(!내권한(현재상세이름)){ alert('본인 명언만 수정할 수 있어요.'); return; }
-  const 현재 = 명언목록[현재상세이름] || '';
-  document.getElementById('quoteInput').value = 현재;
-  document.getElementById('quoteModalBg').classList.add('show');
-  setTimeout(()=>document.getElementById('quoteInput').focus(), 350);  // 모달 애니메이션(0.3s) 후 포커스
-}
-window.quoteModalClose = function(){ document.getElementById('quoteModalBg').classList.remove('show'); }
-window.quoteModalSave = async function(){
-  if(!현재상세이름 || !내권한(현재상세이름)){ quoteModalClose(); return; }
-  const 명언 = document.getElementById('quoteInput').value.trim();
-  try{
-    await setDoc(doc(db,"quotes",현재상세이름), { 명언 }, { merge:true });
-    quoteModalClose();
-    토스트('✅ 저장 완료!');
-  }catch(e){ alert("저장 실패: "+e.message); }
-}
 function 개인화면닫기(){
   document.getElementById('detailView').classList.remove('show');
   const _map = {home:'homeView', ranking:'rankingView', diary:'diaryView', calendar:'calendarView', account:'accountView'};
