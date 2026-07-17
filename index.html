@@ -531,6 +531,7 @@
   .ta-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;}
   .ta-chip.done .ta-avatar{background:rgba(255,200,61,0.14);color:var(--gold);border-color:var(--gold);opacity:1;}
   .ta-chip.me .ta-avatar{box-shadow:0 0 0 2px var(--blue-bright);}
+  .ta-chip.has-avatar .ta-avatar{font-size:22px;opacity:1;}
   .ta-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#69db7c;color:#0a2a12;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
   .ta-name{font-size:10.5px;font-weight:700;color:var(--text-dim);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ta-chip.done .ta-name{color:var(--text);}
@@ -1370,7 +1371,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.185";
+const APP_VERSION = "2026.07.17.186";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1577,6 +1578,14 @@ window.분할선택적용 = async function(v){
   try{ 홈위젯새로고침(); }catch(e){}
 };
 // 개인 페이지 프로필 이모지 (본인이면 탭해서 선택 가능)
+// 아바타 내용(사진 > 이모지 > 기본값 순 우선순위) — 오늘 운동/프로필 탭 등 여러 곳에서 공용으로 사용
+function 아바타이너HTML(이름, 기본){
+  const 사진 = 아바타사진목록[이름];
+  if(사진) return `<img src="${escHtml(사진)}" alt="">`;
+  const emoji = 아바타목록[이름];
+  if(emoji) return emoji;
+  return 기본;
+}
 function 상세아바타HTML(이름){
   const own = !!(현재유저 && !게스트인가() && 이름===현재유저.이름);
   const 사진 = 아바타사진목록[이름];
@@ -2110,9 +2119,9 @@ function 오늘출석그리기(){
   const chips = rows.map(r=>{
     const 초성 = (r.이름||'?').charAt(0);
     const me = r.이름===내이름;
-    const 사진 = 아바타사진목록[r.이름];
-    const avatarInner = 사진 ? `<img src="${escHtml(사진)}" alt="">` : escHtml(초성);
-    return `<button class="ta-chip${r.done?' done':''}${me?' me':''}${사진?' has-photo':''}" onclick="event.stopPropagation();부원일지열기('${escHtml(r.이름)}')">`
+    const 커스텀아바타 = !!(아바타사진목록[r.이름] || 아바타목록[r.이름]);
+    const avatarInner = 아바타이너HTML(r.이름, escHtml(초성));
+    return `<button class="ta-chip${r.done?' done':''}${me?' me':''}${커스텀아바타?' has-avatar':''}" onclick="event.stopPropagation();부원일지열기('${escHtml(r.이름)}')">`
       + `<span class="ta-avatar">${avatarInner}${r.done?'<span class="ta-badge">✅</span>':''}</span>`
       + `<span class="ta-name">${me?'나':escHtml(r.이름)}</span></button>`;
   }).join('');
@@ -4896,8 +4905,9 @@ function 계정화면그리기(){
   document.getElementById('accRoleRow').textContent = guest ? '👀 게스트' : (관리자인가() ? '🛡️ 관리자' : '일반 회원');
   const moreAvEl = document.getElementById('moreAvatar');
   if(moreAvEl){
-    const 사진 = !guest && 현재유저.이름 && 아바타사진목록[현재유저.이름];
-    moreAvEl.innerHTML = 사진 ? `<img src="${escHtml(사진)}" alt="">` : '👤';
+    const 커스텀아바타 = !guest && 현재유저.이름 && (아바타사진목록[현재유저.이름] || 아바타목록[현재유저.이름]);
+    moreAvEl.classList.toggle('has-avatar', !!커스텀아바타);
+    moreAvEl.innerHTML = (!guest && 현재유저.이름) ? 아바타이너HTML(현재유저.이름, '👤') : '👤';
   }
   // 게스트: 가입 유도만 표시, 회원 전용 섹션 숨김
   document.getElementById('guestProfile').style.display = guest ? 'block' : 'none';
