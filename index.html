@@ -1354,7 +1354,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.180";
+const APP_VERSION = "2026.07.17.181";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2021,7 +2021,7 @@ function 홈그리기(){
 }
 // 운동 균형 분석: 레이더 차트에 쓸 부위 목록 (삼대측정/기타는 제외)
 const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];
-let 운동균형기간 = 'week';   // 'week'|'month'|'year'|'all'
+let 운동균형기간 = 'month';   // 'week'|'month'|'all'
 let balanceChartObj = null;
 // 기간(from~to, 문자열 YYYY-MM-DD)에 해당하는 부위별 훈련 횟수 집계. from이 null이면 전체 기간.
 function 부위분포계산(이름, fromDs, toDs){
