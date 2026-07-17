@@ -1410,7 +1410,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.194";
+const APP_VERSION = "2026.07.17.195";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2360,8 +2360,8 @@ function 랭킹그리기(){
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}${뱃지HTML(합계(x.rec))}</div>
-        <div class="rank-detail">체중 ${x.rec.체중}kg</div></div>
+        <div class="rank-info"><div class="rank-name">${x.member.이름}${내것?'<span class="me-tag">ME</span>':''}</div>
+        <div class="rank-detail">${목표태그HTML(x.member.이름)}체중 ${x.rec.체중}kg</div></div>
         <div class="rank-total"><div class="num">${mainNum}</div><div class="unit">${mainUnit}</div>${diffHtml}</div>
         <div class="chevron">›</div></div>`;
   }).join('');
