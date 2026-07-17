@@ -1371,7 +1371,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.173";
+const APP_VERSION = "2026.07.17.174";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3902,11 +3902,11 @@ function 그래프그리기(member){
   if(liftChartObj)liftChartObj.destroy();
   liftChartObj=new Chart(document.getElementById('liftChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'삼대합계',data:member.기록.map(r=>삼대유효(r)?합계(r):null),borderColor:'#ff4d6d',backgroundColor:'#ff4d6d',tension:0.3,borderWidth:3,pointRadius:6,pointStyle:'circle',spanGaps:true},
-      {label:'스쿼트',data:member.기록.map(r=>삼대유효(r)?r.스쿼트:null),borderColor:'#34d399',backgroundColor:'#34d399',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
-      {label:'벤치',data:member.기록.map(r=>삼대유효(r)?r.벤치:null),borderColor:gold,backgroundColor:gold,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
-      {label:'데드',data:member.기록.map(r=>삼대유효(r)?r.데드:null),borderColor:silver,backgroundColor:silver,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true},
-    ]},options:opts});
+      {label:'삼대합계',data:member.기록.map(r=>삼대유효(r)?합계(r):null),borderColor:'#ff4d6d',backgroundColor:영역채움('#ff4d6d'),fill:true,tension:0.35,borderWidth:3,pointRadius:6,pointStyle:'circle',spanGaps:true},
+      {label:'스쿼트',data:member.기록.map(r=>삼대유효(r)?r.스쿼트:null),borderColor:'#34d399',backgroundColor:'#34d399',tension:0.35,borderWidth:2,pointRadius:3,spanGaps:true},
+      {label:'벤치',data:member.기록.map(r=>삼대유효(r)?r.벤치:null),borderColor:gold,backgroundColor:gold,tension:0.35,borderWidth:2,pointRadius:3,spanGaps:true},
+      {label:'데드',data:member.기록.map(r=>삼대유효(r)?r.데드:null),borderColor:silver,backgroundColor:silver,tension:0.35,borderWidth:2,pointRadius:3,spanGaps:true},
+    ]},options:{...opts,layout:{padding:{top:22}}}});
   // 점 위에 숫자를 그려주는 플러그인
   const 숫자표시플러그인 = {
     id:'valueLabels',
@@ -3934,13 +3934,13 @@ function 그래프그리기(member){
   if(muscleChartObj)muscleChartObj.destroy();
   muscleChartObj=new Chart(document.getElementById('muscleChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'골격근량(kg)',data:골격근data,borderColor:blue,backgroundColor:blue,tension:0.3,borderWidth:3,pointRadius:4,spanGaps:true},
+      {label:'골격근량(kg)',data:골격근data,borderColor:blue,backgroundColor:영역채움(blue),fill:true,tension:0.35,borderWidth:3,pointRadius:4,spanGaps:true},
     ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{min:mys.min,max:mys.max,ticks:{color:textDim,stepSize:mys.step},grid:{color:line}}}},plugins:[숫자표시플러그인]});
   // 체지방률 그래프
   if(fatChartObj)fatChartObj.destroy();
   fatChartObj=new Chart(document.getElementById('fatChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'체지방률(%)',data:체지방data,borderColor:'#ff9f40',backgroundColor:'#ff9f40',tension:0.3,borderWidth:3,pointRadius:4,spanGaps:true},
+      {label:'체지방률(%)',data:체지방data,borderColor:'#ff9f40',backgroundColor:영역채움('#ff9f40'),fill:true,tension:0.35,borderWidth:3,pointRadius:4,spanGaps:true},
     ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{min:fys.min,max:fys.max,ticks:{color:textDim,stepSize:fys.step},grid:{color:line}}}},plugins:[숫자표시플러그인]});
 }
 
