@@ -538,6 +538,14 @@
   .ta-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#69db7c;color:#0a2a12;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
   .ta-name{font-size:10.5px;font-weight:700;color:var(--text-dim);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ta-chip.done .ta-name{color:var(--text);}
+  .weekly-rec{margin:0 0 14px;padding:12px 14px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
+  .weekly-rec .wr-head{display:flex;align-items:center;gap:8px;}
+  .weekly-rec .wr-title{font-size:13px;font-weight:800;color:var(--text);}
+  .weekly-rec .wr-sub{flex:1;text-align:right;font-size:11px;font-weight:600;color:var(--text-dim);}
+  .weekly-rec .wr-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;}
+  .wr-chip{padding:7px 14px;border-radius:20px;background:var(--panel-light);border:1.5px solid var(--line);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:transform .12s;}
+  .wr-chip:active{transform:scale(0.94);}
+  .weekly-rec .wr-done{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--text-dim);text-align:center;padding:2px 0 4px;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -895,6 +903,7 @@
     </div>
     <div id="myStrip" class="my-strip" style="display:none;"></div>
     <div id="todayAttendance" class="today-att" style="display:none;"></div>
+    <div id="weeklyRec" class="weekly-rec" style="display:none;"></div>
   </div>
 
   <div id="rankingView" style="display:none;">
@@ -1349,7 +1358,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.167";
+const APP_VERSION = "2026.07.17.168";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1981,10 +1990,44 @@ window.부원일지열기 = function(이름){
   일지대상 = 이름;
   switchMainTab('diary');
 };
-// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황) 그리기
+// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 이번주 안 한 부위 추천) 그리기
 function 홈그리기(){
   try{ 내요약스트립그리기(); }catch(e){}
   try{ 오늘출석그리기(); }catch(e){}
+  try{ 주간부위추천그리기(); }catch(e){}
+}
+// 이번 주(월요일~오늘) 동안 실제로 훈련한 부위 집합
+const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];  // 삼대측정/기타는 추천 대상에서 제외
+function 주간트레인부위(이름){
+  const ws = _weekStart(new Date());
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekDs = new Set();
+  for(let d=new Date(ws); d<=today; d.setDate(d.getDate()+1)){ weekDs.add(_ymd(d)); }
+  const 자동={};
+  훈련목록.forEach(t=>{
+    if(t.이름!==이름 || !t.날짜 || !weekDs.has(t.날짜)) return;
+    (자동[t.날짜]=자동[t.날짜]||new Set()).add(부위(t.종목||'벤치프레스'));
+  });
+  const trained = new Set();
+  weekDs.forEach(ds=>{ 그날부위(이름, ds, 자동[ds]).forEach(p=>trained.add(p)); });
+  return trained;
+}
+// 이번 주 안 한 부위 추천 위젯: 누르면 훈련일지로 이동
+function 주간부위추천그리기(){
+  const el=document.getElementById('weeklyRec'); if(!el) return;
+  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; return; }
+  const trained = 주간트레인부위(현재유저.이름);
+  const missing = 추천부위목록.filter(p=>!trained.has(p));
+  if(!missing.length){
+    el.innerHTML = `<div class="wr-head"><span class="wr-title">🎯 이번주 부위 추천</span></div>
+      <div class="wr-done">이번주 전 부위 다 챙겼어요! 완벽해요 🎉</div>`;
+    el.style.display='block';
+    return;
+  }
+  const chips = missing.map(p=>`<button class="wr-chip" style="border-color:${부위색(p)};color:${부위색(p)}" onclick="switchMainTab('diary')">${escHtml(부위라벨(p))}</button>`).join('');
+  el.innerHTML = `<div class="wr-head"><span class="wr-title">🎯 이번주 안 한 부위</span><span class="wr-sub">눌러서 훈련일지로</span></div>
+    <div class="wr-chips">${chips}</div>`;
+  el.style.display='block';
 }
 // 실시간 리스너용: 홈이 실제로 보일 때만 위젯 새로고침
 function 홈위젯새로고침(){
