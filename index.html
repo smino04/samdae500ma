@@ -189,6 +189,13 @@
   .avatar-big-inner{width:160px;height:160px;margin:0 auto 16px;border-radius:50%;background:var(--panel-light);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:80px;overflow:hidden;color:var(--text-dim);font-weight:800;}
   .avatar-big-inner img{width:100%;height:100%;object-fit:cover;}
   .avatar-big-name{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-weight:800;font-size:18px;color:var(--text);}
+  .avatar-crop-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;width:100%;max-width:320px;text-align:center;animation:tabIn 0.25s ease-out;}
+  .avatar-crop-frame{position:relative;width:240px;height:240px;margin:14px auto;border-radius:50%;overflow:hidden;background:#000;touch-action:none;cursor:grab;box-shadow:0 0 0 4px var(--panel-light);}
+  .avatar-crop-frame:active{cursor:grabbing;}
+  .avatar-crop-frame img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;pointer-events:none;}
+  #avatarCropZoom{width:100%;margin-top:6px;accent-color:var(--blue-bright);}
+  .avatar-crop-btns{display:flex;gap:8px;margin-top:18px;}
+  .avatar-crop-btns .btn{flex:1;}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
   /* 이달의 리포트 진입 카드 */
   .mrep-entry{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer;}
@@ -976,6 +983,21 @@
     </div>
   </div>
 
+  <!-- 프로필 사진 확대/위치 조절 -->
+  <div id="avatarCropOverlay" class="goalpop" style="display:none;">
+    <div class="avatar-crop-card">
+      <div class="goalpop-title">📷 사진 위치·확대 조절</div>
+      <div class="avatar-crop-frame" id="avatarCropFrame" onpointerdown="아바타크롭드래그시작(event)" onpointermove="아바타크롭드래그중(event)" onpointerup="아바타크롭드래그끝(event)" onpointercancel="아바타크롭드래그끝(event)">
+        <img id="avatarCropImg" draggable="false" alt="">
+      </div>
+      <input type="range" id="avatarCropZoom" min="1" max="3" step="0.01" value="1" oninput="크롭줌변경(this.value)">
+      <div class="avatar-crop-btns">
+        <button class="btn btn-cancel" onclick="아바타크롭취소()">취소</button>
+        <button class="btn btn-save" onclick="아바타크롭저장()">저장</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 운동일지 뷰 -->
   <div id="diaryView" style="display:none;">
     <header class="page-header">
@@ -1389,7 +1411,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.188";
+const APP_VERSION = "2026.07.17.189";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1658,46 +1680,105 @@ window.아바타선택적용 = async function(emoji){
   try{ 홈위젯새로고침(); }catch(e){}
 };
 // 사진을 캔버스로 리사이즈+압축(과도한 업로드 용량 방지)
-function 이미지리사이즈(file, maxSize, quality){
-  return new Promise((resolve, reject)=>{
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = ()=>{
-      URL.revokeObjectURL(url);
-      let {width, height} = img;
-      if(width > height){ if(width > maxSize){ height = Math.round(height*maxSize/width); width = maxSize; } }
-      else { if(height > maxSize){ width = Math.round(width*maxSize/height); height = maxSize; } }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob(blob=>{ if(blob) resolve(blob); else reject(new Error('이미지 변환 실패')); }, 'image/jpeg', quality);
-    };
-    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없어요')); };
-    img.src = url;
-  });
-}
-window.아바타사진선택 = async function(input){
+// ── 프로필 사진 확대/위치 조절(크롭) ──
+const 크롭프레임크기 = 240, 크롭출력크기 = 400;
+let 크롭원본파일 = null;
+let 크롭상태 = { naturalW:0, naturalH:0, baseScale:1, zoom:1, panX:0, panY:0, dragging:false, startX:0, startY:0, startPanX:0, startPanY:0 };
+window.아바타사진선택 = function(input){
   if(!현재유저 || 게스트인가()) return;
   const file = input.files && input.files[0];
   input.value = '';
   if(!file) return;
   if(!file.type.startsWith('image/')){ alert('이미지 파일만 업로드할 수 있어요.'); return; }
+  크롭원본파일 = file;
+  const img = document.getElementById('avatarCropImg');
+  img.onload = ()=>{ 크롭초기화(img); };
+  img.src = URL.createObjectURL(file);
+  const avPop=document.getElementById('avatarPop'); if(avPop) avPop.remove();
+  document.getElementById('avatarCropOverlay').style.display = 'flex';
+};
+function 크롭초기화(imgEl){
+  const w = imgEl.naturalWidth, h = imgEl.naturalHeight;
+  크롭상태.naturalW = w; 크롭상태.naturalH = h;
+  크롭상태.baseScale = 크롭프레임크기 / Math.min(w, h);
+  크롭상태.zoom = 1;
+  const dispW = w*크롭상태.baseScale, dispH = h*크롭상태.baseScale;
+  크롭상태.panX = (크롭프레임크기 - dispW)/2;
+  크롭상태.panY = (크롭프레임크기 - dispH)/2;
+  const zoomEl = document.getElementById('avatarCropZoom'); if(zoomEl) zoomEl.value = 1;
+  크롭적용();
+}
+function 크롭클램프(){
+  const scale = 크롭상태.baseScale * 크롭상태.zoom;
+  const dispW = 크롭상태.naturalW*scale, dispH = 크롭상태.naturalH*scale;
+  크롭상태.panX = Math.min(0, Math.max(크롭프레임크기-dispW, 크롭상태.panX));
+  크롭상태.panY = Math.min(0, Math.max(크롭프레임크기-dispH, 크롭상태.panY));
+}
+function 크롭적용(){
+  크롭클램프();
+  const scale = 크롭상태.baseScale * 크롭상태.zoom;
+  const img = document.getElementById('avatarCropImg');
+  img.style.width = (크롭상태.naturalW*scale)+'px';
+  img.style.height = (크롭상태.naturalH*scale)+'px';
+  img.style.transform = `translate(${크롭상태.panX}px, ${크롭상태.panY}px)`;
+}
+window.크롭줌변경 = function(v){
+  크롭상태.zoom = parseFloat(v) || 1;
+  크롭적용();
+};
+window.아바타크롭드래그시작 = function(e){
+  크롭상태.dragging = true;
+  크롭상태.startX = e.clientX; 크롭상태.startY = e.clientY;
+  크롭상태.startPanX = 크롭상태.panX; 크롭상태.startPanY = 크롭상태.panY;
+  try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(err){}
+};
+window.아바타크롭드래그중 = function(e){
+  if(!크롭상태.dragging) return;
+  크롭상태.panX = 크롭상태.startPanX + (e.clientX - 크롭상태.startX);
+  크롭상태.panY = 크롭상태.startPanY + (e.clientY - 크롭상태.startY);
+  크롭적용();
+};
+window.아바타크롭드래그끝 = function(){
+  크롭상태.dragging = false;
+};
+window.아바타크롭취소 = function(){
+  document.getElementById('avatarCropOverlay').style.display = 'none';
+  크롭원본파일 = null;
+};
+function 크롭결과Blob(quality){
+  return new Promise((resolve, reject)=>{
+    const ratio = 크롭출력크기/크롭프레임크기;
+    const scale = 크롭상태.baseScale * 크롭상태.zoom * ratio;
+    const outX = 크롭상태.panX * ratio, outY = 크롭상태.panY * ratio;
+    const canvas = document.createElement('canvas');
+    canvas.width = 크롭출력크기; canvas.height = 크롭출력크기;
+    const ctx = canvas.getContext('2d');
+    const img = document.getElementById('avatarCropImg');
+    ctx.drawImage(img, outX, outY, 크롭상태.naturalW*scale, 크롭상태.naturalH*scale);
+    canvas.toBlob(blob=>{ if(blob) resolve(blob); else reject(new Error('이미지 변환 실패')); }, 'image/jpeg', quality);
+  });
+}
+window.아바타크롭저장 = async function(){
+  if(!현재유저 || 게스트인가() || !크롭원본파일) return;
   const 이름 = 현재유저.이름;
+  document.getElementById('avatarCropOverlay').style.display = 'none';
   토스트('사진 업로드 중...');
   try{
-    const blob = await 이미지리사이즈(file, 400, 0.82);
+    const blob = await 크롭결과Blob(0.85);
     const sref = storageRef(storage, `avatars/${이름}.jpg`);
     await uploadBytes(sref, blob, { contentType:'image/jpeg' });
     const url = await getDownloadURL(sref);
     아바타사진목록[이름] = url;
     await setDoc(doc(db,'quotes',이름), { 아바타사진: url }, { merge:true });
-    const pop=document.getElementById('avatarPop'); if(pop) pop.remove();
     const av=document.getElementById('pAvatar'); if(av && 현재상세이름) av.innerHTML=상세아바타HTML(현재상세이름);
     try{ 계정화면그리기(); }catch(e){}
     try{ 홈위젯새로고침(); }catch(e){}
+    try{ if(document.getElementById('rankingView').style.display!=='none') 랭킹그리기(); }catch(e){}
     토스트('✅ 프로필 사진 저장 완료!');
   }catch(e){
     alert('업로드 실패: ' + (e.code || e.message));
+  } finally {
+    크롭원본파일 = null;
   }
 };
 window.아바타사진제거 = async function(){
@@ -2153,7 +2234,7 @@ function 오늘출석그리기(){
     const 커스텀아바타 = !!(아바타사진목록[r.이름] || 아바타목록[r.이름]);
     const avatarInner = 아바타이너HTML(r.이름, escHtml(초성));
     return `<button class="ta-chip${r.done?' done':''}${me?' me':''}${커스텀아바타?' has-avatar':''}" onclick="event.stopPropagation();부원일지열기('${escHtml(r.이름)}')">`
-      + `<span class="ta-avatar">${avatarInner}${r.done?'<span class="ta-badge">✅</span>':''}</span>`
+      + `<span class="ta-avatar" onclick="event.stopPropagation();showDetail('${escHtml(r.이름)}')">${avatarInner}${r.done?'<span class="ta-badge">✅</span>':''}</span>`
       + `<span class="ta-name">${me?'나':escHtml(r.이름)}</span></button>`;
   }).join('');
   el.innerHTML = headHTML
