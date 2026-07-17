@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="ko"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>삼대오백마</title>
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=8">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=8">
-<link rel="manifest" href="manifest.json?v=8">
-<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json?v=9">
+<meta name="theme-color" content="#07090d">
 <meta name="application-name" content="삼대오백마">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,6 +17,16 @@
 <meta name="apple-mobile-web-app-title" content="삼대오백마">
 
 <script>
+  // 라이트/다크/시스템 테마를 최대한 빨리(렌더 전) 적용해서 전환 시 깜빡임을 방지
+  (function(){
+    try{
+      var mode = localStorage.getItem('테마모드') || 'system';
+      var resolved = mode === 'system'
+        ? ((window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark')
+        : mode;
+      document.documentElement.setAttribute('data-theme', resolved);
+    }catch(e){}
+  })();
   // 안드로이드 '설치앱'으로 켤 때만: OS 스플래시와 겹치지 않게 자체 스플래시 생략 (아이폰/브라우저는 그대로)
   // + 스플래시는 '사이트에 새로 접속할 때'만 표시. 스와이프 뒤로가기 등으로 같은 세션 안에서
   //   페이지가 다시 로드돼도 다시 뜨지 않도록 sessionStorage로 1회만 노출.
@@ -63,8 +73,15 @@
     --gold:#ffc83d; --silver:#c4ccd6; --bronze:#e08953;
     --text:#f4f7fb; --text-dim:#7d8a9c; --line:#232c3a;
   }
+  :root[data-theme="light"]{
+    --bg:#f2f2f7; --panel:#ffffff; --panel-light:#f7f7f9;
+    --blue:#c8d0dc; --blue-bright:#0a5fd1; --blue-glow:rgba(10,95,209,0.22);
+    --gold:#a6790a; --silver:#8a94a3; --bronze:#b8623a;
+    --text:#14171c; --text-dim:#6b7280; --line:#e1e3e8;
+  }
+  html{background:var(--bg);}
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  #splash{position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-bottom:12vh;animation:splashOut 0.4s ease-in 0.9s forwards;}
+  #splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-bottom:12vh;animation:splashOut 0.4s ease-in 0.9s forwards;}
   #splash.hide{display:none;}
   html.no-splash #splash{display:none!important;}  /* 안드로이드 설치앱: 자체 스플래시 생략 */
   .splash-logo-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
@@ -701,6 +718,9 @@
   .more-icon{width:32px;height:32px;border-radius:10px;background:var(--panel-light);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
   .more-row-label{flex:1;font-size:15px;font-weight:600;color:var(--text);}
   .more-row-chev{color:var(--text-dim);font-size:18px;flex-shrink:0;}
+  .theme-toggle-row{display:flex;gap:8px;margin-bottom:14px;}
+  .theme-toggle-btn{flex:1;padding:12px 6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;color:var(--text-dim);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:12.5px;font-weight:700;line-height:1.7;cursor:pointer;transition:all .15s;}
+  .theme-toggle-btn.active{background:var(--blue);border-color:var(--blue-bright);color:#10141b;}
   /* ===== 훈련일지 새 흐름: 리스트 / 상세 / 키패드 ===== */
   .exlist{display:flex;flex-direction:column;gap:9px;}
   .exrow{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 14px;cursor:pointer;transition:transform .14s,border-color .14s;}
@@ -1086,6 +1106,13 @@
       <div id="moreBodyMembers"><div id="adminMembers"></div></div>
     </div>
     </div><!-- /memberOnlyAccount -->
+
+    <div class="more-group-title">화면</div>
+    <div class="theme-toggle-row" id="themeToggleRow">
+      <button class="theme-toggle-btn" data-mode="light" onclick="테마설정('light')">☀️<br>라이트</button>
+      <button class="theme-toggle-btn" data-mode="dark" onclick="테마설정('dark')">🌙<br>다크</button>
+      <button class="theme-toggle-btn" data-mode="system" onclick="테마설정('system')">📱<br>시스템</button>
+    </div>
   </div>
 
   <!-- 더보기 항목 상세 오버레이 (프로필 리스트에서 항목 누르면 그 내용이 여기로 옮겨와서 보임) -->
@@ -1322,7 +1349,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.164";
+const APP_VERSION = "2026.07.17.165";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -4360,6 +4387,33 @@ async function 사용자라우팅(user){
   if(!관리자인가()){ inName.innerHTML = `<option>${escHtml(현재유저.이름)}</option>`; inName.value = 현재유저.이름; inName.disabled = true; }
   else { inName.disabled = false; }
 }
+
+// ── 라이트/다크/시스템 테마 ──
+let 테마모드 = (function(){ try{ return localStorage.getItem('테마모드') || 'system'; }catch(e){ return 'system'; } })();
+function 테마해상도(){
+  if(테마모드 !== 'system') return 테마모드;
+  return (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+}
+function 테마적용(){
+  const resolved = 테마해상도();
+  document.documentElement.setAttribute('data-theme', resolved);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content = (resolved === 'light') ? '#f2f2f7' : '#07090d';
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.mode === 테마모드);
+  });
+}
+window.테마설정 = function(mode){
+  테마모드 = mode;
+  try{ localStorage.setItem('테마모드', mode); }catch(e){}
+  테마적용();
+};
+try{
+  if(window.matchMedia){
+    matchMedia('(prefers-color-scheme: light)').addEventListener('change', ()=>{ if(테마모드==='system') 테마적용(); });
+  }
+}catch(e){}
+테마적용();  // data-theme은 head의 초기 스크립트에서 이미 적용됨, 여기선 토글 버튼/meta만 동기화
 
 onAuthStateChanged(auth, (user)=>{
   if(!user){
