@@ -709,8 +709,11 @@
   /* 더보기(프로필) 스타일 리스트 */
   .more-profile-row{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;margin-bottom:14px;transition:transform .14s;}
   .more-profile-row:active{transform:scale(0.985);}
-  .more-avatar{width:50px;height:50px;border-radius:50%;background:var(--panel-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+  .more-avatar{position:relative;width:50px;height:50px;border-radius:50%;background:var(--panel-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
   .more-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;}
+  .more-avatar.editable{cursor:pointer;}
+  .more-avatar.editable:active{transform:scale(0.92);}
+  .more-avatar.editable::after{content:'✏️';position:absolute;right:-3px;bottom:-3px;width:19px;height:19px;border-radius:50%;background:var(--panel);border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:9px;}
   .more-profile-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .more-profile-name{font-size:17px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .more-profile-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--panel-light);color:var(--blue-bright);white-space:nowrap;}
@@ -1043,7 +1046,7 @@
     </header>
 
     <div class="more-profile-row" onclick="계정설정열기()">
-      <div class="more-avatar" id="moreAvatar">👤</div>
+      <div class="more-avatar" id="moreAvatar" onclick="event.stopPropagation();아바타선택팝업()">👤</div>
       <div class="more-profile-main">
         <span class="more-profile-name" id="accNameRow">-</span>
         <span class="more-profile-badge" id="accRoleRow">-</span>
@@ -1371,7 +1374,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.186";
+const APP_VERSION = "2026.07.17.187";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1596,7 +1599,7 @@ function 상세아바타HTML(이름){
   return `<div class="profile-avatar profile-avatar-empty">🐎</div>`;
 }
 window.아바타선택팝업 = function(){
-  if(!현재유저 || 게스트인가() || 현재상세이름!==현재유저.이름) return;
+  if(!현재유저 || 게스트인가()) return;
   const cur = 아바타목록[현재유저.이름];
   const 사진있음 = !!아바타사진목록[현재유저.이름];
   const opts = 아바타선택지.map(e=>
@@ -4907,6 +4910,7 @@ function 계정화면그리기(){
   if(moreAvEl){
     const 커스텀아바타 = !guest && 현재유저.이름 && (아바타사진목록[현재유저.이름] || 아바타목록[현재유저.이름]);
     moreAvEl.classList.toggle('has-avatar', !!커스텀아바타);
+    moreAvEl.classList.toggle('editable', !guest);
     moreAvEl.innerHTML = (!guest && 현재유저.이름) ? 아바타이너HTML(현재유저.이름, '👤') : '👤';
   }
   // 게스트: 가입 유도만 표시, 회원 전용 섹션 숨김
