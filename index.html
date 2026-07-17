@@ -149,6 +149,10 @@
   .back-btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 18px;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;margin:20px 0;}
   .back-btn:active{background:var(--panel-light);}
   .profile-head{text-align:center;margin-top:32px;margin-bottom:24px;}
+  .profile-avatar{width:76px;height:76px;margin:0 auto 12px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:38px;line-height:1;}
+  .profile-avatar.editable{cursor:pointer;}
+  .profile-avatar.editable:active{transform:scale(0.94);}
+  .profile-avatar-empty{border-style:dashed;color:var(--text-dim);opacity:0.6;}
   .profile-name{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-weight:800;font-size:32px;}
   .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:5px;vertical-align:middle;line-height:1.5;border:1px solid;white-space:nowrap;letter-spacing:0;word-spacing:0;}
   /* 목표 태그 (다이어트/벌크업/린매스업) */
@@ -170,6 +174,10 @@
   .goalpop-btn{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
   .goalpop-btn .gpi{font-size:22px;}
   .goalpop-clear{margin-top:14px;font-size:13px;color:var(--text-dim);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;}
+  .emojipop-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .emojipop-btn{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;font-size:22px;cursor:pointer;padding:0;}
+  .emojipop-btn.on{border-color:var(--blue-bright);background:var(--panel-light);box-shadow:0 0 0 1px var(--blue-bright);}
+  .emojipop-btn:active{transform:scale(0.9);}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
   /* 이달의 리포트 진입 카드 */
   .mrep-entry{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer;}
@@ -923,6 +931,7 @@
   <div id="detailView" class="detail">
     <button class="back-btn" onclick="showRanking()">← 랭킹으로</button>
     <div class="profile-head">
+      <div id="pAvatar"></div>
       <div class="profile-name" id="pName"></div>
       <div style="margin-top:10px;">
         <span id="pGoalTag"></span>
@@ -1354,7 +1363,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.183";
+const APP_VERSION = "2026.07.17.184";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1481,6 +1490,8 @@ let 종목숨김목록 = {};   // { 이름: [운동명...] } 목록에서 없앤
 let 목표목록 = {};   // { 이름: 'cut'|'bulk'|'lean' } 다이어트/벌크업/린매스업 목표
 let 분할목록 = {};   // { 이름: 'none'|'2'|'3'|'4'|'5' } 이번 주 운동 분할 설정
 const 분할라벨 = { none:'무분할', '2':'2분할', '3':'3분할', '4':'4분할', '5':'5분할' };
+let 아바타목록 = {};   // { 이름: 이모지 } 개인 페이지 프로필 이모지
+const 아바타선택지 = ['💪','🔥','⚡','🏋️','🥊','🦾','🐎','🦁','🐯','🐻','🦍','🦅','🐺','🐲','😤','😎','🤙','👑','🎯','🚀','⭐','🏆','💯','🥶'];
 const 분할숫자 = { none:'무', '2':'2', '3':'3', '4':'4', '5':'5' };
 // 목표 태그 정의 (아이콘·라벨·색)
 const 목표정의 = {
@@ -1556,6 +1567,33 @@ window.분할선택적용 = async function(v){
   try{ await setDoc(doc(db,'quotes',이름), { 분할: v }, { merge:true }); }catch(e){}
   try{ 홈위젯새로고침(); }catch(e){}
 };
+// 개인 페이지 프로필 이모지 (본인이면 탭해서 선택 가능)
+function 상세아바타HTML(이름){
+  const own = !!(현재유저 && !게스트인가() && 이름===현재유저.이름);
+  const emoji = 아바타목록[이름];
+  if(emoji) return `<div class="profile-avatar${own?' editable':''}"${own?' onclick="아바타선택팝업()"':''}>${emoji}</div>`;
+  if(own) return `<div class="profile-avatar profile-avatar-empty editable" onclick="아바타선택팝업()">➕</div>`;
+  return `<div class="profile-avatar profile-avatar-empty">🐎</div>`;
+}
+window.아바타선택팝업 = function(){
+  if(!현재유저 || 게스트인가() || 현재상세이름!==현재유저.이름) return;
+  const cur = 아바타목록[현재유저.이름];
+  const opts = 아바타선택지.map(e=>
+    `<button class="emojipop-btn${cur===e?' on':''}" onclick="아바타선택적용('${e}')">${e}</button>`).join('');
+  const old=document.getElementById('avatarPop'); if(old) old.remove();
+  const pop=document.createElement('div'); pop.id='avatarPop'; pop.className='goalpop';
+  pop.onclick=function(e){ if(e.target===pop) pop.remove(); };
+  pop.innerHTML=`<div class="goalpop-card" style="max-width:320px;"><div class="goalpop-title">🖼️ 프로필 이모지 선택</div><div class="emojipop-grid">${opts}</div></div>`;
+  document.body.appendChild(pop);
+};
+window.아바타선택적용 = async function(emoji){
+  if(!현재유저 || 게스트인가()) return;
+  const 이름 = 현재유저.이름;
+  아바타목록[이름] = emoji;
+  const pop=document.getElementById('avatarPop'); if(pop) pop.remove();
+  const av=document.getElementById('pAvatar'); if(av && 현재상세이름) av.innerHTML=상세아바타HTML(현재상세이름);
+  try{ await setDoc(doc(db,'quotes',이름), { 아바타: emoji }, { merge:true }); }catch(e){}
+};
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 실명목록 = {};   // realNames 컬렉션(관리자만 구독) { 닉네임: 실명 } — A4 인쇄용
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
@@ -1622,8 +1660,8 @@ function 데이터구독시작(){
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
     명언목록 = {}; 레벨목록 = {};
     운동유형목록 = {}; 운동부위목록 = {}; 달력목록 = {};
-    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {}; 분할목록 = {};
-    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.운동부위) 운동부위목록[d.id] = data.운동부위; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; if(data.분할) 분할목록[d.id] = data.분할; });
+    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {}; 분할목록 = {}; 아바타목록 = {};
+    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.운동부위) 운동부위목록[d.id] = data.운동부위; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; if(data.분할) 분할목록[d.id] = data.분할; if(data.아바타) 아바타목록[d.id] = data.아바타; });
     if(document.getElementById('diaryView').style.display!=='none' && 일지대상){
       분석대상 = 일지대상; 분석그리기();
     }
@@ -2151,6 +2189,7 @@ window.showDetail = function(이름){
   const 삼대latest = 삼대기록.length ? 삼대기록[삼대기록.length-1] : null;
   // 이름 옆에 마일스톤 뱃지 표시 (삼대 기준)
   document.getElementById('pName').innerHTML = 이름 + (삼대latest ? 뱃지HTML(합계(삼대latest)) : '');
+  document.getElementById('pAvatar').innerHTML = 상세아바타HTML(이름);
   document.getElementById('pGoalTag').innerHTML = 상세목표태그HTML(이름);
   document.getElementById('pSplitTag').innerHTML = 상세분할태그HTML(이름);
   // 다음 목표 달성률 게이지 (삼대 기준)
