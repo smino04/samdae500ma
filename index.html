@@ -176,6 +176,9 @@
   .goal-pick-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text-dim);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;}
   .goal-pick-btn .gp-ic{font-size:22px;}
   .goal-pick-btn.active{color:var(--text);}
+  .split-pick{flex-wrap:wrap;}
+  .split-pick .goal-pick-btn{flex:1 1 27%;padding:11px 4px;}
+  .split-pick .goal-pick-btn.active{background:var(--blue);border-color:var(--blue-bright);color:#10141b;}
   /* 목표 선택 팝업 (개인 페이지에서 태그 탭) */
   .goalpop{position:fixed;inset:0;z-index:260;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:32px;animation:fadeIn 0.2s;}
   .goalpop-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;width:100%;max-width:300px;text-align:center;animation:tabIn 0.25s ease-out;}
@@ -1109,6 +1112,15 @@
           <button class="goal-pick-btn" data-goal="lean" onclick="목표설정('lean')"><span class="gp-ic">⚖️</span>린매스업</button>
         </div>
         <div class="acct-msg" id="goalMsg"></div>
+        <p class="acct-desc" style="margin:20px 0 12px;">이번 주 몇 분할로 운동하는지 정하면 홈 화면에 표시돼요.</p>
+        <div class="goal-pick split-pick" id="splitPick">
+          <button class="goal-pick-btn" data-split="none" onclick="분할설정('none')">무분할</button>
+          <button class="goal-pick-btn" data-split="2" onclick="분할설정('2')">2분할</button>
+          <button class="goal-pick-btn" data-split="3" onclick="분할설정('3')">3분할</button>
+          <button class="goal-pick-btn" data-split="4" onclick="분할설정('4')">4분할</button>
+          <button class="goal-pick-btn" data-split="5" onclick="분할설정('5')">5분할</button>
+        </div>
+        <div class="acct-msg" id="splitMsg"></div>
       </div>
       <div id="moreBodyDash"><div id="dashBoard"></div></div>
       <div id="moreBodyPending"><div id="adminPending"></div></div>
@@ -1358,7 +1370,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.169";
+const APP_VERSION = "2026.07.17.170";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1482,6 +1494,8 @@ let 달력목록 = {};   // { 이름: { 'YYYY-MM-DD': [부위...] } } (달력 �
 let 종목순서목록 = {};   // { 이름: [운동명...] } 사용자가 정한 운동 표시 순서
 let 종목숨김목록 = {};   // { 이름: [운동명...] } 목록에서 없앤(숨긴) 운동
 let 목표목록 = {};   // { 이름: 'cut'|'bulk'|'lean' } 다이어트/벌크업/린매스업 목표
+let 분할목록 = {};   // { 이름: 'none'|'2'|'3'|'4'|'5' } 이번 주 운동 분할 설정
+const 분할라벨 = { none:'무분할', '2':'2분할', '3':'3분할', '4':'4분할', '5':'5분할' };
 // 목표 태그 정의 (아이콘·라벨·색)
 const 목표정의 = {
   cut:  { icon:'🔥', label:'다이어트', short:'컷',   color:'#ff6b6b' },
@@ -1591,8 +1605,8 @@ function 데이터구독시작(){
   구독함수들.push(onSnapshot(quotesCol, (snap)=>{
     명언목록 = {}; 레벨목록 = {};
     운동유형목록 = {}; 달력목록 = {};
-    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {};
-    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; });
+    종목순서목록 = {}; 종목숨김목록 = {}; 목표목록 = {}; 분할목록 = {};
+    snap.forEach(d => { const data=d.data(); 명언목록[d.id] = data.명언; if(data.레벨) 레벨목록[d.id] = data.레벨; if(data.운동유형) 운동유형목록[d.id] = data.운동유형; if(data.달력) 달력목록[d.id] = data.달력; if(data.종목순서) 종목순서목록[d.id] = data.종목순서; if(data.종목숨김) 종목숨김목록[d.id] = data.종목숨김; if(data.목표) 목표목록[d.id] = data.목표; if(data.분할) 분할목록[d.id] = data.분할; });
     if(document.getElementById('detailView').classList.contains('show') && 현재상세이름){
       const q = 명언목록[현재상세이름];
       const el = document.getElementById('pQuote');
@@ -1609,8 +1623,8 @@ function 데이터구독시작(){
        && !document.getElementById('detailView').classList.contains('show')){
       랭킹그리기();
     }
-    // 프로필 목표 버튼도 동기화
-    try{ if(document.getElementById('accountView').style.display!=='none') 목표버튼갱신(); }catch(e){}
+    // 프로필 목표/분할 버튼도 동기화
+    try{ if(document.getElementById('accountView').style.display!=='none'){ 목표버튼갱신(); 분할버튼갱신(); } }catch(e){}
     // 홈의 내 요약 스트립(목표 태그 등)도 실시간 반영
     try{ 홈위젯새로고침(); }catch(e){}
     // 오늘 기록 유도 배너: 캘린더(달력) 데이터가 뒤늦게 도착해도 즉시 재판정
@@ -1934,18 +1948,21 @@ function 내요약스트립그리기(){
   const 이름=현재유저.이름;
   // 이번 주 운동일수
   const 이번주 = 스트릭계산(이름).이번주;
-  // 이번 주 몇 분할인지 (실제로 훈련한 서로 다른 부위 수)
-  const 분할수 = [...주간트레인부위(이름)].filter(p=>추천부위목록.includes(p)).length;
   // 내 목표(다이어트/벌크업/린매스업)
   const 목표info = 목표정의[목표목록[이름]];
   const goalCellHTML = 목표info
     ? `<div class="ms-v" style="color:${목표info.color};">${목표info.icon}</div><div class="ms-l">${목표info.label}</div>`
     : `<div class="ms-v" style="color:var(--text-dim);">🎯</div><div class="ms-l">목표 미설정</div>`;
+  // 이번 주 분할 (목표 설정에서 직접 지정)
+  const 분할현재 = 분할목록[이름];
+  const splitCellHTML = 분할현재
+    ? `<div class="ms-v">${분할라벨[분할현재]}</div><div class="ms-l">이번주</div>`
+    : `<div class="ms-v" style="color:var(--text-dim);">-</div><div class="ms-l">분할 미설정</div>`;
   el.innerHTML = `<div class="ms-name">${escHtml(이름)}</div>
     <div class="ms-stats">
       <div class="ms-cell"><div class="ms-v">${이번주}<small>/4</small></div><div class="ms-l">이번주</div></div>
       <div class="ms-cell">${goalCellHTML}</div>
-      <div class="ms-cell"><div class="ms-v">${분할수}</div><div class="ms-l">분할</div></div>
+      <div class="ms-cell">${splitCellHTML}</div>
     </div>
     <span class="ms-chev">›</span>`;
   el.onclick = ()=> showDetail(이름);
@@ -4766,9 +4783,10 @@ function 계정화면그리기(){
   if(guest) return;
   // 입력칸/메시지 초기화
   ['curPw','newPw','newPw2','delPw','newNick'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  ['pwMsg','resetMsg','delMsg','nickMsg','goalMsg'].forEach(id=>acctMsg(id,''));
+  ['pwMsg','resetMsg','delMsg','nickMsg','goalMsg','splitMsg'].forEach(id=>acctMsg(id,''));
   월간리포트엔트리그리기(현재유저.이름);
   목표버튼갱신();
+  분할버튼갱신();
   // 관리자만 회원 관리 섹션 표시
   document.getElementById('accountAdmin').style.display = 관리자인가() ? 'block' : 'none';
   if(관리자인가()) 관리자화면그리기();
@@ -4830,6 +4848,28 @@ function 목표버튼갱신(){
     b.style.borderColor = on ? 목표정의[b.dataset.goal].color : '';
     b.style.background = on ? 목표정의[b.dataset.goal].color+'1a' : '';
     b.style.color = on ? 목표정의[b.dataset.goal].color : '';
+  });
+}
+window.분할설정 = async function(v){
+  if(!현재유저 || 게스트인가()) return;
+  const 이름 = 현재유저.이름;
+  const 이전값 = 분할목록[이름];
+  분할목록[이름] = v;
+  분할버튼갱신();
+  try{
+    await setDoc(doc(db,'quotes',이름), { 분할: v }, { merge:true });
+    acctMsg('splitMsg', `이번주 분할: ${분할라벨[v]}`, true);
+    try{ 홈위젯새로고침(); }catch(e){}
+  }catch(e){
+    if(이전값!==undefined) 분할목록[이름] = 이전값; else delete 분할목록[이름];
+    분할버튼갱신();
+    acctMsg('splitMsg','저장 실패: '+(e.code||e.message));
+  }
+};
+function 분할버튼갱신(){
+  const cur = 현재유저 ? 분할목록[현재유저.이름] : null;
+  document.querySelectorAll('#splitPick .goal-pick-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.split===cur);
   });
 }
 window.닉네임변경 = async function(){
