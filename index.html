@@ -1386,7 +1386,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.176";
+const APP_VERSION = "2026.07.17.177";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3932,41 +3932,47 @@ window.deleteTraining = async function(id){
   catch(e){ alert("삭제 실패: "+e.message); }
 }
 
+// 훈련일지 운동 상세(detailChart)와 동일하게, 최고 기록 지점만 크게+금색으로 강조
+function PR포인트스타일(vals, color){
+  const valid = vals.map((v,i)=>({v,i})).filter(x=>x.v!=null);
+  let bestIdx=-1;
+  if(valid.length>=2){ const mx=Math.max(...valid.map(x=>x.v)); valid.forEach(x=>{ if(x.v>=mx) bestIdx=x.i; }); }
+  const ptColors=vals.map((v,i)=> i===bestIdx?'#ffc83d':color);
+  const ptR=vals.map((v,i)=> v==null?0:(i===bestIdx?5:3.5));
+  return {ptColors, ptR};
+}
 function 그래프그리기(member){
   const 월s=member.기록.map(r=>r.월);
   const css=getComputedStyle(document.documentElement);
   const blue=css.getPropertyValue('--blue-bright').trim();
-  const gold=css.getPropertyValue('--gold').trim();
-  const silver=css.getPropertyValue('--silver').trim();
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
-  const opts={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:textDim,font:{family:'Noto Sans KR',size:12},usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8}}},
+  const bodyOpts={responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
+    plugins:{legend:{display:false}},
     scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}};
-  const detailLayout={padding:{top:28,left:12,right:16}};
+  // 삼대합계 그래프 (스쿼트/벤치/데드 개별선은 빼고 삼대합계 한 줄만)
+  const 삼대data=member.기록.map(r=>삼대유효(r)?합계(r):null);
+  const 삼대pt=PR포인트스타일(삼대data,'#ff4d6d');
   if(liftChartObj)liftChartObj.destroy();
   liftChartObj=new Chart(document.getElementById('liftChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'삼대합계',data:member.기록.map(r=>삼대유효(r)?합계(r):null),borderColor:'#ff4d6d',backgroundColor:영역채움('#ff4d6d'),fill:true,tension:0.35,borderWidth:3,pointRadius:6,pointHoverRadius:7,pointStyle:'circle',spanGaps:true},
-      {label:'스쿼트',data:member.기록.map(r=>삼대유효(r)?r.스쿼트:null),borderColor:'#34d399',backgroundColor:'#34d399',tension:0.35,borderWidth:2,pointRadius:3,spanGaps:true,noValueLabel:true},
-      {label:'벤치',data:member.기록.map(r=>삼대유효(r)?r.벤치:null),borderColor:gold,backgroundColor:gold,tension:0.35,borderWidth:2,pointRadius:3,spanGaps:true,noValueLabel:true},
-      {label:'데드',data:member.기록.map(r=>삼대유효(r)?r.데드:null),borderColor:silver,backgroundColor:silver,tension:0.35,borderWidth:2,pointRadius:3,spanGaps:true,noValueLabel:true},
-    ]},options:{...opts,layout:detailLayout},plugins:[점값플러그인]});
-  const bodyOpts={...opts,layout:detailLayout,plugins:{legend:{display:false}}};
+      {label:'삼대합계',data:삼대data,belowLabels:member.기록.map(r=>삼대유효(r)?`스${r.스쿼트}·벤${r.벤치}·데${r.데드}`:null),borderColor:'#ff4d6d',backgroundColor:영역채움('#ff4d6d'),fill:true,tension:0.35,borderWidth:2.5,pointRadius:삼대pt.ptR,pointHoverRadius:6,pointBackgroundColor:삼대pt.ptColors,pointBorderColor:삼대pt.ptColors,pointStyle:'circle',spanGaps:true},
+    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}},plugins:[점값플러그인]});
   const 골격근data=member.기록.map(r=>r.골격근량), 체지방data=member.기록.map(r=>r.체지방률);
   const mys=yScale(골격근data), fys=yScale(체지방data);
+  const 근육pt=PR포인트스타일(골격근data,blue), 지방pt=PR포인트스타일(체지방data,'#ff9f40');
   // 골격근량 그래프
   if(muscleChartObj)muscleChartObj.destroy();
   muscleChartObj=new Chart(document.getElementById('muscleChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'골격근량(kg)',data:골격근data,borderColor:blue,backgroundColor:영역채움(blue),fill:true,tension:0.35,borderWidth:3,pointRadius:4,pointHoverRadius:6,spanGaps:true},
-    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{min:mys.min,max:mys.max,ticks:{color:textDim,stepSize:mys.step},grid:{color:line}}}},plugins:[점값플러그인]});
+      {label:'골격근량(kg)',data:골격근data,borderColor:blue,backgroundColor:영역채움(blue),fill:true,tension:0.35,borderWidth:2.5,pointRadius:근육pt.ptR,pointHoverRadius:6,pointBackgroundColor:근육pt.ptColors,pointBorderColor:근육pt.ptColors,spanGaps:true},
+    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:mys.min,max:mys.max,ticks:{color:textDim,stepSize:mys.step},grid:{color:line}}}},plugins:[점값플러그인]});
   // 체지방률 그래프
   if(fatChartObj)fatChartObj.destroy();
   fatChartObj=new Chart(document.getElementById('fatChart'),{type:'line',
     data:{labels:월s,datasets:[
-      {label:'체지방률(%)',data:체지방data,borderColor:'#ff9f40',backgroundColor:영역채움('#ff9f40'),fill:true,tension:0.35,borderWidth:3,pointRadius:4,pointHoverRadius:6,spanGaps:true},
-    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{min:fys.min,max:fys.max,ticks:{color:textDim,stepSize:fys.step},grid:{color:line}}}},plugins:[점값플러그인]});
+      {label:'체지방률(%)',data:체지방data,borderColor:'#ff9f40',backgroundColor:영역채움('#ff9f40'),fill:true,tension:0.35,borderWidth:2.5,pointRadius:지방pt.ptR,pointHoverRadius:6,pointBackgroundColor:지방pt.ptColors,pointBorderColor:지방pt.ptColors,spanGaps:true},
+    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:fys.min,max:fys.max,ticks:{color:textDim,stepSize:fys.step},grid:{color:line}}}},plugins:[점값플러그인]});
 }
 
 // ── 입력 모달 ──
