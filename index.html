@@ -122,7 +122,7 @@
   .control-row .period-row{display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .control-row .cal-nav{width:34px;height:34px;font-size:14px;border-radius:8px;}
   .control-row .period-label{font-size:13px;font-weight:700;color:var(--text);min-width:76px;text-align:center;}
-  .rank-card{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:transform 0.15s,border-color 0.2s;animation:slideIn 0.4s backwards;position:relative;overflow:hidden;}
+  .rank-card{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;min-height:86px;cursor:pointer;transition:transform 0.15s,border-color 0.2s;animation:slideIn 0.4s backwards;position:relative;overflow:hidden;box-sizing:border-box;}
   .rank-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;}
   .rank-card:active{transform:scale(0.98);}
   .rank-card.top1{border-color:var(--gold);background:linear-gradient(100deg,rgba(255,200,61,0.12),var(--panel) 55%);}
@@ -135,8 +135,8 @@
   .rank-num{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:26px;width:42px;text-align:center;flex-shrink:0;color:var(--text-dim);}
   .top1 .rank-num{color:var(--gold);}.top2 .rank-num{color:var(--silver);}.top3 .rank-num{color:var(--bronze);}
   .rank-info{flex:1;min-width:0;}
-  .rank-name{font-size:17px;font-weight:700;}
-  .rank-detail{font-size:12px;color:var(--text-dim);margin-top:4px;}
+  .rank-name{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rank-detail{font-size:12px;color:var(--text-dim);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rank-total{text-align:right;flex-shrink:0;}
   .rank-total .num{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:24px;color:var(--blue-bright);line-height:1;}
   .rank-total .unit{font-size:11px;color:var(--text-dim);}
@@ -535,14 +535,14 @@
   .ta-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#69db7c;color:#0a2a12;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
   .ta-name{font-size:10.5px;font-weight:700;color:var(--text-dim);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ta-chip.done .ta-name{color:var(--text);}
-  .weekly-rec{margin:0 0 14px;padding:12px 14px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
-  .weekly-rec .wr-head{display:flex;align-items:center;gap:8px;}
-  .weekly-rec .wr-title{font-size:13px;font-weight:800;color:var(--text);}
-  .weekly-rec .wr-sub{flex:1;text-align:right;font-size:11px;font-weight:600;color:var(--text-dim);}
-  .weekly-rec .wr-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;}
-  .wr-chip{padding:7px 14px;border-radius:20px;background:var(--panel-light);border:1.5px solid var(--line);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:transform .12s;}
-  .wr-chip:active{transform:scale(0.94);}
-  .weekly-rec .wr-done{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--text-dim);text-align:center;padding:2px 0 4px;}
+  .balance-card{margin:0 0 14px;padding:14px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
+  .balance-card .wr-head{display:flex;align-items:center;gap:8px;}
+  .balance-card .wr-title{font-size:13px;font-weight:800;color:var(--text);}
+  .balance-sub{margin-top:3px;font-size:11.5px;font-weight:600;color:var(--text-dim);}
+  .balance-chart-wrap{position:relative;height:220px;margin-top:12px;}
+  .balance-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;font-size:12.5px;font-weight:600;color:var(--text-dim);line-height:1.5;}
+  .balance-period-row{display:flex;gap:8px;margin-top:12px;}
+  .balance-period-row .goal-pick-btn{padding:9px 4px;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -900,7 +900,17 @@
     </div>
     <div id="myStrip" class="my-strip" style="display:none;"></div>
     <div id="todayAttendance" class="today-att" style="display:none;"></div>
-    <div id="weeklyRec" class="weekly-rec" style="display:none;"></div>
+    <div id="balanceCard" class="balance-card" style="display:none;">
+      <div class="wr-head"><span class="wr-title">🎯 운동 균형 분석</span></div>
+      <div class="balance-sub">운동하며 놓치고 있는 부위를 확인해보세요</div>
+      <div class="balance-chart-wrap"><canvas id="balanceChart"></canvas><div id="balanceEmpty" class="balance-empty" style="display:none;"></div></div>
+      <div class="balance-period-row" id="balancePeriodRow">
+        <button class="goal-pick-btn" data-period="week" onclick="운동균형기간변경('week')">1주</button>
+        <button class="goal-pick-btn" data-period="month" onclick="운동균형기간변경('month')">1달</button>
+        <button class="goal-pick-btn" data-period="year" onclick="운동균형기간변경('year')">1년</button>
+        <button class="goal-pick-btn" data-period="all" onclick="운동균형기간변경('all')">전체</button>
+      </div>
+    </div>
   </div>
 
   <div id="rankingView" style="display:none;">
@@ -1361,7 +1371,7 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, si
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.17.172";
+const APP_VERSION = "2026.07.17.173";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2026,44 +2036,79 @@ window.부원일지열기 = function(이름){
   일지대상 = 이름;
   switchMainTab('diary');
 };
-// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 이번주 안 한 부위 추천) 그리기
+// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 운동 균형 분석) 그리기
 function 홈그리기(){
   try{ 내요약스트립그리기(); }catch(e){}
   try{ 오늘출석그리기(); }catch(e){}
-  try{ 주간부위추천그리기(); }catch(e){}
+  try{ 운동균형그리기(); }catch(e){}
 }
-// 이번 주(월요일~오늘) 동안 실제로 훈련한 부위 집합
-const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];  // 삼대측정/기타는 추천 대상에서 제외
-function 주간트레인부위(이름){
-  const ws = _weekStart(new Date());
-  const today = new Date(); today.setHours(0,0,0,0);
-  const weekDs = new Set();
-  for(let d=new Date(ws); d<=today; d.setDate(d.getDate()+1)){ weekDs.add(_ymd(d)); }
+// 운동 균형 분석: 레이더 차트에 쓸 부위 목록 (삼대측정/기타는 제외)
+const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];
+let 운동균형기간 = 'week';   // 'week'|'month'|'year'|'all'
+let balanceChartObj = null;
+// 기간(from~to, 문자열 YYYY-MM-DD)에 해당하는 부위별 훈련 횟수 집계. from이 null이면 전체 기간.
+function 부위분포계산(이름, fromDs, toDs){
   const 자동={};
   훈련목록.forEach(t=>{
-    if(t.이름!==이름 || !t.날짜 || !weekDs.has(t.날짜)) return;
+    if(t.이름!==이름 || !t.날짜) return;
+    if(fromDs && (t.날짜<fromDs || t.날짜>toDs)) return;
     (자동[t.날짜]=자동[t.날짜]||new Set()).add(부위(t.종목||'벤치프레스'));
   });
-  const trained = new Set();
-  weekDs.forEach(ds=>{ 그날부위(이름, ds, 자동[ds]).forEach(p=>trained.add(p)); });
-  return trained;
+  const allDs = new Set(Object.keys(자동));
+  const cal = 달력목록[이름]||{};
+  Object.keys(cal).forEach(ds=>{ if(!fromDs || (ds>=fromDs && ds<=toDs)) allDs.add(ds); });
+  const 카운트={}; let 총=0;
+  allDs.forEach(ds=>{
+    그날부위(이름, ds, 자동[ds]).forEach(p=>{
+      if(p==='삼대측정' || p==='기타') return;
+      카운트[p]=(카운트[p]||0)+1; 총++;
+    });
+  });
+  return {카운트, 총};
 }
-// 이번 주 안 한 부위 추천 위젯: 누르면 훈련일지로 이동
-function 주간부위추천그리기(){
-  const el=document.getElementById('weeklyRec'); if(!el) return;
+function 운동균형기간범위(period){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const toDs=_ymd(today);
+  if(period==='week') return {from:_ymd(_weekStart(today)), to:toDs};
+  if(period==='month') return {from:_ds(today.getFullYear(),today.getMonth(),1), to:toDs};
+  if(period==='year') return {from:_ds(today.getFullYear(),0,1), to:toDs};
+  return {from:null, to:null};  // 전체
+}
+window.운동균형기간변경 = function(p){
+  운동균형기간 = p;
+  운동균형그리기();
+};
+function 운동균형그리기(){
+  const el=document.getElementById('balanceCard'); if(!el) return;
   if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; return; }
-  const trained = 주간트레인부위(현재유저.이름);
-  const missing = 추천부위목록.filter(p=>!trained.has(p));
-  if(!missing.length){
-    el.innerHTML = `<div class="wr-head"><span class="wr-title">🎯 이번주 부위 추천</span></div>
-      <div class="wr-done">이번주 전 부위 다 챙겼어요! 완벽해요 🎉</div>`;
-    el.style.display='block';
+  el.style.display='block';
+  document.querySelectorAll('#balancePeriodRow .goal-pick-btn').forEach(b=>b.classList.toggle('active', b.dataset.period===운동균형기간));
+  const {from,to} = 운동균형기간범위(운동균형기간);
+  const {카운트,총} = 부위분포계산(현재유저.이름, from, to);
+  const canvas=document.getElementById('balanceChart');
+  const emptyEl=document.getElementById('balanceEmpty');
+  if(!canvas) return;
+  if(!총){
+    if(balanceChartObj){ balanceChartObj.destroy(); balanceChartObj=null; }
+    canvas.style.display='none';
+    if(emptyEl){ emptyEl.style.display='flex'; emptyEl.textContent='아직 기록이 없어요. 운동을 기록하면 균형을 분석해드려요!'; }
     return;
   }
-  const chips = missing.map(p=>`<button class="wr-chip" style="border-color:${부위색(p)};color:${부위색(p)}" onclick="switchMainTab('diary')">${escHtml(부위라벨(p))}</button>`).join('');
-  el.innerHTML = `<div class="wr-head"><span class="wr-title">🎯 이번주 안 한 부위</span><span class="wr-sub">눌러서 훈련일지로</span></div>
-    <div class="wr-chips">${chips}</div>`;
-  el.style.display='block';
+  canvas.style.display='block';
+  if(emptyEl) emptyEl.style.display='none';
+  const css=getComputedStyle(document.documentElement);
+  const blueBright=css.getPropertyValue('--blue-bright').trim();
+  const blueGlow=css.getPropertyValue('--blue-glow').trim();
+  const textDim=css.getPropertyValue('--text-dim').trim();
+  const line=css.getPropertyValue('--line').trim();
+  const data=추천부위목록.map(p=>Math.round((카운트[p]||0)/총*100));
+  if(balanceChartObj) balanceChartObj.destroy();
+  balanceChartObj=new Chart(canvas,{type:'radar',
+    data:{labels:추천부위목록, datasets:[{label:'비중(%)', data, borderColor:blueBright, backgroundColor:blueGlow, borderWidth:2, pointBackgroundColor:blueBright, pointRadius:3}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{r:{min:0, suggestedMax:Math.max(30, Math.ceil(Math.max(...data)/10)*10), ticks:{display:false}, grid:{color:line}, angleLines:{color:line}, pointLabels:{color:textDim, font:{family:'Noto Sans KR', size:11}}}}
+    }});
 }
 // 실시간 리스너용: 홈이 실제로 보일 때만 위젯 새로고침
 function 홈위젯새로고침(){
