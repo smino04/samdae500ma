@@ -194,14 +194,6 @@
   .avatar-crop-btns{display:flex;gap:8px;margin-top:18px;}
   .avatar-crop-btns .btn{flex:1;}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
-  /* 이달의 리포트 진입 카드 */
-  .mrep-entry{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;cursor:pointer;}
-  .mrep-entry:active{transform:scale(0.98);}
-  .mrep-entry-ic{font-size:24px;flex-shrink:0;}
-  .mrep-entry-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
-  .mrep-entry-txt b{font-size:14px;color:var(--text);}
-  .mrep-entry-txt span{font-size:11.5px;color:var(--text-dim);}
-  .mrep-entry-arrow{font-size:20px;color:var(--text-dim);flex-shrink:0;}
   /* 이달의 리포트 오버레이 */
   .mrep-body{flex:1;overflow-y:auto;padding:6px 16px 24px;}
   .mrep-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;}
@@ -1101,7 +1093,7 @@
     <div id="memberOnlyAccount">
     <div class="more-group-title">내 활동</div>
     <div class="more-section">
-      <div class="more-row" onclick="더보기열기('📈 이번 달 리포트','moreBodyReport')">
+      <div class="more-row" onclick="이번달리포트열기()">
         <span class="more-icon">📈</span>
         <span class="more-row-label">이번 달 리포트</span>
         <span class="more-row-chev">›</span>
@@ -1155,7 +1147,6 @@
 
     <!-- 각 항목 실제 내용(평소엔 숨겨두고, 눌렀을 때 아래 상세 오버레이 안으로 옮겨서 보여줌) -->
     <div style="display:none;">
-      <div id="moreBodyReport"><div id="pMonthly"></div></div>
       <div id="moreBodyGoal">
         <p class="acct-desc" style="margin-bottom:12px;">목표를 정하면 랭킹·프로필에 태그로 표시돼요. (다시 누르면 해제)</p>
         <div class="goal-pick" id="goalPick">
@@ -1409,7 +1400,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.201";
+const APP_VERSION = "2026.07.18.202";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2482,17 +2473,11 @@ function 월간리포트데이터(이름, y, m){
   else { 하이라이트 = `이 달 총 ${운동일수}일 운동했어요`; }
   return { y, m, 총일수:days, 경과일수:cutoff, 운동일수, 최장연속, 부위분포, 종목성장, PR개수, 하이라이트, isFuture, isCurOrLater: isFuture||isCur };
 }
-function 월간리포트엔트리그리기(이름){
-  const el=document.getElementById('pMonthly'); if(!el) return;
-  const now=new Date();
-  const d=월간리포트데이터(이름, now.getFullYear(), now.getMonth());
-  el.innerHTML = `<div class="mrep-entry" onclick="월간리포트보기('${escHtml(이름)}')">
-    <div class="mrep-entry-ic">📊</div>
-    <div class="mrep-entry-txt"><b>이달의 리포트</b><span>${escHtml(d.하이라이트)}</span></div>
-    <div class="mrep-entry-arrow">›</div>
-  </div>`;
-}
 let 월간리포트대상=null, 월간리포트YM=null;
+window.이번달리포트열기 = function(){
+  if(!현재유저 || 게스트인가()) return;
+  월간리포트보기(현재유저.이름);
+};
 window.월간리포트보기 = function(이름){
   월간리포트대상 = 이름;
   const now=new Date();
@@ -5042,7 +5027,6 @@ function 계정화면그리기(){
   // 입력칸/메시지 초기화
   ['curPw','newPw','newPw2','delPw','newNick'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['pwMsg','resetMsg','delMsg','nickMsg','goalMsg','splitMsg'].forEach(id=>acctMsg(id,''));
-  월간리포트엔트리그리기(현재유저.이름);
   목표버튼갱신();
   분할버튼갱신();
   // 관리자만 회원 관리 섹션 표시
