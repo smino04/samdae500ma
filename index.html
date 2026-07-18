@@ -910,9 +910,9 @@
     </header>
     <div class="control-row">
       <select id="sortSelect" class="sort-select" onchange="setSort(this.value)">
-        <option value="growth">📈 주간 성장</option>
+        <option value="growth" selected>📈 주간 성장</option>
         <option value="attendance">✅ 월간 출석</option>
-        <option value="total" selected>🏋️ 삼대합계</option>
+        <option value="total">🏋️ 삼대합계</option>
         <option value="score">💪 체중 대비</option>
       </select>
       <div class="period-row">
@@ -1418,7 +1418,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.216";
+const APP_VERSION = "2026.07.18.217";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1803,7 +1803,7 @@ window.아바타사진제거 = async function(){
 };
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 실명목록 = {};   // realNames 컬렉션(관리자만 구독) { 닉네임: 실명 } — A4 인쇄용
-let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
+let 현재월 = null, 현재연도 = null, 현재정렬 = 'growth', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 let 주간성장주차오프셋 = 0;   // 0=이번 주, -1=지난 주 …
 let 출석랭킹YM = null;   // 월간출석 랭킹에서 보고 있는 {y, m} (실제 달력 월)
 
@@ -2187,7 +2187,7 @@ function 성장랭킹그리기(){
     const topClass=i<3?`top${i+1}`:'';
     const medal=['🥇','🥈','🥉'][i]||(i+1);
     const 내것=(현재유저 && !게스트인가() && x.이름===현재유저.이름);
-    const sub=[`🎯 신기록 ${x.pr}개`, x.streak>=2?`🔥 ${x.streak}주 연속 우상향`:''].filter(Boolean).join(' · ');
+    const sub=x.streak>=2?`🔥 ${x.streak}주 연속 우상향`:'';
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="주간로그보기('${x.이름}',${off})">
         <div class="rank-num">${medal}</div>
         <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}${목표태그HTML(x.이름)}</div>
