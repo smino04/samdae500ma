@@ -926,7 +926,7 @@
         <option value="total">삼대합계</option>
         <option value="score">체중대비</option>
         <option value="growth">주간성장</option>
-        <option value="attendance">출석률</option>
+        <option value="attendance">월간출석</option>
       </select>
       <div class="period-row">
         <button class="cal-nav" id="periodPrev" onclick="기간이동(-1)">◀</button>
@@ -1401,7 +1401,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.204";
+const APP_VERSION = "2026.07.18.205";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1787,7 +1787,7 @@ let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이
 let 실명목록 = {};   // realNames 컬렉션(관리자만 구독) { 닉네임: 실명 } — A4 인쇄용
 let 현재월 = null, 현재연도 = null, 현재정렬 = 'total', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
 let 주간성장주차오프셋 = 0;   // 0=이번 주, -1=지난 주 …
-let 출석랭킹YM = null;   // 출석률 랭킹에서 보고 있는 {y, m} (실제 달력 월)
+let 출석랭킹YM = null;   // 월간출석 랭킹에서 보고 있는 {y, m} (실제 달력 월)
 
 // ── 로그인 / 권한 상태 ──
 const 관리자이름 = ['신은수','이승민','노재헌'];   // 이 이름으로 먼저 가입한 계정이 자동 관리자
@@ -1841,10 +1841,10 @@ function 데이터구독시작(){
        && !document.getElementById('detailView').classList.contains('show')){
       성장랭킹그리기();
     }
-    // 출석률 랭킹 보고 있으면 실시간 반영
+    // 월간출석 랭킹 보고 있으면 실시간 반영
     if(현재정렬==='attendance' && document.getElementById('rankingView').style.display!=='none'
        && !document.getElementById('detailView').classList.contains('show')){
-      출석률랭킹그리기();
+      월간출석랭킹그리기();
     }
     // 오늘 기록 유도 배너: 훈련일지 데이터가 뒤늦게 도착해도 즉시 재판정
     try{ 오늘기록배너그리기(); }catch(e){}
@@ -1935,14 +1935,14 @@ window.기간이동 = function(delta){
     return;
   }
   if(현재정렬==='attendance'){
-    // 출석률: 실제 달력 월 단위 이동 (미래 달로는 못 감)
+    // 월간출석: 실제 달력 월 단위 이동 (미래 달로는 못 감)
     if(!출석랭킹YM){ const t=new Date(); 출석랭킹YM={y:t.getFullYear(),m:t.getMonth()}; }
     let mm=출석랭킹YM.m+delta, yy=출석랭킹YM.y;
     if(mm<0){ mm=11; yy--; } else if(mm>11){ mm=0; yy++; }
     const t=new Date();
     if(yy>t.getFullYear() || (yy===t.getFullYear() && mm>t.getMonth())) return;
     출석랭킹YM={y:yy,m:mm};
-    출석률랭킹그리기();
+    월간출석랭킹그리기();
     기간라벨갱신();
     return;
   }
@@ -2037,7 +2037,7 @@ function 화면갱신(){
 }
 window.setSort = function(s){
   if(s==='growth') 주간성장주차오프셋=0;   // 성장 모드 진입 시 항상 이번 주부터
-  if(s==='attendance'){ const t=new Date(); 출석랭킹YM={y:t.getFullYear(),m:t.getMonth()}; }   // 출석률 모드 진입 시 항상 이번 달부터
+  if(s==='attendance'){ const t=new Date(); 출석랭킹YM={y:t.getFullYear(),m:t.getMonth()}; }   // 월간출석 모드 진입 시 항상 이번 달부터
   현재정렬=s;
   const sel=document.getElementById('sortSelect'); if(sel) sel.value=s;
   랭킹그리기();
@@ -2193,9 +2193,8 @@ function 성장랭킹그리기(){
   const shareBtn = 이번주 ? `<button class="weekly-share-btn" style="margin-top:14px;margin-bottom:0;" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>` : '';
   el.innerHTML = heroHTML + `<div class="rank-section-label">📈 전체 성장 랭킹</div>` + listHTML + shareBtn;
 }
-// ── 출석률 랭킹: 이 달(오늘까지) 동안 운동한 날 비율 ──
-const 출석률최소경과일 = 5;   // 월초엔 표본이 너무 적어 왜곡되니, 이만큼 지나야 순위를 보여줌
-function 출석률데이터(y, m){
+// ── 월간출석 랭킹: 이 달(오늘까지) 동안 운동한 날 횟수 ──
+function 월간출석데이터(y, m){
   const 오늘=new Date(); 오늘.setHours(0,0,0,0);
   const days = new Date(y, m+1, 0).getDate();
   const isFuture = (y>오늘.getFullYear()) || (y===오늘.getFullYear() && m>오늘.getMonth());
@@ -2214,20 +2213,16 @@ function 출석률데이터(y, m){
       const ds=_ds(y,m,d);
       if(그날부위(이름, ds, byDay[d]).length) 출석일수++;
     }
-    return { 이름, 출석일수, 비율: cutoff ? Math.round(출석일수/cutoff*100) : 0 };
+    return { 이름, 출석일수 };
   });
-  list.sort((a,b)=> b.비율-a.비율 || b.출석일수-a.출석일수 || a.이름.localeCompare(b.이름,'ko'));
+  list.sort((a,b)=> b.출석일수-a.출석일수 || a.이름.localeCompare(b.이름,'ko'));
   return { list, cutoff };
 }
-function 출석률랭킹그리기(){
+function 월간출석랭킹그리기(){
   if(!출석랭킹YM){ const t=new Date(); 출석랭킹YM={y:t.getFullYear(),m:t.getMonth()}; }
   const {y,m}=출석랭킹YM;
   const el=document.getElementById('rankList'); if(!el) return;
-  const {list, cutoff} = 출석률데이터(y, m);
-  if(cutoff < 출석률최소경과일){
-    el.innerHTML = `<div class="status">이번 달 데이터가 아직 부족해요.<br>${출석률최소경과일}일 이상 지나야 출석률 순위가 나와요.</div>`;
-    return;
-  }
+  const {list, cutoff} = 월간출석데이터(y, m);
   if(!list.length){ el.innerHTML = '<div class="status">표시할 회원이 없어요.</div>'; return; }
   el.innerHTML = list.map((x,i)=>{
     const topClass=i<3?`top${i+1}`:'';
@@ -2236,8 +2231,8 @@ function 출석률랭킹그리기(){
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.이름}')">
         <div class="rank-num">${medal}</div>
         <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}</div>
-        <div class="rank-detail">${x.출석일수}/${cutoff}일 출석</div></div>
-        <div class="rank-total"><div class="num">${x.비율}</div><div class="unit">%</div></div>
+        <div class="rank-detail">이번 달 ${cutoff}일 중</div></div>
+        <div class="rank-total"><div class="num">${x.출석일수}</div><div class="unit">일</div></div>
         <div class="chevron">›</div></div>`;
   }).join('');
 }
@@ -2409,7 +2404,7 @@ function 랭킹그리기(){
   if(현재정렬==='attendance'){
     if(pr) pr.style.display='';
     if(rn){ rn.style.display='none'; }
-    출석률랭킹그리기();
+    월간출석랭킹그리기();
     기간라벨갱신();
     return;
   }
