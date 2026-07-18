@@ -128,16 +128,6 @@
   .rank-diff.up{color:#69db7c;}
   .rank-diff.down{color:#f87171;}
   .chevron{color:var(--text-dim);font-size:20px;flex-shrink:0;}
-  /* 주간 성장 MVP 히어로 카드 */
-  .mvp-hero{position:relative;overflow:hidden;border-radius:16px;padding:22px 20px 20px;margin-bottom:18px;text-align:center;cursor:pointer;border:1px solid var(--gold);background:linear-gradient(150deg,rgba(255,200,61,0.18),rgba(255,146,43,0.06) 60%,var(--panel));box-shadow:0 6px 28px rgba(255,200,61,0.14);animation:slideIn 0.4s backwards;}
-  .mvp-hero:active{transform:scale(0.99);}
-  .mvp-crown{font-size:40px;line-height:1;filter:drop-shadow(0 3px 10px rgba(255,200,61,0.5));}
-  .mvp-label{margin-top:6px;font-size:12px;font-weight:800;letter-spacing:3px;color:var(--gold);}
-  .mvp-name{margin-top:8px;font-size:28px;font-weight:800;color:var(--text);}
-  .mvp-growth{margin-top:6px;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-weight:800;font-size:34px;color:var(--gold);line-height:1.1;}
-  .mvp-growth small{font-size:16px;font-weight:700;margin-left:3px;}
-  .mvp-sub{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--text-dim);}
-  .rank-section-label{font-size:13px;font-weight:700;color:var(--text-dim);margin:4px 2px 12px;}
   .weekly-share-btn{width:100%;margin-bottom:14px;padding:13px;background:var(--panel-light);border:1px solid rgba(255,200,61,0.4);border-radius:11px;color:var(--gold);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;}
   .weekly-share-btn:active{transform:scale(0.99);background:rgba(255,200,61,0.08);}
   .detail{display:none;animation:fadeIn 0.3s;}
@@ -920,10 +910,10 @@
     </header>
     <div class="control-row">
       <select id="sortSelect" class="sort-select" onchange="setSort(this.value)">
-        <option value="total">🏋️ 삼대합계</option>
-        <option value="score">💪 체중 대비</option>
         <option value="growth">📈 주간 성장</option>
         <option value="attendance">✅ 월간 출석</option>
+        <option value="total" selected>🏋️ 삼대합계</option>
+        <option value="score">💪 체중 대비</option>
       </select>
       <div class="period-row">
         <button class="cal-nav" id="periodPrev" onclick="기간이동(-1)">◀</button>
@@ -1428,7 +1418,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.215";
+const APP_VERSION = "2026.07.18.216";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2193,18 +2183,6 @@ function 성장랭킹그리기(){
       : '<div class="status">이 주엔 성장 기록이 없어요.</div>';
     return;
   }
-  const 라벨 = 이번주 ? '이번 주 성장 MVP' : '성장 MVP';
-  // 성장 MVP 히어로 카드 (1위)
-  const mvp=활성[0];
-  const mvp내것=(현재유저 && !게스트인가() && mvp.이름===현재유저.이름);
-  const mvpSub=[`🎯 신기록 ${mvp.pr}개`, mvp.streak>=2?`🔥 ${mvp.streak}주 연속 우상향`:''].filter(Boolean).join(' · ');
-  const heroHTML = `<div class="mvp-hero" onclick="주간로그보기('${mvp.이름}',${off})">
-      <div class="mvp-crown">👑</div>
-      <div class="mvp-label">${라벨}</div>
-      <div class="mvp-name">${mvp.이름}${mvp내것?'<span class="me-tag">ME</span>':''}</div>
-      <div class="mvp-growth">+${mvp.성장}<small>kg ↑</small></div>
-      <div class="mvp-sub">${mvpSub||'이 주 가장 많이 성장했어요!'}</div>
-    </div>`;
   const listHTML = 활성.map((x,i)=>{
     const topClass=i<3?`top${i+1}`:'';
     const medal=['🥇','🥈','🥉'][i]||(i+1);
@@ -2212,14 +2190,14 @@ function 성장랭킹그리기(){
     const sub=[`🎯 신기록 ${x.pr}개`, x.streak>=2?`🔥 ${x.streak}주 연속 우상향`:''].filter(Boolean).join(' · ');
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="주간로그보기('${x.이름}',${off})">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}</div>
-        <div class="rank-detail">${목표태그HTML(x.이름)}${sub||'성장 중'}</div></div>
+        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}${목표태그HTML(x.이름)}</div>
+        <div class="rank-detail">${sub||'성장 중'}</div></div>
         <div class="rank-total"><div class="num">+${x.성장}</div><div class="unit">kg ↑</div></div>
         <div class="chevron">›</div></div>`;
   }).join('');
   // 결산 이미지 공유는 이번 주에서만 (지난 주는 '이번 주 결산'과 맞지 않음)
   const shareBtn = 이번주 ? `<button class="weekly-share-btn" style="margin-top:14px;margin-bottom:0;" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>` : '';
-  el.innerHTML = heroHTML + `<div class="rank-section-label">📈 전체 성장 랭킹</div>` + listHTML + shareBtn;
+  el.innerHTML = listHTML + shareBtn;
 }
 // ── 월간출석 랭킹: 이 달(오늘까지) 동안 운동한 날 횟수 ──
 function 월간출석데이터(y, m){
@@ -2446,7 +2424,7 @@ function 목표그래프그리기(){
   if(g.체지방률!=null){ const s=목표시계열목표포함(이름,'체지방률',g.체지방률); defs.push({key:'fat', canvasId:'homeGoalFatMini', title:`🔥 체지방률 (%) · 목표 ${g.체지방률}%`, color:'#ff9f40', s}); }
 
   if(!defs.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
-  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')"><div class="chart-title">🎯 전역 시 피지컬 목표</div>${
+  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')"><div class="chart-title">🎯 전역 목표 피지컬</div>${
     defs.map(d=>`<div class="goalarc-mini"><div class="goalarc-mini-title">${d.title}</div><div class="goalarc-mini-wrap"><canvas id="${d.canvasId}"></canvas></div></div>`).join('')
   }</div>`;
   el.style.display = 'block';
