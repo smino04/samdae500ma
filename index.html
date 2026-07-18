@@ -544,8 +544,9 @@
   .goalarc-cta{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px 16px;margin-bottom:14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text-dim);}
   .goalarc-cta-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
   .goalarc-combo{cursor:pointer;}
-  .goalarc-legend{display:flex;gap:14px;justify-content:center;margin-top:2px;flex-wrap:wrap;}
-  .goalarc-legend-item{font-size:12px;font-weight:700;}
+  .goalarc-mini{margin-top:14px;}
+  .goalarc-mini-title{font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
+  .goalarc-mini-wrap{position:relative;height:120px;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -1405,7 +1406,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.211";
+const APP_VERSION = "2026.07.18.212";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2317,88 +2318,86 @@ window.부원일지열기 = function(이름){
   일지대상 = 이름;
   switchMainTab('diary');
 };
-// 목표 그래프: 정확한 수치 추적용이 아니라 동기부여용 시각 자극 — 삼대/골격근량/체지방률을
-// 각자 목표 대비 진행률(%)로 정규화해서 하나의 값(평균)으로 합치고, 하나의 선에 올림.
-// 늘어야 좋은 지표든(삼대·골격근량) 줄어야 좋은 지표든(체지방률) 항상 "목표=100%, 시작=0%" 방향으로 맞춤.
-// 활성화된 목표 항목이 전부 들어있는 기록만 점으로 찍음 (하나라도 빠지면 그 기록은 건너뜀).
-function 목표통합포인트(이름){
-  const g = 수치목표목록[이름];
-  const specs = { 삼대:r=>삼대유효(r)?합계(r):null, 골격근량:r=>r.골격근량, 체지방률:r=>r.체지방률 };
-  const 활성 = ['삼대','골격근량','체지방률'].filter(f=>g && g[f]!=null);
-  if(!활성.length) return [];
-
-  const starts = {};
-  활성.forEach(f=>{
-    const first = 기록목록.filter(r=>r.이름===이름).map(r=>({r,v:specs[f](r)})).filter(x=>x.v!=null && !isNaN(x.v))
-      .sort((a,b)=>(a.r.등록시각||0)-(b.r.등록시각||0))[0];
-    starts[f] = first ? first.v : null;
-  });
-  const 사용가능 = 활성.filter(f=>starts[f]!=null);
-
-  let dataPoints = [];
-  if(사용가능.length){
-    const recs = 기록목록.filter(r=>r.이름===이름 && 사용가능.every(f=>{ const v=specs[f](r); return v!=null && !isNaN(v); }))
-      .sort((a,b)=>(a.등록시각||0)-(b.등록시각||0));
-    dataPoints = recs.map(r=>{
-      const pcts = 사용가능.map(f=>{
-        const v=specs[f](r), start=starts[f], goal=g[f], denom=goal-start;
-        return denom===0 ? 100 : Math.max(0, Math.min(100, ((v-start)/denom)*100));
-      });
-      const avg = pcts.reduce((a,b)=>a+b,0)/pcts.length;
-      return { label:r.월, pct:avg, isGoal:false };
-    });
+// 목표 그래프: 삼대/골격근량/체지방률 각각의 실제 기록 추이를 하나의 박스 안에 미니 그래프 3개로.
+// 각 항목은 독립적으로 그리며, 빈 달도 x축에 다 채우고(선은 실제 기록 사이만 이어짐),
+// 가장 최근 기록까지만 선이 이어지고 다음 기록이 들어오면 자연히 늘어남.
+function 월번호(월str){ const i=월선택지.indexOf(월str); return i<0?0:i; }
+function 목표시계열(이름, field){
+  const get = field==='삼대' ? (r=>삼대유효(r)?합계(r):null) : (r=>r[field]);
+  const recs = 기록목록.filter(r=>r.이름===이름).map(r=>({y:연도of(r), m:월번호(r.월), v:get(r), ts:r.등록시각||0}))
+    .filter(x=>x.v!=null && !isNaN(x.v)).sort((a,b)=>a.ts-b.ts);
+  if(!recs.length) return {labels:[], values:[]};
+  const byKey={}; recs.forEach(r=>{ byKey[`${r.y}-${r.m}`]=r.v; });   // 같은 달에 여러 번 기록했으면 마지막 값
+  const first=recs[0], last=recs[recs.length-1];
+  const labels=[], values=[];
+  let y=first.y, m=first.m, 안전=0;
+  while((y<last.y || (y===last.y && m<=last.m)) && 안전<120){
+    labels.push(`${m+1}월`);
+    values.push(byKey[`${y}-${m}`] ?? null);
+    m++; if(m>11){ m=0; y++; } 안전++;
   }
-  if(!dataPoints.length && !g.전역) return [];
-
-  const points = dataPoints.slice();
-  // 전역 년월까지 남은 달을 라벨만 채워서 x축에 다 넣고, 맨 끝만 목표점(⭐전역⭐)으로
-  if(g.전역){
-    const [gy,gm] = g.전역.split('-').map(Number);
-    const goalDate = new Date(gy, gm-1, 1);
-    const now = new Date(); const cursor = new Date(now.getFullYear(), now.getMonth()+1, 1);   // 이번 달은 이미 기록에 있을 수 있으니 다음 달부터
-    let 안전장치 = 0;
-    while(cursor < goalDate && 안전장치 < 60){
-      points.push({ label:`${cursor.getMonth()+1}월`, pct:null, isGoal:false });
-      cursor.setMonth(cursor.getMonth()+1); 안전장치++;
-    }
-  }
-  points.push({ label:'⭐전역⭐', pct:100, isGoal:true });
-  return points;
+  return {labels, values};
 }
-let 홈목표차트 = null;
-function 목표그래프그리기(){
-  const el = document.getElementById('goalArcArea'); if(!el) return;
-  const ctaHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
-  const 초기화 = ()=>{ if(홈목표차트){ try{ 홈목표차트.destroy(); }catch(e){} 홈목표차트=null; } };
-  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; 초기화(); return; }
-  const 이름 = 현재유저.이름;
-  const pts = 목표통합포인트(이름);
-  if(!pts.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
-
-  const g = 수치목표목록[이름] || {};
-  const legendDefs = [
-    {field:'삼대', icon:'🏋️', color:'#ff4d6d'},
-    {field:'골격근량', icon:'💪', color:'var(--blue-bright)'},
-    {field:'체지방률', icon:'🔥', color:'#ff9f40'},
-  ].filter(d=>g[d.field]!=null);
-  const legendHTML = `<div class="goalarc-legend">${legendDefs.map(d=>`<span class="goalarc-legend-item" style="color:${d.color}">${d.icon} ${d.field}</span>`).join('')}</div>`;
-
-  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')"><div class="chart-title">🎯 목표까지</div><div class="chart-wrap"><canvas id="homeGoalComboChart"></canvas></div>${legendHTML}</div>`;
-  el.style.display = 'block';
-  초기화();
+const 미니값라벨플러그인 = {
+  id:'miniValLabels',
+  afterDatasetsDraw(chart){
+    const {ctx}=chart; const ca=chart.chartArea; ctx.save();
+    ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font="700 10px 'Noto Sans KR'";
+    chart.data.datasets.forEach((ds,di)=>{
+      chart.getDatasetMeta(di).data.forEach((pt,i)=>{
+        const v=ds.data[i]; if(v==null) return;
+        const r=(pt.options&&pt.options.radius)||ds.pointRadius||3;
+        const label=String(Math.round(v*10)/10);
+        let x=pt.x; const hw=ctx.measureText(label).width/2+2;
+        if(x-hw<ca.left) x=ca.left+hw;
+        if(x+hw>ca.right) x=ca.right-hw;
+        const y=Math.min(pt.y+r+4, ca.bottom-11);
+        ctx.fillStyle=ds.borderColor; ctx.fillText(label, x, y);
+      });
+    });
+    ctx.restore();
+  }
+};
+let 홈목표차트들 = {};   // {total, muscle, fat} Chart.js 인스턴스
+function 목표미니차트그리기(canvasId, key, color, labels, values, useYScale){
   const css=getComputedStyle(document.documentElement);
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
-  const blue=css.getPropertyValue('--blue-bright').trim();
-  const labels=pts.map(p=>p.label), data=pts.map(p=>p.pct);
-  const colors=pts.map(p=>p.isGoal?'#ffd43b':blue);
-  const ptR=pts.map(p=>p.isGoal?7:(p.pct==null?0:4));
-  const canvas=document.getElementById('homeGoalComboChart'); if(!canvas) return;
-  홈목표차트=new Chart(canvas,{type:'line',
-    data:{labels, datasets:[{data, borderColor:blue, backgroundColor:영역채움(blue), fill:true, cubicInterpolationMode:'monotone', tension:0.4, borderWidth:2.5, pointRadius:ptR, pointHoverRadius:8, pointBackgroundColor:colors, pointBorderColor:colors, pointStyle:'circle', spanGaps:true}]},
-    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:24,left:8,right:8,bottom:6}},
+  const yOpt = useYScale
+    ? (()=>{ const ys=yScale(values); return {min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step,font:{size:10}},grid:{color:line}}; })()
+    : {ticks:{color:textDim,font:{size:10}},grid:{color:line}};
+  if(홈목표차트들[key]) 홈목표차트들[key].destroy();
+  const canvas=document.getElementById(canvasId); if(!canvas) return;
+  홈목표차트들[key]=new Chart(canvas,{type:'line',
+    data:{labels, datasets:[{data:values, borderColor:color, backgroundColor:영역채움(color), fill:true, tension:0.35, borderWidth:2, pointRadius:values.map(v=>v==null?0:3), pointHoverRadius:6, pointBackgroundColor:color, pointBorderColor:color, spanGaps:true}]},
+    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:16,left:4,right:4,bottom:14}},
       plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:8},grid:{color:line}}, y:{min:-8,max:108,ticks:{display:false},grid:{color:line}}}}});
+      scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:6,font:{size:10}},grid:{color:line}}, y:yOpt}},
+    plugins:[미니값라벨플러그인]});
+}
+function 목표그래프그리기(){
+  const el = document.getElementById('goalArcArea'); if(!el) return;
+  const ctaHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
+  const 초기화 = ()=>{ Object.values(홈목표차트들).forEach(c=>{ try{ c.destroy(); }catch(e){} }); 홈목표차트들={}; };
+  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; 초기화(); return; }
+  const 이름 = 현재유저.이름;
+  const g = 수치목표목록[이름];
+  if(!g || !Object.keys(g).length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
+
+  const css=getComputedStyle(document.documentElement);
+  const blue=css.getPropertyValue('--blue-bright').trim();
+  const defs = [];
+  if(g.삼대!=null){ const s=목표시계열(이름,'삼대'); if(s.values.length) defs.push({key:'total', canvasId:'homeGoalTotalMini', title:`🏋️ 삼대합계 (kg) · 목표 ${g.삼대}kg`, color:'#ff4d6d', s, useYScale:false}); }
+  if(g.골격근량!=null){ const s=목표시계열(이름,'골격근량'); if(s.values.length) defs.push({key:'muscle', canvasId:'homeGoalMuscleMini', title:`💪 골격근량 (kg) · 목표 ${g.골격근량}kg`, color:blue, s, useYScale:true}); }
+  if(g.체지방률!=null){ const s=목표시계열(이름,'체지방률'); if(s.values.length) defs.push({key:'fat', canvasId:'homeGoalFatMini', title:`🔥 체지방률 (%) · 목표 ${g.체지방률}%`, color:'#ff9f40', s, useYScale:true}); }
+
+  if(!defs.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
+  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')"><div class="chart-title">🎯 목표까지</div>${
+    defs.map(d=>`<div class="goalarc-mini"><div class="goalarc-mini-title">${d.title}</div><div class="goalarc-mini-wrap"><canvas id="${d.canvasId}"></canvas></div></div>`).join('')
+  }</div>`;
+  el.style.display = 'block';
+  초기화();
+  defs.forEach(d=> 목표미니차트그리기(d.canvasId, d.key, d.color, d.s.labels, d.s.values, d.useYScale));
 }
 // 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 목표 그래프 + 운동 균형 분석) 그리기
 function 홈그리기(){
