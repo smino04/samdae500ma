@@ -540,29 +540,9 @@
   .ta-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#69db7c;color:#0a2a12;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
   .ta-name{font-size:10.5px;font-weight:700;color:var(--text-dim);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ta-chip.done .ta-name{color:var(--text);}
-  /* 목표 그래프 (홈): 지금(좌하단) → 목표(우상단)를 곡선으로 잇는 카드 */
+  /* 목표 그래프 (홈): 목표 미설정 시 유도 카드 */
   .goalarc-cta{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px 16px;margin-bottom:14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text-dim);}
   .goalarc-cta-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
-  .goalarc-row{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;}
-  .goalarc-card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px 16px 16px;}
-  .goalarc-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;}
-  .goalarc-wrap{position:relative;height:84px;margin-top:6px;}
-  .goalarc-svg{position:absolute;inset:0;width:100%;height:100%;}
-  .goalarc-now,.goalarc-goal{position:absolute;display:flex;flex-direction:column;line-height:1.3;}
-  .goalarc-now{left:0;bottom:0;align-items:flex-start;}
-  .goalarc-goal{right:0;top:0;align-items:flex-end;}
-  .goalarc-now .l,.goalarc-goal .l{font-size:10px;font-weight:700;color:var(--text-dim);}
-  .goalarc-now .v{font-size:18px;font-weight:800;color:#4dabf7;}
-  .goalarc-goal .v{font-size:18px;font-weight:800;color:#ffd43b;}
-  .goalarc-now .v small,.goalarc-goal .v small{font-size:11px;font-weight:700;margin-left:1px;color:var(--text-dim);}
-  .balance-card{margin:0 0 14px;padding:14px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
-  .balance-card .wr-head{display:flex;align-items:center;gap:8px;}
-  .balance-card .wr-title{font-size:13px;font-weight:800;color:var(--text);}
-  .balance-sub{margin-top:3px;font-size:11.5px;font-weight:600;color:var(--text-dim);}
-  .balance-chart-wrap{position:relative;height:220px;margin-top:12px;}
-  .balance-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;font-size:12.5px;font-weight:600;color:var(--text-dim);line-height:1.5;}
-  .balance-period-row{display:flex;gap:8px;margin-top:12px;}
-  .balance-period-row .goal-pick-btn{padding:9px 4px;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -921,16 +901,6 @@
     <div id="myStrip" class="my-strip" style="display:none;"></div>
     <div id="todayAttendance" class="today-att" style="display:none;"></div>
     <div id="goalArcArea" style="display:none;"></div>
-    <div id="balanceCard" class="balance-card" style="display:none;">
-      <div class="wr-head"><span class="wr-title">🎯 운동 균형 분석</span></div>
-      <div class="balance-sub">운동하며 놓치고 있는 부위를 확인해보세요</div>
-      <div class="balance-chart-wrap"><canvas id="balanceChart"></canvas><div id="balanceEmpty" class="balance-empty" style="display:none;"></div></div>
-      <div class="balance-period-row" id="balancePeriodRow">
-        <button class="goal-pick-btn" data-period="week" onclick="운동균형기간변경('week')">1주</button>
-        <button class="goal-pick-btn" data-period="month" onclick="운동균형기간변경('month')">1달</button>
-        <button class="goal-pick-btn" data-period="all" onclick="운동균형기간변경('all')">전체</button>
-      </div>
-    </div>
   </div>
 
   <div id="rankingView" style="display:none;">
@@ -1431,7 +1401,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.207";
+const APP_VERSION = "2026.07.18.208";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2344,126 +2314,69 @@ window.부원일지열기 = function(이름){
   switchMainTab('diary');
 };
 // 목표 그래프: 그 사람의 가장 최근 유효 기록값 (삼대는 스쿼트·벤치·데드가 모두 있는 기록만 인정)
-function 삼대현재값(이름){
-  const recs = 기록목록.filter(r=>r.이름===이름 && 삼대유효(r)).sort((a,b)=>(a.등록시각||0)-(b.등록시각||0));
-  return recs.length ? 합계(recs[recs.length-1]) : null;
+// 그 사람의 과거 기록에서 해당 항목(삼대/골격근량/체지방률)의 시계열을 뽑음 (훈련일지 그래프와 동일한 스타일로 씀)
+function 목표시계열(이름, field){
+  const recs = 기록목록.filter(r=>{
+    if(r.이름!==이름) return false;
+    return field==='삼대' ? 삼대유효(r) : (r[field]!=null && !isNaN(r[field]));
+  }).sort((a,b)=>(a.등록시각||0)-(b.등록시각||0));
+  return { labels: recs.map(r=>r.월), values: recs.map(r=> field==='삼대' ? 합계(r) : r[field]) };
 }
-function 인바디현재값(이름, field){
-  const recs = 기록목록.filter(r=>r.이름===이름 && r[field]!=null && !isNaN(r[field])).sort((a,b)=>(a.등록시각||0)-(b.등록시각||0));
-  return recs.length ? recs[recs.length-1][field] : null;
+// 목표점(맨 끝)만 금색으로 강조 — 훈련일지 그래프의 PR 강조와 같은 느낌
+function 목표포인트스타일(vals, color){
+  const n=vals.length;
+  const ptColors=vals.map((v,i)=> i===n-1 ? '#ffc83d' : color);
+  const ptR=vals.map((v,i)=> v==null?0:(i===n-1?6:3.5));
+  return {ptColors, ptR};
 }
-function 목표아크카드HTML(key, label, 현재, 목표, unit){
-  const gid = 'gag_'+key;
-  const fmt = v => (Math.round(v*10)/10).toString();
-  return `<div class="goalarc-card">
-    <div class="goalarc-title">${label}</div>
-    <div class="goalarc-wrap">
-      <svg viewBox="0 0 100 50" preserveAspectRatio="none" class="goalarc-svg">
-        <defs><linearGradient id="${gid}" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#4dabf7"/><stop offset="100%" stop-color="#ffd43b"/></linearGradient></defs>
-        <path d="M8,42 C50,42 50,8 92,8" stroke="url(#${gid})" fill="none" stroke-width="2.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      </svg>
-      <div class="goalarc-now"><span class="l">지금</span><span class="v">${fmt(현재)}<small>${unit}</small></span></div>
-      <div class="goalarc-goal"><span class="l">목표</span><span class="v">${fmt(목표)}<small>${unit}</small></span></div>
-    </div>
-  </div>`;
+let 홈목표차트들 = {};   // {total, muscle, fat} Chart.js 인스턴스 (재렌더 시 destroy용)
+function 목표차트그리기(canvasId, key, color, labels, values, 목표, useYScale){
+  const 전체labels=[...labels, '목표'];
+  const 전체values=[...values, 목표];
+  const pt=목표포인트스타일(전체values, color);
+  const css=getComputedStyle(document.documentElement);
+  const textDim=css.getPropertyValue('--text-dim').trim();
+  const line=css.getPropertyValue('--line').trim();
+  const yOpt = useYScale
+    ? (()=>{ const ys=yScale(전체values); return {min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step},grid:{color:line}}; })()
+    : {ticks:{color:textDim},grid:{color:line}};
+  if(홈목표차트들[key]) 홈목표차트들[key].destroy();
+  const canvas=document.getElementById(canvasId); if(!canvas) return;
+  홈목표차트들[key]=new Chart(canvas,{type:'line',
+    data:{labels:전체labels,datasets:[
+      {label:key, data:전체values, borderColor:color, backgroundColor:영역채움(color), fill:true, tension:0.35, borderWidth:2.5, pointRadius:pt.ptR, pointHoverRadius:6, pointBackgroundColor:pt.ptColors, pointBorderColor:pt.ptColors, pointStyle:'circle', spanGaps:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:yOpt}},
+    plugins:[점값플러그인]});
 }
 function 목표그래프그리기(){
   const el = document.getElementById('goalArcArea'); if(!el) return;
-  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; return; }
+  const ctaHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
+  const 초기화 = ()=>{ Object.values(홈목표차트들).forEach(c=>{ try{ c.destroy(); }catch(e){} }); 홈목표차트들={}; };
+  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; 초기화(); return; }
   const 이름 = 현재유저.이름;
   const g = 수치목표목록[이름];
-  const ctaHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
-  if(!g || !Object.keys(g).length){ el.innerHTML = ctaHTML; el.style.display = 'block'; return; }
-  const cards = [];
-  if(g.삼대!=null){
-    const 현재 = 삼대현재값(이름);
-    if(현재!=null) cards.push(목표아크카드HTML('total','🏋️ 삼대', 현재, g.삼대, 'kg'));
-  }
-  if(g.골격근량!=null){
-    const 현재 = 인바디현재값(이름,'골격근량');
-    if(현재!=null) cards.push(목표아크카드HTML('muscle','💪 골격근량', 현재, g.골격근량, 'kg'));
-  }
-  if(g.체지방률!=null){
-    const 현재 = 인바디현재값(이름,'체지방률');
-    if(현재!=null) cards.push(목표아크카드HTML('fat','🔥 체지방률', 현재, g.체지방률, '%'));
-  }
-  if(!cards.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; return; }
-  el.innerHTML = `<div class="goalarc-row">${cards.join('')}</div>`;
+  if(!g || !Object.keys(g).length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
+
+  const css=getComputedStyle(document.documentElement);
+  const blue=css.getPropertyValue('--blue-bright').trim();
+  const defs = [];
+  if(g.삼대!=null){ const s=목표시계열(이름,'삼대'); if(s.values.length) defs.push({key:'total', canvasId:'homeGoalTotalChart', title:`🏋️ 삼대합계 (kg) · 목표 ${g.삼대}kg`, color:'#ff4d6d', s, 목표:g.삼대, useYScale:false}); }
+  if(g.골격근량!=null){ const s=목표시계열(이름,'골격근량'); if(s.values.length) defs.push({key:'muscle', canvasId:'homeGoalMuscleChart', title:`💪 골격근량 (kg) · 목표 ${g.골격근량}kg`, color:blue, s, 목표:g.골격근량, useYScale:true}); }
+  if(g.체지방률!=null){ const s=목표시계열(이름,'체지방률'); if(s.values.length) defs.push({key:'fat', canvasId:'homeGoalFatChart', title:`🔥 체지방률 (%) · 목표 ${g.체지방률}%`, color:'#ff9f40', s, 목표:g.체지방률, useYScale:true}); }
+
+  if(!defs.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
+  el.innerHTML = defs.map(d=>`<div class="chart-card"><div class="chart-title">${d.title}</div><div class="chart-wrap"><canvas id="${d.canvasId}"></canvas></div></div>`).join('');
   el.style.display = 'block';
+  defs.forEach(d=> 목표차트그리기(d.canvasId, d.key, d.color, d.s.labels, d.s.values, d.목표, d.useYScale));
 }
 // 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 목표 그래프 + 운동 균형 분석) 그리기
 function 홈그리기(){
   try{ 내요약스트립그리기(); }catch(e){}
   try{ 오늘출석그리기(); }catch(e){}
   try{ 목표그래프그리기(); }catch(e){}
-  try{ 운동균형그리기(); }catch(e){}
-}
-// 운동 균형 분석: 레이더 차트에 쓸 부위 목록 (삼대측정/기타는 제외)
-const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];
-let 운동균형기간 = 'month';   // 'week'|'month'|'all'
-let balanceChartObj = null;
-// 기간(from~to, 문자열 YYYY-MM-DD)에 해당하는 부위별 훈련 횟수 집계. from이 null이면 전체 기간.
-function 부위분포계산(이름, fromDs, toDs){
-  const 자동={};
-  훈련목록.forEach(t=>{
-    if(t.이름!==이름 || !t.날짜) return;
-    if(fromDs && (t.날짜<fromDs || t.날짜>toDs)) return;
-    (자동[t.날짜]=자동[t.날짜]||new Set()).add(부위(t.이름, t.종목||'벤치프레스'));
-  });
-  const allDs = new Set(Object.keys(자동));
-  const cal = 달력목록[이름]||{};
-  Object.keys(cal).forEach(ds=>{ if(!fromDs || (ds>=fromDs && ds<=toDs)) allDs.add(ds); });
-  const 카운트={}; let 총=0;
-  allDs.forEach(ds=>{
-    그날부위(이름, ds, 자동[ds]).forEach(p=>{
-      if(p==='삼대측정' || p==='기타') return;
-      카운트[p]=(카운트[p]||0)+1; 총++;
-    });
-  });
-  return {카운트, 총};
-}
-function 운동균형기간범위(period){
-  const today=new Date(); today.setHours(0,0,0,0);
-  const toDs=_ymd(today);
-  if(period==='week') return {from:_ymd(_weekStart(today)), to:toDs};
-  if(period==='month') return {from:_ds(today.getFullYear(),today.getMonth(),1), to:toDs};
-  return {from:null, to:null};  // 전체
-}
-window.운동균형기간변경 = function(p){
-  운동균형기간 = p;
-  운동균형그리기();
-};
-function 운동균형그리기(){
-  const el=document.getElementById('balanceCard'); if(!el) return;
-  if(!현재유저 || 게스트인가() || !현재유저.이름){ el.style.display='none'; return; }
-  el.style.display='block';
-  document.querySelectorAll('#balancePeriodRow .goal-pick-btn').forEach(b=>b.classList.toggle('active', b.dataset.period===운동균형기간));
-  const {from,to} = 운동균형기간범위(운동균형기간);
-  const {카운트,총} = 부위분포계산(현재유저.이름, from, to);
-  const canvas=document.getElementById('balanceChart');
-  const emptyEl=document.getElementById('balanceEmpty');
-  if(!canvas) return;
-  if(!총){
-    if(balanceChartObj){ balanceChartObj.destroy(); balanceChartObj=null; }
-    canvas.style.display='none';
-    if(emptyEl){ emptyEl.style.display='flex'; emptyEl.textContent='아직 기록이 없어요. 운동을 기록하면 균형을 분석해드려요!'; }
-    return;
-  }
-  canvas.style.display='block';
-  if(emptyEl) emptyEl.style.display='none';
-  const css=getComputedStyle(document.documentElement);
-  const blueBright=css.getPropertyValue('--blue-bright').trim();
-  const blueGlow=css.getPropertyValue('--blue-glow').trim();
-  const textDim=css.getPropertyValue('--text-dim').trim();
-  const line=css.getPropertyValue('--line').trim();
-  const data=추천부위목록.map(p=>Math.round((카운트[p]||0)/총*100));
-  if(balanceChartObj) balanceChartObj.destroy();
-  balanceChartObj=new Chart(canvas,{type:'radar',
-    data:{labels:추천부위목록, datasets:[{label:'비중(%)', data, borderColor:blueBright, backgroundColor:blueGlow, borderWidth:2, pointBackgroundColor:blueBright, pointRadius:3}]},
-    options:{responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{r:{min:0, suggestedMax:Math.max(30, Math.ceil(Math.max(...data)/10)*10), ticks:{display:false}, grid:{color:line}, angleLines:{color:line}, pointLabels:{color:textDim, font:{family:'Noto Sans KR', size:11}}}}
-    }});
 }
 // 실시간 리스너용: 홈이 실제로 보일 때만 위젯 새로고침
 function 홈위젯새로고침(){
