@@ -194,6 +194,12 @@
   .avatar-crop-btns{display:flex;gap:8px;margin-top:18px;}
   .avatar-crop-btns .btn{flex:1;}
   .goal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+  /* 운동 균형 분석 오버레이 */
+  .balance-sub{margin-top:3px;font-size:11.5px;font-weight:600;color:var(--text-dim);}
+  .balance-chart-wrap{position:relative;height:280px;margin-top:12px;}
+  .balance-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;font-size:12.5px;font-weight:600;color:var(--text-dim);line-height:1.5;}
+  .balance-period-row{display:flex;gap:8px;margin-top:16px;}
+  .balance-period-row .goal-pick-btn{padding:9px 4px;}
   /* 이달의 리포트 오버레이 */
   .mrep-body{flex:1;overflow-y:auto;padding:6px 16px 24px;}
   .mrep-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;}
@@ -544,6 +550,7 @@
   .goalarc-cta{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px 16px;margin-bottom:14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text-dim);}
   .goalarc-cta-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
   .goalarc-combo{cursor:pointer;}
+  .goalarc-combo .chart-title::before{display:none;}
   .goalarc-mini{margin-top:14px;}
   .goalarc-mini-title{font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
   .goalarc-mini-wrap{position:relative;height:120px;}
@@ -1084,9 +1091,9 @@
     <div id="memberOnlyAccount">
     <div class="more-group-title">내 활동</div>
     <div class="more-section">
-      <div class="more-row" onclick="이번달리포트열기()">
-        <span class="more-icon">📈</span>
-        <span class="more-row-label">이번 달 리포트</span>
+      <div class="more-row" onclick="더보기열기('📊 운동 분석','moreBodyAnalysis')">
+        <span class="more-icon">📊</span>
+        <span class="more-row-label">운동 분석</span>
         <span class="more-row-chev">›</span>
       </div>
       <div class="more-divider"></div>
@@ -1161,6 +1168,21 @@
           <button class="goal-pick-btn" data-split="5" onclick="분할설정('5')">5분할</button>
         </div>
         <div class="acct-msg" id="splitMsg"></div>
+      </div>
+      <div id="moreBodyAnalysis">
+        <div class="more-section">
+          <div class="more-row" onclick="이번달리포트열기()">
+            <span class="more-icon">📈</span>
+            <span class="more-row-label">월간 리포트</span>
+            <span class="more-row-chev">›</span>
+          </div>
+          <div class="more-divider"></div>
+          <div class="more-row" onclick="운동균형분석열기()">
+            <span class="more-icon">🎯</span>
+            <span class="more-row-label">운동 균형 분석</span>
+            <span class="more-row-chev">›</span>
+          </div>
+        </div>
       </div>
       <div id="moreBodyNumGoal">
         <p class="acct-desc" style="margin-bottom:12px;">목표를 정하면 홈 화면에 지금 위치를 보여주는 그래프가 떠요. (비워두면 그 항목은 표시 안 함)</p>
@@ -1406,7 +1428,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.213";
+const APP_VERSION = "2026.07.18.214";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2424,14 +2446,97 @@ function 목표그래프그리기(){
   if(g.체지방률!=null){ const s=목표시계열목표포함(이름,'체지방률',g.체지방률); defs.push({key:'fat', canvasId:'homeGoalFatMini', title:`🔥 체지방률 (%) · 목표 ${g.체지방률}%`, color:'#ff9f40', s}); }
 
   if(!defs.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
-  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')"><div class="chart-title">🎯 목표까지</div>${
+  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 목표 그래프 설정','moreBodyNumGoal')"><div class="chart-title">🎯 전역 시 피지컬 목표</div>${
     defs.map(d=>`<div class="goalarc-mini"><div class="goalarc-mini-title">${d.title}</div><div class="goalarc-mini-wrap"><canvas id="${d.canvasId}"></canvas></div></div>`).join('')
   }</div>`;
   el.style.display = 'block';
   초기화();
   defs.forEach(d=> 목표미니차트그리기(d.canvasId, d.key, d.color, d.s.labels, d.s.values, d.s.customLabels, d.s.goalIndex));
 }
-// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 목표 그래프 + 운동 균형 분석) 그리기
+// 운동 균형 분석: 프로필 > 운동 분석에서 들어가는 전체 화면 오버레이. 레이더 차트로 부위별 훈련 비중을 보여줌.
+const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];
+let 운동균형기간 = 'month';   // 'week'|'month'|'all'
+let balanceChartObj = null;
+// 기간(from~to, 문자열 YYYY-MM-DD)에 해당하는 부위별 훈련 횟수 집계. from이 null이면 전체 기간.
+function 부위분포계산(이름, fromDs, toDs){
+  const 자동={};
+  훈련목록.forEach(t=>{
+    if(t.이름!==이름 || !t.날짜) return;
+    if(fromDs && (t.날짜<fromDs || t.날짜>toDs)) return;
+    (자동[t.날짜]=자동[t.날짜]||new Set()).add(부위(t.이름, t.종목||'벤치프레스'));
+  });
+  const allDs = new Set(Object.keys(자동));
+  const cal = 달력목록[이름]||{};
+  Object.keys(cal).forEach(ds=>{ if(!fromDs || (ds>=fromDs && ds<=toDs)) allDs.add(ds); });
+  const 카운트={}; let 총=0;
+  allDs.forEach(ds=>{
+    그날부위(이름, ds, 자동[ds]).forEach(p=>{
+      if(p==='삼대측정' || p==='기타') return;
+      카운트[p]=(카운트[p]||0)+1; 총++;
+    });
+  });
+  return {카운트, 총};
+}
+function 운동균형기간범위(period){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const toDs=_ymd(today);
+  if(period==='week') return {from:_ymd(_weekStart(today)), to:toDs};
+  if(period==='month') return {from:_ds(today.getFullYear(),today.getMonth(),1), to:toDs};
+  return {from:null, to:null};  // 전체
+}
+window.운동균형기간변경 = function(p){
+  운동균형기간 = p;
+  운동균형그리기();
+};
+window.운동균형분석열기 = function(){
+  if(!현재유저 || 게스트인가()) return;
+  const old=document.getElementById('balanceOverlay'); if(old) old.remove();
+  const ov=document.createElement('div'); ov.id='balanceOverlay'; ov.className='kp-ov';
+  ov.innerHTML=`<div class="kp-top"><button class="x" onclick="document.getElementById('balanceOverlay').remove()">✕</button><h3>🎯 운동 균형 분석</h3><div style="width:32px;"></div></div>
+    <div class="mrep-body">
+      <div class="balance-sub">운동하며 놓치고 있는 부위를 확인해보세요</div>
+      <div class="balance-chart-wrap"><canvas id="balanceChart"></canvas><div id="balanceEmpty" class="balance-empty" style="display:none;"></div></div>
+      <div class="balance-period-row" id="balancePeriodRow">
+        <button class="goal-pick-btn" data-period="week" onclick="운동균형기간변경('week')">1주</button>
+        <button class="goal-pick-btn" data-period="month" onclick="운동균형기간변경('month')">1달</button>
+        <button class="goal-pick-btn" data-period="all" onclick="운동균형기간변경('all')">전체</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  운동균형그리기();
+};
+function 운동균형그리기(){
+  const el=document.getElementById('balanceOverlay'); if(!el) return;
+  if(!현재유저 || 게스트인가() || !현재유저.이름) return;
+  document.querySelectorAll('#balancePeriodRow .goal-pick-btn').forEach(b=>b.classList.toggle('active', b.dataset.period===운동균형기간));
+  const {from,to} = 운동균형기간범위(운동균형기간);
+  const {카운트,총} = 부위분포계산(현재유저.이름, from, to);
+  const canvas=document.getElementById('balanceChart');
+  const emptyEl=document.getElementById('balanceEmpty');
+  if(!canvas) return;
+  if(!총){
+    if(balanceChartObj){ balanceChartObj.destroy(); balanceChartObj=null; }
+    canvas.style.display='none';
+    if(emptyEl){ emptyEl.style.display='flex'; emptyEl.textContent='아직 기록이 없어요. 운동을 기록하면 균형을 분석해드려요!'; }
+    return;
+  }
+  canvas.style.display='block';
+  if(emptyEl) emptyEl.style.display='none';
+  const css=getComputedStyle(document.documentElement);
+  const blueBright=css.getPropertyValue('--blue-bright').trim();
+  const blueGlow=css.getPropertyValue('--blue-glow').trim();
+  const textDim=css.getPropertyValue('--text-dim').trim();
+  const line=css.getPropertyValue('--line').trim();
+  const data=추천부위목록.map(p=>Math.round((카운트[p]||0)/총*100));
+  if(balanceChartObj) balanceChartObj.destroy();
+  balanceChartObj=new Chart(canvas,{type:'radar',
+    data:{labels:추천부위목록, datasets:[{label:'비중(%)', data, borderColor:blueBright, backgroundColor:blueGlow, borderWidth:2, pointBackgroundColor:blueBright, pointRadius:3}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{r:{min:0, suggestedMax:Math.max(30, Math.ceil(Math.max(...data)/10)*10), ticks:{display:false}, grid:{color:line}, angleLines:{color:line}, pointLabels:{color:textDim, font:{family:'Noto Sans KR', size:11}}}}
+    }});
+}
+// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 목표 그래프) 그리기
 function 홈그리기(){
   try{ 내요약스트립그리기(); }catch(e){}
   try{ 오늘출석그리기(); }catch(e){}
