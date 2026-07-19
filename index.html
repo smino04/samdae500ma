@@ -469,7 +469,7 @@
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:6px;}
   .field input,.field select{width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:15px;}
-  .field input[type="month"]{-webkit-appearance:none;appearance:none;}
+  .field input[type="month"],.field input[type="date"]{-webkit-appearance:none;appearance:none;}
   .field input:focus,.field select:focus{outline:none;border-color:var(--blue-bright);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .lift-entry-block{margin-bottom:10px;}
@@ -1178,7 +1178,7 @@
       </div>
       <div id="moreBodyNumGoal">
         <p class="acct-desc" style="margin-bottom:12px;">목표를 정하면 홈 화면에 지금 위치를 보여주는 그래프가 떠요. (비워두면 그 항목은 표시 안 함)</p>
-        <div class="field"><label>⭐ 전역 년월</label><input type="month" id="goalDischargeInput"></div>
+        <div class="field"><label>⭐ 전역일</label><input type="date" id="goalDischargeInput"></div>
         <div class="field"><label>삼대 목표 (kg)</label><input type="number" id="goalTotalInput" inputmode="decimal" placeholder="예: 500"></div>
         <div class="field"><label>골격근량 목표 (kg)</label><input type="number" id="goalMuscleInput" inputmode="decimal" placeholder="예: 35"></div>
         <div class="field"><label>체지방률 목표 (%)</label><input type="number" id="goalFatInput" inputmode="decimal" placeholder="예: 12"></div>
@@ -1420,7 +1420,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.220";
+const APP_VERSION = "2026.07.18.221";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2355,15 +2355,15 @@ function 목표시계열목표포함(이름, field, goal){
   if(m>11){ m=0; y++; }
 
   if(g.전역){
-    const [gy,gm] = g.전역.split('-').map(Number);
-    const goalDate = new Date(gy, gm-1, 1);
+    const [gy,gm,gd] = g.전역.split('-').map(Number);
+    const goalMonthStart = new Date(gy, gm-1, 1);   // 중간 달 채우기는 월 단위로 판정 (일자는 마지막 라벨에만 씀)
     let cursor = new Date(y, m, 1);
     let 안전=0;
-    while(cursor < goalDate && 안전<120){
+    while(cursor < goalMonthStart && 안전<120){
       labels.push(`${cursor.getMonth()+1}월`); values.push(null); customLabels.push(null); ym.push({y:cursor.getFullYear(),m:cursor.getMonth()});
       cursor.setMonth(cursor.getMonth()+1); 안전++;
     }
-    labels.push(`${String(gy).slice(2)}.${gm}`);
+    labels.push(gd ? `${String(gy).slice(2)}.${gm}.${gd}` : `${String(gy).slice(2)}.${gm}`);
   } else {
     labels.push('목표');
   }
