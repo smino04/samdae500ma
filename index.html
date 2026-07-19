@@ -519,7 +519,7 @@
   /* 오늘 운동 현황 스트립 (부원별 오늘 출석) */
   .today-att{margin:0 0 14px;padding:12px 14px;border-radius:15px;background:var(--panel);border:1px solid var(--line);}
   .today-att .ta-head{display:flex;align-items:center;gap:8px;cursor:pointer;}
-  .today-att .ta-title{font-size:13px;font-weight:800;color:var(--text);}
+  .today-att .ta-title{font-size:16px;font-weight:800;color:var(--text);}
   .today-att .ta-count{flex:1;font-size:12px;font-weight:700;color:var(--text-dim);}
   .today-att .ta-count b{color:var(--gold);font-size:15px;}
   .today-att .ta-chev{color:var(--text-dim);font-size:16px;transition:transform .18s;}
@@ -542,7 +542,8 @@
   .goalarc-cta-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
   .goalarc-combo{cursor:pointer;margin:0 0 14px;padding:12px 14px;border-radius:15px;}
   .goalarc-combo .chart-title::before{display:none;}
-  .goalarc-combo .chart-title{font-size:13px;font-weight:800;margin-bottom:12px;}
+  .goalarc-combo .chart-title{font-size:16px;font-weight:800;margin-bottom:22px;display:flex;align-items:center;gap:8px;}
+  .goalarc-dday{font-size:12px;font-weight:800;color:var(--gold);background:rgba(255,200,61,0.14);border:1px solid rgba(255,200,61,0.4);border-radius:8px;padding:2px 8px;}
   .goalarc-mini{margin-top:14px;}
   .goalarc-mini-title{font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
   .goalarc-mini-wrap{position:relative;height:120px;}
@@ -1420,7 +1421,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.18.221";
+const APP_VERSION = "2026.07.19.222";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2417,6 +2418,15 @@ function 목표미니차트그리기(canvasId, key, color, labels, values, custo
       scales:{x:{offset:true,ticks:{color:textDim,maxRotation:0,autoSkipPadding:6,font:{size:10}},grid:{color:line}}, y:{min:ys.min,max:ys.max,ticks:{color:textDim,stepSize:ys.step,font:{size:10}},grid:{color:line}}}},
     plugins:[미니값라벨플러그인]});
 }
+// 전역일까지 D-day 계산 (YYYY-MM-DD)
+function 디데이(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const goal = new Date(y, m-1, d); goal.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((goal-today)/86400000);
+  if(diff===0) return 'D-DAY';
+  return diff>0 ? `D-${diff}` : `D+${-diff}`;
+}
 function 목표그래프그리기(){
   const el = document.getElementById('goalArcArea'); if(!el) return;
   const ctaHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
@@ -2434,7 +2444,8 @@ function 목표그래프그리기(){
   if(g.체지방률!=null){ const s=목표시계열목표포함(이름,'체지방률',g.체지방률); defs.push({key:'fat', canvasId:'homeGoalFatMini', title:`🔥 체지방률 (%) · 목표 ${g.체지방률}%`, color:'#ff9f40', s}); }
 
   if(!defs.length){ el.innerHTML = ctaHTML; el.style.display = 'block'; 초기화(); return; }
-  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')"><div class="chart-title">🎯 전역 목표 피지컬</div>${
+  const dDayHTML = g.전역 ? `<span class="goalarc-dday">${디데이(g.전역)}</span>` : '';
+  el.innerHTML = `<div class="chart-card goalarc-combo" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')"><div class="chart-title">🎯 전역 목표 피지컬${dDayHTML}</div>${
     defs.map(d=>`<div class="goalarc-mini"><div class="goalarc-mini-title">${d.title}</div><div class="goalarc-mini-wrap"><canvas id="${d.canvasId}"></canvas></div></div>`).join('')
   }</div>`;
   el.style.display = 'block';
