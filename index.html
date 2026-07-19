@@ -1433,7 +1433,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.19.224";
+const APP_VERSION = "2026.07.19.225";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2210,8 +2210,8 @@ function 성장랭킹그리기(){
         <div class="rank-total"><div class="num">+${x.성장}</div><div class="unit">kg ↑</div></div>
         <div class="chevron">›</div></div>`;
   }).join('');
-  // 결산 이미지 공유는 이번 주에서만 (지난 주는 '이번 주 결산'과 맞지 않음)
-  const shareBtn = 이번주 ? `<button class="weekly-share-btn" style="margin-top:14px;margin-bottom:0;" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>` : '';
+  // 결산 이미지 공유는 이번 주 + 관리자에게만 (지난 주는 '이번 주 결산'과 맞지 않음)
+  const shareBtn = (이번주 && 관리자인가()) ? `<button class="weekly-share-btn" style="margin-top:14px;margin-bottom:0;" onclick="주간결산공유(this)">📊 이번 주 결산 이미지 공유하기</button>` : '';
   el.innerHTML = listHTML + shareBtn;
 }
 // ── 월간출석 랭킹: 이 달(오늘까지) 동안 운동한 날 횟수 ──
@@ -3401,6 +3401,7 @@ async function 주간결산카드그리기(){
   return new Promise(res=>c.toBlob(res,'image/png',0.96));
 }
 window.주간결산공유 = async function(btn){
+  if(!관리자인가()) return;
   const 원래=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='이미지 만드는 중…';}
   try{
