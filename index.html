@@ -1434,7 +1434,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.20.226";
+const APP_VERSION = "2026.07.20.227";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2321,7 +2321,7 @@ function 오늘출석그리기(){
     const 커스텀아바타 = !!(아바타사진목록[r.이름] || 아바타목록[r.이름]);
     const avatarInner = 아바타이너HTML(r.이름, escHtml(초성));
     return `<button class="ta-chip${r.done?' done':''}${me?' me':''}${커스텀아바타?' has-avatar':''}" onclick="event.stopPropagation();부원일지열기('${escHtml(r.이름)}')">`
-      + `<span class="ta-avatar" onclick="event.stopPropagation();showDetail('${escHtml(r.이름)}')">${avatarInner}${r.done?'<span class="ta-badge">✅</span>':''}</span>`
+      + `<span class="ta-avatar" onclick="event.stopPropagation();아바타크게보기('${escHtml(r.이름)}')">${avatarInner}${r.done?'<span class="ta-badge">✅</span>':''}</span>`
       + `<span class="ta-name">${me?'나':escHtml(r.이름)}</span></button>`;
   }).join('');
   el.innerHTML = headHTML
