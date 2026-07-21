@@ -939,7 +939,7 @@
     <div class="role-note" style="display:none;"></div>
     <div id="rankList"><div class="status">기록을 불러오는 중...</div></div>
   </div>
-  <div id="todayNudge" class="today-nudge" style="display:none;" onclick="switchMainTab('diary')">
+  <div id="todayNudge" class="today-nudge" style="display:none;" onclick="switchMainTab('diary',true)">
     <span class="tn-ic">✍️</span>
     <span class="tn-txt">오늘 아직 기록 전이에요!<small>눌러서 훈련일지에 바로 입력하기</small></span>
     <span class="tn-arrow">›</span>
@@ -1284,10 +1284,10 @@
     <button class="bottom-nav-btn" id="navRanking" onclick="switchMainTab('ranking')">
       <span class="nav-icon">🏆</span><span class="nav-label">랭킹</span>
     </button>
-    <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary')">
+    <button class="bottom-nav-btn" id="navDiary" onclick="switchMainTab('diary',true)">
       <span class="nav-icon">📒</span><span class="nav-label">훈련일지</span>
     </button>
-    <button class="bottom-nav-btn" id="navCalendar" onclick="switchMainTab('calendar')">
+    <button class="bottom-nav-btn" id="navCalendar" onclick="switchMainTab('calendar',true)">
       <span class="nav-icon">📅</span><span class="nav-label">캘린더</span>
     </button>
     <button class="bottom-nav-btn" id="navAccount" onclick="switchMainTab('account')" style="position:relative;">
@@ -1434,7 +1434,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.20.228";
+const APP_VERSION = "2026.07.21.229";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2990,7 +2990,7 @@ window.페이지제목클릭 = function(tab){
 // ── 메인 하단 탭 ──
 let 현재메인탭 = 'home';
 let 일지대상 = null;
-window.switchMainTab = function(tab){
+window.switchMainTab = function(tab, 내걸로){
   현재메인탭 = tab;
   // 개인화면이 열린 채로 하단 탭을 누르면, 쌓아둔 뒤로가기 히스토리도 정리
   if(document.getElementById('detailView').classList.contains('show') && history.state && history.state.view==='detail'){
@@ -3018,9 +3018,13 @@ window.switchMainTab = function(tab){
     const sel = document.getElementById('calMemberSelect');
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
       전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
-    let 대상 = 분석대상 || 일지대상 || (현재유저 && !게스트인가() ? 현재유저.이름 : null);
+    const 본인 = (현재유저 && !게스트인가()) ? 현재유저.이름 : null;
+    // 하단 탭을 직접 눌러 들어온 경우(내걸로=true)엔 항상 내 캘린더가 기본 — 남의 프사/카드를 눌러 보던 게 남아있지 않게.
+    // 그 외(다른 회원 일지·캘린더로 일부러 이동하는 내부 호출)엔 지정된 대상을 그대로 존중.
+    let 대상 = 내걸로 ? (본인 || 분석대상 || 일지대상) : (분석대상 || 일지대상 || 본인);
+    분석대상 = 대상;
     sel.value = 대상 || '';
-    if(대상){ 분석대상 = 대상; 분석캘린더그리기(대상); }
+    if(대상){ 분석캘린더그리기(대상); }
     else { document.getElementById('analysisCalendar').innerHTML = '<div class="status">이름을 선택하세요.</div>'; }
   }
   if(tab==='diary'){
@@ -3029,8 +3033,10 @@ window.switchMainTab = function(tab){
     const sel = document.getElementById('diaryMemberSelect');
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
       전체멤버목록().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
-    // 처음 들어오면 본인 일지를 기본으로 보여줌
-    if(!일지대상 && 현재유저 && !게스트인가()){ 일지대상 = 현재유저.이름; }
+    const 본인 = (현재유저 && !게스트인가()) ? 현재유저.이름 : null;
+    // 하단 탭을 직접 눌러 들어온 경우엔 항상 내 일지가 기본, 아니면(다른 회원 일지로 이동하는 내부 호출) 지정된 대상을 존중
+    if(내걸로 && 본인) 일지대상 = 본인;
+    else if(!일지대상 && 본인) 일지대상 = 본인;
     if(!일지대상){
       sel.value = '';
       document.getElementById('diaryContent').style.display = 'none';
