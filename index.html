@@ -1332,6 +1332,16 @@
   </div>
 </div>
 
+<!-- 전역 목표 피지컬 미설정 안내 (설정 전까지 접속마다 노출) -->
+<div class="modal-bg" id="goalNudgeBg">
+  <div class="modal">
+    <h2>🎯 전역 목표 피지컬, 아직이시네요!</h2>
+    <div class="sub">삼대·골격근량·체지방률 목표를 정하면 홈 화면에 지금 내 위치와 D-day를 보여주는 성장 그래프가 떠요. 동기부여 뿜뿜 📈</div>
+    <button class="btn btn-save" style="width:100%;margin-top:10px;" onclick="목표설정하러가기()">지금 설정하기</button>
+    <button class="btn btn-cancel" style="width:100%;margin-top:8px;" onclick="목표안내닫기()">나중에 할게요</button>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalBg">
   <div class="modal">
     <h2 id="modalTitle">기록 입력</h2>
@@ -1434,7 +1444,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.21.229";
+const APP_VERSION = "2026.07.21.230";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1907,6 +1917,8 @@ function 데이터구독시작(){
     try{ if(document.getElementById('accountView').style.display!=='none'){ 목표버튼갱신(); 분할버튼갱신(); } }catch(e){}
     // 홈의 내 요약 스트립(목표 태그 등)도 실시간 반영
     try{ 홈위젯새로고침(); }catch(e){}
+    // 전역 목표 피지컬을 아직 설정 안 한 회원에게 안내 팝업 (설정할 때까지 접속마다 노출)
+    try{ 목표설정안내체크(); }catch(e){}
     // 오늘 기록 유도 배너: 캘린더(달력) 데이터가 뒤늦게 도착해도 즉시 재판정
     try{ 오늘기록배너그리기(); }catch(e){}
   }));
@@ -4938,6 +4950,29 @@ function introShow(){
 window.introClose = function(){
   localStorage.setItem('introSeen_v1','1');
   const m=document.getElementById('introModalBg'); if(m) m.classList.remove('show');
+}
+// 전역 목표 피지컬 미설정 안내 (설정하기 전까진 접속할 때마다 한 번씩 노출)
+let 목표안내표시됨 = false;
+function 목표설정안내체크(){
+  if(목표안내표시됨) return;
+  if(!현재유저 || 게스트인가() || !현재유저.이름) return;
+  const g = 수치목표목록[현재유저.이름];
+  if(g && Object.keys(g).length) return;   // 이미 하나라도 설정했으면 다시 안 뜸
+  목표안내표시됨 = true;
+  const 겹침대기 = document.getElementById('introModalBg').classList.contains('show') ? 6200 : 3400;
+  setTimeout(()=>{
+    if(document.getElementById('goalNudgeBg') && !document.getElementById('moreDetailOverlay').style.display.match('flex')){
+      document.getElementById('goalNudgeBg').classList.add('show');
+    }
+  }, 겹침대기);
+}
+window.목표안내닫기 = function(){
+  const m=document.getElementById('goalNudgeBg'); if(m) m.classList.remove('show');
+}
+window.목표설정하러가기 = function(){
+  목표안내닫기();
+  try{ 수치목표입력갱신(); }catch(e){}
+  더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal');
 }
 function 권한UI적용(){
   const guest = 게스트인가();
