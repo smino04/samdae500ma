@@ -1445,7 +1445,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.25.234";
+const APP_VERSION = "2026.07.25.235";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2267,13 +2267,23 @@ function 월간출석랭킹그리기(){
   const el=document.getElementById('rankList'); if(!el) return;
   const {list, cutoff} = 월간출석데이터(y, m);
   if(!list.length){ el.innerHTML = '<div class="status">표시할 회원이 없어요.</div>'; return; }
+  // 동률(출석일수 같음)이면 같은 순위로 묶음 (표준 경쟁 순위: 1,2,2,4 …)
+  const 순위목록=[]; let 이전값=null, 이전순위=0;
+  list.forEach((x,i)=>{
+    if(x.출석일수!==이전값){ 이전순위=i+1; 이전값=x.출석일수; }
+    순위목록.push(이전순위);
+  });
+  const 순위인원수={}; 순위목록.forEach(r=>{ 순위인원수[r]=(순위인원수[r]||0)+1; });
   el.innerHTML = list.map((x,i)=>{
-    const topClass=i<3?`top${i+1}`:'';
-    const medal=['🥇','🥈','🥉'][i]||(i+1);
+    const 순위=순위목록[i];
+    const 공동임=순위인원수[순위]>1;
+    const topClass=순위<=3?`top${순위}`:'';
+    const medal=(['🥇','🥈','🥉'][순위-1]||순위);
+    const 공동태그=공동임?`<span class="me-tag" style="background:var(--panel-light);color:var(--text-dim);">공동 ${순위}위</span>`:'';
     const 내것=(현재유저 && !게스트인가() && x.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.이름}')">
         <div class="rank-num">${medal}</div>
-        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}</div>
+        <div class="rank-info"><div class="rank-name">${x.이름}${내것?'<span class="me-tag">ME</span>':''}${공동태그}</div>
         <div class="rank-detail">이번 달 ${cutoff}일 중</div></div>
         <div class="rank-total"><div class="num">${x.출석일수}</div><div class="unit">일</div></div>
         <div class="chevron">›</div></div>`;
