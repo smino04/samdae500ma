@@ -1446,7 +1446,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.26.240";
+const APP_VERSION = "2026.07.26.241";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2068,6 +2068,17 @@ function 전월대비(member, 현재월){
   if(!prev) return null;
   return 합계(cur) - 합계(prev);
 }
+// 5월(기준월) 대비 체중대비 점수 증감률(%) — 체중대비 랭킹에서 다이어트 등으로 인한 점수 상승 추적용
+function 오월대비퍼센트(member, 현재월){
+  if(현재월==='5월') return null;   // 기준월 자체는 비교 대상 없음
+  const cur = member.기록.find(r=>r.월===현재월 && 삼대유효(r));
+  if(!cur) return null;
+  const may = member.기록.find(r=>r.월==='5월' && 삼대유효(r));
+  if(!may) return null;
+  const mayScore = 상대점수(may);
+  if(!mayScore) return null;
+  return (상대점수(cur)/mayScore - 1) * 100;
+}
 
 function 화면갱신(){
   const years = 데이터연도목록();
@@ -2669,11 +2680,18 @@ function 랭킹그리기(){
     const score=상대점수(x.rec).toFixed(2);
     const mainNum=현재정렬==='total'?합계(x.rec):score;
     const mainUnit=현재정렬==='total'?'kg':'점';
-    // 전월 대비 증감 → 이름 옆이 아니라 결과 숫자 쪽에 붙임(결과와 한 묶음)
-    const diff=전월대비(x.member,현재월);
+    // 전월 대비 증감(삼대합계) → 이름 옆이 아니라 결과 숫자 쪽에 붙임(결과와 한 묶음)
+    // 체중대비 정렬일 땐 전월 대비 kg 대신 5월(기준월) 대비 점수 증감률(%)을 보여줌 — 다이어트 등 체중 변화로 인한 상승 추적용
     let diffHtml='';
-    if(diff!==null && diff>0) diffHtml=`<div class="rank-diff up">▲${Math.round(diff)}kg</div>`;
-    else if(diff!==null && diff<0) diffHtml=`<div class="rank-diff down">▼${Math.round(Math.abs(diff))}kg</div>`;
+    if(현재정렬==='score'){
+      const pct=오월대비퍼센트(x.member,현재월);
+      if(pct!==null && pct>0.05) diffHtml=`<div class="rank-diff up">▲${pct.toFixed(1)}% (5월비)</div>`;
+      else if(pct!==null && pct<-0.05) diffHtml=`<div class="rank-diff down">▼${Math.abs(pct).toFixed(1)}% (5월비)</div>`;
+    } else {
+      const diff=전월대비(x.member,현재월);
+      if(diff!==null && diff>0) diffHtml=`<div class="rank-diff up">▲${Math.round(diff)}kg</div>`;
+      else if(diff!==null && diff<0) diffHtml=`<div class="rank-diff down">▼${Math.round(Math.abs(diff))}kg</div>`;
+    }
     const 내것 = (현재유저 && !게스트인가() && x.member.이름===현재유저.이름);
     return `<div class="rank-card ${topClass}${내것?' mine':''}" style="animation-delay:${i*0.05}s" onclick="showDetail('${x.member.이름}')">
         <div class="rank-num">${medal}</div>
