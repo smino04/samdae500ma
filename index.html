@@ -565,6 +565,9 @@
   .goalarc-mini{margin-top:14px;}
   .goalarc-mini-title{font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
   .goalarc-mini-wrap{position:relative;height:120px;}
+  /* 상세보기(#pGoalArcArea)에서는 유일한 그래프라 조금 더 크게, 클릭 유도 커서도 뺌(읽기 전용) */
+  #pGoalArcArea .goalarc-combo{cursor:default;}
+  #pGoalArcArea .goalarc-mini-wrap{height:190px;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
   .bottom-nav-btn.active{color:var(--blue-bright);}
@@ -963,16 +966,8 @@
     </div>
     <div id="pGoal" class="goal-box"></div>
     <div id="pGoalArcArea" style="display:none;"></div>
-
-    <div id="paneOfficial">
-      <div class="section-label">📈 공식 삼대기록 추이</div>
-      <div class="chart-card"><div class="chart-title">월별 공식 삼대 (kg)</div><div class="chart-wrap"><canvas id="liftChart"></canvas></div></div>
-      <div class="edit-row" id="pEditLift"></div>
-      <div class="section-label">📊 인바디 추이</div>
-      <div class="chart-card"><div class="chart-title">골격근량 (kg)</div><div class="chart-wrap"><canvas id="muscleChart"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">체지방률 (%)</div><div class="chart-wrap"><canvas id="fatChart"></canvas></div></div>
-      <div class="edit-row" id="pEditBody"></div>
-    </div>
+    <div class="edit-row" id="pEditLift"></div>
+    <div class="edit-row" id="pEditBody"></div>
   </div>
 
   <!-- 아바타 크게 보기(랭킹판 등에서 프사 탭) -->
@@ -1450,7 +1445,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.25.236";
+const APP_VERSION = "2026.07.25.237";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -1838,7 +1833,7 @@ window.아바타사진제거 = async function(){
 };
 let 회원목록 = [];   // users 컬렉션(관리자만 구독) [{uid,email,이름,role,status}]
 let 실명목록 = {};   // realNames 컬렉션(관리자만 구독) { 닉네임: 실명 } — A4 인쇄용
-let 현재월 = null, 현재연도 = null, 현재정렬 = 'growth', 현재상세이름 = null, 현재탭 = 'official', liftChartObj = null, muscleChartObj = null, fatChartObj = null;
+let 현재월 = null, 현재연도 = null, 현재정렬 = 'growth', 현재상세이름 = null;
 let 주간성장주차오프셋 = 0;   // 0=이번 주, -1=지난 주 …
 let 출석랭킹YM = null;   // 월간출석 랭킹에서 보고 있는 {y, m} (실제 달력 월)
 
@@ -2491,12 +2486,14 @@ function 디데이(dateStr){
   return diff>0 ? `D-${diff}` : `D+${-diff}`;
 }
 // 이름/영역/캔버스 접두어/차트 저장소를 받아 목표 그래프를 그리는 공통 로직.
-// 편집가능=true(홈, 본인)면 목표 미설정 시 CTA + 카드 클릭으로 설정화면 진입, false(상세보기, 타인 포함)면 읽기 전용이라 미설정 시 그냥 숨김.
+// 편집가능=true(홈, 본인): 목표 미설정 시 CTA + 카드 클릭으로 설정화면 진입, 목표 없는 항목은 표시 안 함(홈은 동기부여용이라 그대로 유지).
+// 편집가능=false(상세보기, 본인/타인 공용): 읽기 전용. 목표가 있으면 목표점까지 포함해서, 없어도 실제 기록 추이는 그대로 보여줌
+//   (예전엔 여기 따로 있던 "월별 공식 삼대/인바디" 그래프를 이 카드 하나로 합쳤음). 기록도 목표도 둘 다 없는 항목만 숨김.
 function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능){
   const el = document.getElementById(elId); if(!el) return;
   const 초기화 = ()=>{ Object.values(chartStore).forEach(c=>{ try{ c.destroy(); }catch(e){} }); Object.keys(chartStore).forEach(k=>delete chartStore[k]); };
-  const g = 이름 ? 수치목표목록[이름] : null;
-  if(!이름 || !g || !Object.keys(g).length){
+  const g = (이름 && 수치목표목록[이름]) || {};
+  if(!이름 || (편집가능 && !Object.keys(g).length)){
     if(편집가능){
       el.innerHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
       el.style.display = 'block';
@@ -2509,14 +2506,31 @@ function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능)
 
   const css=getComputedStyle(document.documentElement);
   const blue=css.getPropertyValue('--blue-bright').trim();
+  const 필드정의 = [
+    { key:'total', field:'삼대', canvasId:`${idPrefix}TotalMini`, icon:'🏋️', label:'삼대합계', unit:'kg', color:'#ff4d6d' },
+    { key:'muscle', field:'골격근량', canvasId:`${idPrefix}MuscleMini`, icon:'💪', label:'골격근량', unit:'kg', color:blue },
+    { key:'fat', field:'체지방률', canvasId:`${idPrefix}FatMini`, icon:'🔥', label:'체지방률', unit:'%', color:'#ff9f40' },
+  ];
   const defs = [];
-  if(g.삼대!=null){ const s=목표시계열목표포함(이름,'삼대',g.삼대); defs.push({key:'total', canvasId:`${idPrefix}TotalMini`, title:`🏋️ 삼대합계 (kg) · 목표 ${g.삼대}kg`, color:'#ff4d6d', s}); }
-  if(g.골격근량!=null){ const s=목표시계열목표포함(이름,'골격근량',g.골격근량); defs.push({key:'muscle', canvasId:`${idPrefix}MuscleMini`, title:`💪 골격근량 (kg) · 목표 ${g.골격근량}kg`, color:blue, s}); }
-  if(g.체지방률!=null){ const s=목표시계열목표포함(이름,'체지방률',g.체지방률); defs.push({key:'fat', canvasId:`${idPrefix}FatMini`, title:`🔥 체지방률 (%) · 목표 ${g.체지방률}%`, color:'#ff9f40', s}); }
+  필드정의.forEach(f=>{
+    const goal = g[f.field];
+    let s;
+    if(goal!=null){
+      s = 목표시계열목표포함(이름, f.field, goal);
+    } else if(!편집가능){
+      const s0 = 목표시계열(이름, f.field);
+      if(!s0.labels.length) return;   // 기록도 목표도 없는 항목은 표시 안 함
+      s = { labels:s0.labels, values:s0.values, customLabels:s0.labels.map(()=>null), goalIndex:-1 };
+    } else {
+      return;   // 홈(본인)에서는 목표 없는 항목은 그대로 표시 안 함
+    }
+    const title = `${f.icon} ${f.label} (${f.unit})${goal!=null?` · 목표 ${goal}${f.unit}`:''}`;
+    defs.push({ key:f.key, canvasId:f.canvasId, title, color:f.color, s });
+  });
 
   if(!defs.length){
     if(편집가능){ el.innerHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`; el.style.display = 'block'; }
-    else { el.innerHTML = ''; el.style.display = 'none'; }
+    else { el.innerHTML = '<div class="status" style="padding:20px 0;">아직 기록이 없어요.</div>'; el.style.display = 'block'; }
     초기화(); return;
   }
   const dDayHTML = g.전역 ? `<span class="goalarc-dday">${디데이(g.전역)}</span>` : '';
@@ -2720,9 +2734,7 @@ window.showDetail = function(이름){
     `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>` : '';
   document.getElementById('pEditBody').innerHTML = 권한 ?
     `<button class="edit-btn" onclick="editRecord('${이름}','body')">✏️ 인바디 기록 수정</button>` : '';
-  그래프그리기(member);
   상세목표그래프그리기(이름);
-  setTimeout(()=>{ if(liftChartObj)liftChartObj.resize(); if(muscleChartObj)muscleChartObj.resize(); if(fatChartObj)fatChartObj.resize(); }, 50);
 }
 function _운동일집합(이름){
   const days=new Set();
@@ -4472,49 +4484,6 @@ window.deleteTraining = async function(id){
   if(!confirm("이 기록을 삭제할까?")) return;
   try{ await deleteDoc(doc(db,"training",id)); }
   catch(e){ alert("삭제 실패: "+e.message); }
-}
-
-// 훈련일지 운동 상세(detailChart)와 동일하게, 최고 기록 지점만 크게+금색으로 강조
-function PR포인트스타일(vals, color){
-  const valid = vals.map((v,i)=>({v,i})).filter(x=>x.v!=null);
-  let bestIdx=-1;
-  if(valid.length>=2){ const mx=Math.max(...valid.map(x=>x.v)); valid.forEach(x=>{ if(x.v>=mx) bestIdx=x.i; }); }
-  const ptColors=vals.map((v,i)=> i===bestIdx?'#ffc83d':color);
-  const ptR=vals.map((v,i)=> v==null?0:(i===bestIdx?5:3.5));
-  return {ptColors, ptR};
-}
-function 그래프그리기(member){
-  const 월s=member.기록.map(r=>r.월);
-  const css=getComputedStyle(document.documentElement);
-  const blue=css.getPropertyValue('--blue-bright').trim();
-  const textDim=css.getPropertyValue('--text-dim').trim();
-  const line=css.getPropertyValue('--line').trim();
-  const bodyOpts={responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:12,right:16}},
-    plugins:{legend:{display:false}},
-    scales:{x:{ticks:{color:textDim},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}};
-  // 삼대합계 그래프 (스쿼트/벤치/데드 개별선은 빼고 삼대합계 한 줄만)
-  const 삼대data=member.기록.map(r=>삼대유효(r)?합계(r):null);
-  const 삼대pt=PR포인트스타일(삼대data,'#ff4d6d');
-  if(liftChartObj)liftChartObj.destroy();
-  liftChartObj=new Chart(document.getElementById('liftChart'),{type:'line',
-    data:{labels:월s,datasets:[
-      {label:'삼대합계',data:삼대data,borderColor:'#ff4d6d',backgroundColor:영역채움('#ff4d6d'),fill:true,tension:0.35,borderWidth:2.5,pointRadius:삼대pt.ptR,pointHoverRadius:6,pointBackgroundColor:삼대pt.ptColors,pointBorderColor:삼대pt.ptColors,pointStyle:'circle',spanGaps:true},
-    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{ticks:{color:textDim},grid:{color:line}}}},plugins:[점값플러그인]});
-  const 골격근data=member.기록.map(r=>r.골격근량), 체지방data=member.기록.map(r=>r.체지방률);
-  const mys=yScale(골격근data), fys=yScale(체지방data);
-  const 근육pt=PR포인트스타일(골격근data,blue), 지방pt=PR포인트스타일(체지방data,'#ff9f40');
-  // 골격근량 그래프
-  if(muscleChartObj)muscleChartObj.destroy();
-  muscleChartObj=new Chart(document.getElementById('muscleChart'),{type:'line',
-    data:{labels:월s,datasets:[
-      {label:'골격근량(kg)',data:골격근data,borderColor:blue,backgroundColor:영역채움(blue),fill:true,tension:0.35,borderWidth:2.5,pointRadius:근육pt.ptR,pointHoverRadius:6,pointBackgroundColor:근육pt.ptColors,pointBorderColor:근육pt.ptColors,spanGaps:true},
-    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:mys.min,max:mys.max,ticks:{color:textDim,stepSize:mys.step},grid:{color:line}}}},plugins:[점값플러그인]});
-  // 체지방률 그래프
-  if(fatChartObj)fatChartObj.destroy();
-  fatChartObj=new Chart(document.getElementById('fatChart'),{type:'line',
-    data:{labels:월s,datasets:[
-      {label:'체지방률(%)',data:체지방data,borderColor:'#ff9f40',backgroundColor:영역채움('#ff9f40'),fill:true,tension:0.35,borderWidth:2.5,pointRadius:지방pt.ptR,pointHoverRadius:6,pointBackgroundColor:지방pt.ptColors,pointBorderColor:지방pt.ptColors,spanGaps:true},
-    ]},options:{...bodyOpts,scales:{x:{ticks:{color:textDim,maxRotation:0,autoSkipPadding:12},grid:{color:line}},y:{min:fys.min,max:fys.max,ticks:{color:textDim,stepSize:fys.step},grid:{color:line}}}},plugins:[점값플러그인]});
 }
 
 // ── 입력 모달 ──
