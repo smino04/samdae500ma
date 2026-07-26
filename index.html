@@ -566,7 +566,7 @@
   .goalarc-mini-title{font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:2px;}
   .goalarc-mini-wrap{position:relative;height:120px;}
   /* 상세보기(#pGoalArcArea)에서는 유일한 그래프라 조금 더 크게, 클릭 유도 커서도 뺌(읽기 전용) */
-  #pGoalArcArea .goalarc-combo{cursor:default;}
+  .goalarc-combo.readonly{cursor:default;}
   #pGoalArcArea .goalarc-mini-wrap{height:190px;}
   .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:50;max-width:480px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom);}
   .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 0 14px;background:transparent;border:none;color:var(--text-dim);cursor:pointer;transition:color 0.2s;}
@@ -1445,7 +1445,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.25.237";
+const APP_VERSION = "2026.07.26.238";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2486,23 +2486,21 @@ function 디데이(dateStr){
   return diff>0 ? `D-${diff}` : `D+${-diff}`;
 }
 // 이름/영역/캔버스 접두어/차트 저장소를 받아 목표 그래프를 그리는 공통 로직.
-// 편집가능=true(홈, 본인): 목표 미설정 시 CTA + 카드 클릭으로 설정화면 진입, 목표 없는 항목은 표시 안 함(홈은 동기부여용이라 그대로 유지).
-// 편집가능=false(상세보기, 본인/타인 공용): 읽기 전용. 목표가 있으면 목표점까지 포함해서, 없어도 실제 기록 추이는 그대로 보여줌
-//   (예전엔 여기 따로 있던 "월별 공식 삼대/인바디" 그래프를 이 카드 하나로 합쳤음). 기록도 목표도 둘 다 없는 항목만 숨김.
-function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능){
+// 편집가능: 내 카드일 때 true — 카드를 눌러 목표 설정 화면으로 진입 가능(홈, 상세보기 둘 다 본인이면 true).
+// 폴백표시: 목표가 없는 항목도 실제 기록 추이를 그대로 보여줄지. 상세보기(본인/타인 공용)는 항상 true,
+//   홈은 목표 설정을 유도하는 위젯이라 false로 유지(목표 하나도 없으면 CTA만, 있으면 그 항목만 표시).
+function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능, 폴백표시){
   const el = document.getElementById(elId); if(!el) return;
   const 초기화 = ()=>{ Object.values(chartStore).forEach(c=>{ try{ c.destroy(); }catch(e){} }); Object.keys(chartStore).forEach(k=>delete chartStore[k]); };
   const g = (이름 && 수치목표목록[이름]) || {};
-  if(!이름 || (편집가능 && !Object.keys(g).length)){
-    if(편집가능){
-      el.innerHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
-      el.style.display = 'block';
-    } else {
-      el.innerHTML = '';
-      el.style.display = 'none';
-    }
-    초기화(); return;
-  }
+  const 빈상태표시 = ()=>{
+    if(편집가능) el.innerHTML = `<div class="goalarc-cta" onclick="목표설정하러가기()">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`;
+    else if(폴백표시) el.innerHTML = '<div class="status" style="padding:20px 0;">아직 기록이 없어요.</div>';
+    else el.innerHTML = '';
+    el.style.display = (편집가능 || 폴백표시) ? 'block' : 'none';
+    초기화();
+  };
+  if(!이름 || (!폴백표시 && !Object.keys(g).length)){ 빈상태표시(); return; }
 
   const css=getComputedStyle(document.documentElement);
   const blue=css.getPropertyValue('--blue-bright').trim();
@@ -2517,25 +2515,21 @@ function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능)
     let s;
     if(goal!=null){
       s = 목표시계열목표포함(이름, f.field, goal);
-    } else if(!편집가능){
+    } else if(폴백표시){
       const s0 = 목표시계열(이름, f.field);
       if(!s0.labels.length) return;   // 기록도 목표도 없는 항목은 표시 안 함
       s = { labels:s0.labels, values:s0.values, customLabels:s0.labels.map(()=>null), goalIndex:-1 };
     } else {
-      return;   // 홈(본인)에서는 목표 없는 항목은 그대로 표시 안 함
+      return;   // 홈에서 목표 없는 항목은 그대로 표시 안 함
     }
     const title = `${f.icon} ${f.label} (${f.unit})${goal!=null?` · 목표 ${goal}${f.unit}`:''}`;
     defs.push({ key:f.key, canvasId:f.canvasId, title, color:f.color, s });
   });
 
-  if(!defs.length){
-    if(편집가능){ el.innerHTML = `<div class="goalarc-cta" onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')">🎯 목표를 설정하면 나만의 성장 그래프가 떠요<span class="goalarc-cta-arrow">›</span></div>`; el.style.display = 'block'; }
-    else { el.innerHTML = '<div class="status" style="padding:20px 0;">아직 기록이 없어요.</div>'; el.style.display = 'block'; }
-    초기화(); return;
-  }
+  if(!defs.length){ 빈상태표시(); return; }
   const dDayHTML = g.전역 ? `<span class="goalarc-dday">${디데이(g.전역)}</span>` : '';
-  const cardOnclick = 편집가능 ? ` onclick="더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal')"` : '';
-  el.innerHTML = `<div class="chart-card goalarc-combo"${cardOnclick}><div class="chart-title">🎯 전역 목표 피지컬${dDayHTML}</div>${
+  const cardOnclick = 편집가능 ? ` onclick="목표설정하러가기()"` : '';
+  el.innerHTML = `<div class="chart-card goalarc-combo${편집가능?'':' readonly'}"${cardOnclick}><div class="chart-title">🎯 전역 목표 피지컬${dDayHTML}</div>${
     defs.map(d=>`<div class="goalarc-mini"><div class="goalarc-mini-title">${d.title}</div><div class="goalarc-mini-wrap"><canvas id="${d.canvasId}"></canvas></div></div>`).join('')
   }</div>`;
   el.style.display = 'block';
@@ -2544,10 +2538,11 @@ function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능)
 }
 function 목표그래프그리기(){
   const 이름 = (현재유저 && !게스트인가()) ? 현재유저.이름 : null;
-  목표그래프렌더(이름, 'goalArcArea', 'homeGoal', 홈목표차트들, true);
+  목표그래프렌더(이름, 'goalArcArea', 'homeGoal', 홈목표차트들, true, false);
 }
 function 상세목표그래프그리기(이름){
-  목표그래프렌더(이름, 'pGoalArcArea', 'detailGoal', 상세목표차트들, false);
+  const 편집가능 = !!(현재유저 && !게스트인가() && 이름===현재유저.이름);
+  목표그래프렌더(이름, 'pGoalArcArea', 'detailGoal', 상세목표차트들, 편집가능, true);
 }
 // 운동 균형 분석: 프로필 > 운동 분석에서 들어가는 전체 화면 오버레이. 레이더 차트로 부위별 훈련 비중을 보여줌.
 const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];
