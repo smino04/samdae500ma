@@ -1357,7 +1357,7 @@
     <div id="weightField" class="field" style="margin-bottom:10px;"><label>체중 (kg)</label><input type="number" id="inWeight" inputmode="decimal" style="max-width:40%;"></div>
     <!-- 삼대 그룹 -->
     <div id="liftGroup">
-    <div class="group-tag must">🏋️ 삼대 기록 <small>입력하려면 스쿼트·벤치·데드 모두 (체중 포함)</small></div>
+    <div class="group-tag must">🏋️ 삼대 기록 <small>하나씩 따로 입력해도 저장돼요 (랭킹엔 셋 다 있어야 반영)</small></div>
     <!-- 벤치프레스 -->
     <div class="lift-entry-block">
       <div class="lift-entry-header">
@@ -1445,7 +1445,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.26.238";
+const APP_VERSION = "2026.07.26.239";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -4591,24 +4591,28 @@ window.saveRecord = async function(){
 
   // 체중은 삼대/인바디 공통 — 항상 별도로 읽음
   const 체중입력 = document.getElementById('inWeight').value.trim();
-  // 리프트(스쿼트·벤치·데드)가 전부 비었는지 (체중은 제외 → 체중만 넣어도 삼대 강요 안 함)
-  const 리프트비었나 = ['Bench','Squat','Dead'].every(l=>{
+  // 특정 리프트 필드가 비어있는지 (직접입력/횟수입력 모드에 따라 확인할 필드가 다름)
+  const 리프트필드비었나 = l=>{
     if(리프트모드[l]==='rep') return document.getElementById('rep'+l+'Kg').value.trim()==='' && document.getElementById('rep'+l+'Rep').value.trim()==='';
     return document.getElementById('in'+l).value.trim()==='';
-  });
+  };
 
   let 체중, 벤치, 스쿼트, 데드;
-  if(삼대보임 && !리프트비었나){
-    // 리프트를 입력한 경우 → 체중 + 3종 모두 유효해야 함(랭킹 반영 조건)
-    체중 = parseFloat(document.getElementById('inWeight').value);
-    벤치 = getLiftVal('Bench','벤치프레스'); if(벤치===null) return;
-    스쿼트 = getLiftVal('Squat','스쿼트'); if(스쿼트===null) return;
-    데드 = getLiftVal('Dead','데드리프트'); if(데드===null) return;
-    if([체중,스쿼트,벤치,데드].some(v=>isNaN(v))){
-      alert("삼대를 입력하려면 체중·스쿼트·벤치·데드를 모두 채워주세요!"); return;
+  if(삼대보임){
+    // 스쿼트·벤치·데드·체중을 각각 독립적으로 처리 — 비워둔 항목은 기존값 유지, 하나만 입력해도 저장됨
+    // (랭킹에 반영되려면 나중에 나머지도 채워서 넷 다 있어야 함 — 삼대유효() 조건)
+    체중 = 체중입력!=='' ? parseFloat(document.getElementById('inWeight').value) : (기존?기존.체중:null);
+    if(리프트필드비었나('Bench')){ 벤치 = 기존?기존.벤치:null; }
+    else { 벤치 = getLiftVal('Bench','벤치프레스'); if(벤치===null) return; }   // getLiftVal이 자체 검증 실패로 null 반환(이미 alert함)
+    if(리프트필드비었나('Squat')){ 스쿼트 = 기존?기존.스쿼트:null; }
+    else { 스쿼트 = getLiftVal('Squat','스쿼트'); if(스쿼트===null) return; }
+    if(리프트필드비었나('Dead')){ 데드 = 기존?기존.데드:null; }
+    else { 데드 = getLiftVal('Dead','데드리프트'); if(데드===null) return; }
+    if([체중,벤치,스쿼트,데드].some(v=>v!=null && isNaN(v))){
+      alert("입력한 값을 확인해주세요!"); return;
     }
   } else {
-    // 리프트 미입력 → 리프트는 기존값 유지, 체중은 입력했으면 반영(인바디+체중만 기록 OK)
+    // 삼대 그룹 자체가 숨겨진 경우(인바디만 수정) → 리프트는 기존값 유지, 체중은 입력했으면 반영
     벤치=기존?기존.벤치:null; 스쿼트=기존?기존.스쿼트:null; 데드=기존?기존.데드:null;
     체중 = 체중입력!=='' ? parseFloat(document.getElementById('inWeight').value) : (기존?기존.체중:null);
   }
@@ -4625,10 +4629,9 @@ window.saveRecord = async function(){
     체지방률 = 기존 ? 기존.체지방률 : null;
   }
 
-  // 최소 하나는 입력돼야 저장 (삼대 또는 인바디)
-  const 삼대OK = [체중,스쿼트,벤치,데드].every(v=>v!=null && !isNaN(v));
-  const 인바디OK = (골격근량!=null && !isNaN(골격근량)) || (체지방률!=null && !isNaN(체지방률));
-  if(!삼대OK && !인바디OK){ alert('입력된 기록이 없어요!\n삼대 또는 인바디 중 하나는 입력해주세요.'); return; }
+  // 최소 하나는 입력돼야 저장 (체중/스쿼트/벤치/데드/골격근량/체지방률 중 아무거나 하나면 OK)
+  const 무언가입력됨 = [체중,스쿼트,벤치,데드,골격근량,체지방률].some(v=>v!=null && !isNaN(v));
+  if(!무언가입력됨){ alert('입력된 기록이 없어요!\n최소 하나는 입력해주세요.'); return; }
 
   const btn=document.getElementById('saveBtn');
   btn.textContent="저장 중..."; btn.disabled=true;
