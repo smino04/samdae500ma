@@ -934,9 +934,8 @@
       <button class="gb-join" onclick="로그아웃()">회원가입</button>
     </div>
     <div id="myStrip" class="my-strip" style="display:none;"></div>
-    <div id="clubGoalArea" style="display:none;"></div>
     <div id="todayAttendance" class="today-att" style="display:none;"></div>
-    <div id="goalArcArea" style="display:none;"></div>
+    <div id="clubGoalArea" style="display:none;"></div>
   </div>
 
   <div id="rankingView" style="display:none;">
@@ -1457,7 +1456,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.26.244";
+const APP_VERSION = "2026.07.26.245";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2349,7 +2348,7 @@ function 내요약스트립그리기(){
     : `<div class="ms-v" style="color:var(--text-dim);">-</div><div class="ms-l">분할 미설정</div>`;
   el.innerHTML = `<div class="ms-name">${escHtml(이름)}</div>
     <div class="ms-stats">
-      <div class="ms-cell"><div class="ms-v">${이번주}<small>/4</small></div><div class="ms-l">이번주</div></div>
+      <div class="ms-cell"><div class="ms-v">${이번주}<small>/3</small></div><div class="ms-l">이번주</div></div>
       <div class="ms-cell">${goalCellHTML}</div>
       <div class="ms-cell">${splitCellHTML}</div>
     </div>
@@ -2483,10 +2482,8 @@ const 미니값라벨플러그인 = {
     ctx.restore();
   }
 };
-let 홈목표차트들 = {};   // {total, muscle, fat} Chart.js 인스턴스 (홈 화면, 본인 전용)
-let 상세목표차트들 = {}; // 상세 화면(다른 회원 포함) 전용 인스턴스 — 홈과 분리 저장해 동시 렌더 시 서로 destroy하지 않게 함
+let 상세목표차트들 = {}; // 목표 미니 그래프(전역 목표 피지컬) Chart.js 인스턴스 — 상세보기 전용
 function 목표미니차트그리기(canvasId, key, color, labels, values, customLabels, goalIndex, chartStore){
-  chartStore = chartStore || 홈목표차트들;
   const css=getComputedStyle(document.documentElement);
   const textDim=css.getPropertyValue('--text-dim').trim();
   const line=css.getPropertyValue('--line').trim();
@@ -2561,10 +2558,6 @@ function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능,
   el.style.display = 'block';
   초기화();
   defs.forEach(d=> 목표미니차트그리기(d.canvasId, d.key, d.color, d.s.labels, d.s.values, d.s.customLabels, d.s.goalIndex, chartStore));
-}
-function 목표그래프그리기(){
-  const 이름 = (현재유저 && !게스트인가()) ? 현재유저.이름 : null;
-  목표그래프렌더(이름, 'goalArcArea', 'homeGoal', 홈목표차트들, true, false);
 }
 function 상세목표그래프그리기(이름){
   const 편집가능 = !!(현재유저 && !게스트인가() && 이름===현재유저.이름);
@@ -2707,12 +2700,11 @@ function 동아리목표그리기(){
   </div>`;
   el.style.display='block';
 }
-// 홈 화면 위젯(내 요약 스트립 + 동아리 목표 + 오늘 운동 현황 + 목표 그래프) 그리기
+// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 동아리 목표) 그리기
 function 홈그리기(){
   try{ 내요약스트립그리기(); }catch(e){}
-  try{ 동아리목표그리기(); }catch(e){}
   try{ 오늘출석그리기(); }catch(e){}
-  try{ 목표그래프그리기(); }catch(e){}
+  try{ 동아리목표그리기(); }catch(e){}
 }
 // 실시간 리스너용: 홈이 실제로 보일 때만 위젯 새로고침
 function 홈위젯새로고침(){
@@ -3477,7 +3469,7 @@ function 주간결산데이터(){
   // 성장 데이터
   const g=성장데이터(); const 활성=g.filter(x=>x.성장>0);
   const 총PR=활성.reduce((s,x)=>s+x.pr,0);
-  const 주4회이상=Object.values(출석).filter(s=>s.size>=4).length;
+  const 주4회이상=Object.values(출석).filter(s=>s.size>=3).length;
   return {주차, 출석왕목록, 출석왕일수, 출석랭킹, 총PR, 주4회이상, mvp:활성[0]||null, top3:활성.slice(0,3)};
 }
 async function 주간결산카드그리기(){
@@ -3539,13 +3531,13 @@ async function 주간결산카드그리기(){
     x.fillStyle='#5a6a7a'; x.font=`500 36px ${HF}`; x.fillText('아직 기록 없음', W/2, 540);
   }
 
-  // ── 스탯 3칸 (이번 주 PR · 성장 MVP · 주 4회 이상) ──
+  // ── 스탯 3칸 (이번 주 PR · 성장 MVP · 주 3회 이상) ──
   x.strokeStyle='rgba(220,227,238,0.12)'; x.lineWidth=1;
   x.beginPath(); x.moveTo(80,772); x.lineTo(W-80,772); x.stroke();
   const boxes=[
     {label:'이번 주 PR', val:`${d.총PR}개`, sub:'신기록 갱신'},
     {label:'성장 MVP', val:d.mvp?d.mvp.이름:'-', sub:d.mvp?`+${d.mvp.성장}kg`:'기록 없음'},
-    {label:'주 4회 이상', val:`${d.주4회이상}명`, sub:'이번 주 달성'},
+    {label:'주 3회 이상', val:`${d.주4회이상}명`, sub:'이번 주 달성'},
   ];
   const bW=284, bH=160, bY=800, bGap=22, bX0=80;
   boxes.forEach((b,i)=>{
@@ -3879,8 +3871,8 @@ function 분석캘린더그리기(이름){
   const 정렬=부위목록.filter(p=>카운트[p]).map(p=>[p,카운트[p]]).sort((a,b)=>b[1]-a[1]);
   const _st=스트릭계산(이름);
   const 일수HTML = `<div class="streak-card" style="margin-top:16px">
-      <div class="streak-box"><div class="sn">${_st.이번주}<small>/4</small></div><div class="sl">이번 주 운동</div></div>
-      <div class="streak-box wk"><div class="sn">🗓️ ${_st.주연속}<small>주</small></div><div class="sl">주 4회 연속 달성</div></div>
+      <div class="streak-box"><div class="sn">${_st.이번주}<small>/3</small></div><div class="sl">이번 주 운동</div></div>
+      <div class="streak-box wk"><div class="sn">🗓️ ${_st.주연속}<small>주</small></div><div class="sl">주 3회 연속 달성</div></div>
     </div>`;
   const 카운트HTML = `<div class="cal-ex-counts">
       <div class="cal-ex-title">📊 ${m+1}월 부위별 횟수</div>
@@ -4110,8 +4102,8 @@ function 스트릭계산(이름){
   const ws=_weekStart(new Date());
   const keyOf=(n)=>{ const d=new Date(ws); d.setDate(d.getDate()-7*n); return _weekKey(d); };
   const 이번주=주카운트[keyOf(0)]||0;
-  // 연속 주: '주 4회 이상' 달성한 주가 연속 몇 주. 이번 주가 아직 4회 미만이면 지난 주부터 셈(진행 중 보호)
-  const 목표=4;
+  // 연속 주: '주 3회 이상' 달성한 주가 연속 몇 주. 이번 주가 아직 3회 미만이면 지난 주부터 셈(진행 중 보호)
+  const 목표=3;
   let start=(이번주>=목표)?0:1, 주연속=0;
   for(let n=start;;n++){ if((주카운트[keyOf(n)]||0)>=목표) 주연속++; else break; }
   return {연속일, 주연속, 이번주};
@@ -5262,7 +5254,7 @@ function 대시보드그리기(){
     const streak = 스트릭계산(이름);
     // 상태 분류
     let 상태;
-    if(tw>=4) 상태='power';
+    if(tw>=3) 상태='power';
     else if(tw>=2) 상태='steady';
     else if(tw>=1||(lw>=2&&tw===0)) 상태='casual';
     else 상태='dormant';
@@ -5274,7 +5266,7 @@ function 대시보드그리기(){
 
   // 집계
   const 활성 = 멤버데이터.filter(m=>m.tw>=1).length;
-  const 주4 = 멤버데이터.filter(m=>m.tw>=4).length;
+  const 주4 = 멤버데이터.filter(m=>m.tw>=3).length;
   const 파워 = 멤버데이터.filter(m=>m.상태==='power').length;
   const 휴면 = 멤버데이터.filter(m=>m.상태==='dormant').length;
 
@@ -5298,7 +5290,7 @@ function 대시보드그리기(){
   el.innerHTML = `
     <div class="dash-grid">
       <div class="dash-stat"><div class="dash-stat-val">${활성}<span style="font-size:16px;color:var(--text-dim)">/${멤버들.length}</span></div><div class="dash-stat-label">이번 주 활성</div></div>
-      <div class="dash-stat"><div class="dash-stat-val">${주4}</div><div class="dash-stat-label">주 4회 달성</div></div>
+      <div class="dash-stat"><div class="dash-stat-val">${주4}</div><div class="dash-stat-label">주 3회 달성</div></div>
       <div class="dash-stat"><div class="dash-stat-val" style="color:var(--gold)">${잔존}%</div><div class="dash-stat-label">주간 리텐션</div></div>
       <div class="dash-stat"><div class="dash-stat-val" style="color:#f87171">${휴면}</div><div class="dash-stat-label">휴면 (요주의)</div></div>
     </div>
@@ -5318,7 +5310,7 @@ function 대시보드그리기(){
       ${주잔존.map((pct,i)=>`<div class="dash-retention-row"><div class="dash-retention-label">${i+1}주 전</div><div class="dash-retention-bar-wrap"><div class="dash-retention-bar" style="width:${pct}%;opacity:${1-i*0.15}"></div></div><div class="dash-retention-pct">${pct}%</div></div>`).join('')}
     </div>
     <div style="font-size:11px;color:var(--text-dim);margin-top:12px;line-height:1.6;">
-      <b style="color:var(--gold)">파워유저</b> 주 4회↑ &nbsp;·&nbsp; <b style="color:#64dc78">꾸준러</b> 주 2~3회 &nbsp;·&nbsp; <b style="color:var(--blue)">간헐러</b> 주 1회 &nbsp;·&nbsp; <b style="color:#f87171">휴면</b> 이번 주 0회
+      <b style="color:var(--gold)">파워유저</b> 주 3회↑ &nbsp;·&nbsp; <b style="color:#64dc78">꾸준러</b> 주 2회 &nbsp;·&nbsp; <b style="color:var(--blue)">간헐러</b> 주 1회 &nbsp;·&nbsp; <b style="color:#f87171">휴면</b> 이번 주 0회
     </div>`;
 }
 
