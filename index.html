@@ -968,6 +968,7 @@
     <div id="pGoalArcArea" style="display:none;"></div>
     <div class="edit-row" id="pEditLift"></div>
     <div class="edit-row" id="pEditBody"></div>
+    <div class="edit-row" id="pEditGoal"></div>
   </div>
 
   <!-- 아바타 크게 보기(랭킹판 등에서 프사 탭) -->
@@ -1445,7 +1446,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.26.239";
+const APP_VERSION = "2026.07.26.240";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2729,6 +2730,10 @@ window.showDetail = function(이름){
     `<button class="edit-btn" onclick="editRecord('${이름}','lift')">✏️ 삼대 기록 수정</button>` : '';
   document.getElementById('pEditBody').innerHTML = 권한 ?
     `<button class="edit-btn" onclick="editRecord('${이름}','body')">✏️ 인바디 기록 수정</button>` : '';
+  // 목표 설정은 관리자가 남 대신 해줄 수 있는 게 아니라 본인 전용 (권한과 별개)
+  const 본인임 = !!(현재유저 && !게스트인가() && 이름===현재유저.이름);
+  document.getElementById('pEditGoal').innerHTML = 본인임 ?
+    `<button class="edit-btn" onclick="목표설정하러가기()">🎯 전역 목표 피지컬 설정</button>` : '';
   상세목표그래프그리기(이름);
 }
 function _운동일집합(이름){
