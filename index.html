@@ -1456,7 +1456,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.26.245";
+const APP_VERSION = "2026.07.27.246";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3620,15 +3620,22 @@ function yScale(vals){
 }
 
 // 차트 점 위 숫자(겹침 방지) — 분석 그래프용
+// 기록이 많이 쌓여 점 간격이 좁아지면 라벨끼리 가로로 겹치므로, 왼쪽부터 순서대로 그리면서
+// 직전에 실제로 그린 라벨과 겹치는 라벨은 건너뜀(단, 가장 최근 값은 제일 중요하니 항상 그림).
 const 점값플러그인 = {
   id:'ptValsCommon',
   afterDatasetsDraw(chart){
     const {ctx}=chart; const ca=chart.chartArea; ctx.save();
     ctx.textAlign='center';
+    const GAP=4;
     chart.data.datasets.forEach((ds,di)=>{
       if(ds.noValueLabel) return;   // 보조선(여러 선 겹치는 차트)은 라벨 생략해서 번잡함 방지
       const below = ds.belowLabels;   // 탑세트 중량×횟수 (점 아래 흐릿하게)
-      chart.getDatasetMeta(di).data.forEach((pt,i)=>{
+      const points = chart.getDatasetMeta(di).data;
+      let lastValidIdx=-1;
+      for(let i=points.length-1;i>=0;i--){ if(ds.data[i]!=null){ lastValidIdx=i; break; } }
+      let topRight=-Infinity, belowRight=-Infinity;
+      points.forEach((pt,i)=>{
         const v=ds.data[i]; if(v==null) return;
         const r=(pt.options&&pt.options.radius)||ds.pointRadius||4;
         // 위: 예상 1RM 값 (가장자리 점이 잘리지 않게 안쪽으로 끌어당김)
@@ -3639,7 +3646,11 @@ const 점값플러그인 = {
         const wantY = pt.y - r - 7;
         const topMovedDown = wantY < 13;
         const y = topMovedDown ? pt.y + r + 16 : wantY;   // 위 공간 없으면 점 아래로
-        ctx.fillStyle=ds.borderColor; ctx.fillText(v, x, y);
+        const isLast = i===lastValidIdx;
+        if(isLast || x-hw > topRight+GAP){
+          ctx.fillStyle=ds.borderColor; ctx.fillText(v, x, y);
+          topRight = Math.max(topRight, x+hw);
+        }
         // 아래: 탑세트 중량×횟수 — 흐릿하게 (위 값이 아래로 내려간 점은 생략해 겹침 방지)
         if(below && below[i] && !topMovedDown){
           ctx.font="600 10px 'Noto Sans KR'"; ctx.textBaseline='top';
@@ -3647,7 +3658,10 @@ const 점값플러그인 = {
           if(bx-bhw<ca.left) bx=ca.left+bhw;
           if(bx+bhw>ca.right) bx=ca.right-bhw;
           const by=pt.y + r + 5;
-          if(by+11 <= ca.bottom){ ctx.fillStyle='rgba(173,181,189,0.55)'; ctx.fillText(below[i], bx, by); }
+          if(by+11 <= ca.bottom && (isLast || bx-bhw > belowRight+GAP)){
+            ctx.fillStyle='rgba(173,181,189,0.55)'; ctx.fillText(below[i], bx, by);
+            belowRight = Math.max(belowRight, bx+bhw);
+          }
         }
       });
     });
