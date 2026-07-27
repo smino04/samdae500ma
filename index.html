@@ -477,9 +477,15 @@
   .intro-row{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;}
   .intro-ic{font-size:30px;line-height:1;flex-shrink:0;}
   .intro-tx{font-size:13px;line-height:1.5;color:var(--text-dim);}
-  .pwa-steps{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+  .pwa-plat{font-size:13px;font-weight:800;color:#69db7c;margin-top:10px;}
+  .pwa-steps{margin-top:10px;display:flex;flex-direction:column;gap:10px;}
   .pwa-step{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
   .pwa-step-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--blue-bright);color:#10141b;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .pwa-install-fab{position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:45;display:flex;align-items:center;gap:6px;background:linear-gradient(100deg,var(--blue-bright),#69db7c);color:#0a1f14;border:none;border-radius:999px;padding:12px 18px;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,0.4);cursor:pointer;white-space:nowrap;}
+  .pwa-install-fab:active{transform:scale(0.96);}
+  #pwaInstallBg{align-items:flex-end;padding:0;}
+  #pwaInstallBg .pwa-sheet{width:100%;max-width:480px;margin:0;border-radius:20px 20px 0 0;padding-bottom:calc(24px + env(safe-area-inset-bottom));animation:slideUp 0.3s;}
+  @keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
   .intro-tx b{color:var(--text);}
   .group-tag{font-size:13px;font-weight:700;color:var(--text);margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line);}
   .group-tag small{font-size:11px;font-weight:700;margin-left:4px;}
@@ -1291,6 +1297,9 @@
 
   <footer>백절불굴의 정신으로 무장하라</footer>
 
+  <!-- 홈 화면 추가(PWA 설치) 유도 버튼 — 모바일에서 아직 설치 안 했으면 계속 떠있고, 설치하면 사라짐 -->
+  <button id="pwaInstallFab" class="pwa-install-fab" style="display:none;" onclick="pwa설치안내열기()">📲 홈 화면에 추가하기</button>
+
   <!-- 하단 고정 탭 -->
   <nav class="bottom-nav">
     <button class="bottom-nav-btn active" id="navHome" onclick="switchMainTab('home')">
@@ -1357,13 +1366,12 @@
   </div>
 </div>
 
-<!-- 홈 화면에 추가(PWA 설치) 안내: 이미 설치했으면 안 뜨고, 안 했으면 접속마다 노출 -->
-<div class="modal-bg" id="pwaInstallBg">
-  <div class="modal">
-    <h2>📲 홈 화면에 추가하세요!</h2>
-    <div class="sub">앱처럼 홈 화면에서 바로 켜서 쓸 수 있어요</div>
+<!-- 홈 화면에 추가(PWA 설치) 안내: 하단 버튼을 눌렀을 때 뜨는 바텀시트 -->
+<div class="modal-bg" id="pwaInstallBg" onclick="if(event.target===this) pwa설치안내닫기()">
+  <div class="modal pwa-sheet">
+    <h2>📲 홈 화면에 추가하기</h2>
     <div id="pwaInstallBody"></div>
-    <button class="btn btn-cancel" style="width:100%;margin-top:10px;" onclick="pwa설치안내닫기()">나중에</button>
+    <button class="btn btn-save" style="width:100%;margin-top:14px;" onclick="pwa설치안내닫기()">확인했어요</button>
   </div>
 </div>
 
@@ -1469,7 +1477,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.07.27.247";
+const APP_VERSION = "2026.07.27.248";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -5050,7 +5058,7 @@ function 앱표시(){
   document.getElementById('appRoot').style.display = 'flex';
   switchMainTab('home');  // 시작 화면을 홈으로
   introShow();  // 처음 1회 공식기록 vs 훈련일지 안내
-  try{ pwa설치안내체크(); }catch(e){}
+  try{ pwa버튼갱신(); }catch(e){}
 }
 // 첫 진입 안내 (기기당 1회)
 function introShow(){
@@ -5094,7 +5102,8 @@ window.목표설정하러가기 = function(){
   try{ 수치목표입력갱신(); }catch(e){}
   더보기열기('📈 전역 목표 피지컬','moreBodyNumGoal');
 }
-// 홈 화면 추가(PWA 설치) 안내 — 아이폰/갤럭시 등 모바일에서 아직 설치 안 했으면 접속마다 노출, 설치하면 안 뜸
+// 홈 화면 추가(PWA 설치) 안내 — 아이폰/갤럭시 등 모바일에서 아직 설치 안 했으면 하단에 버튼이 계속 떠있고,
+// 누르면 안내 시트가 뜸. 설치를 마치면(또는 이미 설치돼서 실행 중이면) 버튼 자체가 안 보임.
 function pwa플랫폼(){
   const ua = navigator.userAgent;
   if(/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
@@ -5104,31 +5113,33 @@ function pwa플랫폼(){
 function pwa설치됨(){
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
-let pwa안내표시됨 = false;
-function pwa설치안내체크(){
-  if(pwa안내표시됨) return;
+// 'appinstalled' 이벤트가 떠도 지금 이 탭 자체는 standalone으로 안 바뀜(새로 생긴 홈 화면 아이콘으로
+// 다시 열어야 반영됨) — 그래서 pwa설치됨()만 보면 방금 설치했는데도 버튼이 안 사라짐. 이벤트로 직접 확정.
+let pwa설치완료됨 = false;
+function pwa버튼갱신(){
+  const btn = document.getElementById('pwaInstallFab'); if(!btn) return;
+  btn.style.display = (pwa플랫폼() && !pwa설치됨() && !pwa설치완료됨) ? 'flex' : 'none';
+}
+window.addEventListener('appinstalled', ()=>{ pwa설치완료됨 = true; pwaDeferredPrompt = null; pwa설치안내닫기(); pwa버튼갱신(); });
+window.pwa설치안내열기 = function(){
   const 플랫폼 = pwa플랫폼();
-  if(!플랫폼 || pwa설치됨()) return;
-  pwa안내표시됨 = true;
-  setTimeout(()=>{
-    const bg = document.getElementById('pwaInstallBg'); const body = document.getElementById('pwaInstallBody');
-    if(!bg || !body || pwa설치됨()) return;
-    if(플랫폼==='ios'){
-      body.innerHTML = `<div class="pwa-steps">
-        <div class="pwa-step"><span class="pwa-step-num">1</span>하단(또는 상단) 공유 버튼 탭</div>
-        <div class="pwa-step"><span class="pwa-step-num">2</span><b>'홈 화면에 추가'</b> 선택</div>
-        <div class="pwa-step"><span class="pwa-step-num">3</span>오른쪽 위 <b>'추가'</b> 탭</div>
-      </div>`;
-    } else if(pwaDeferredPrompt){
-      body.innerHTML = `<button class="btn btn-save" style="width:100%;margin-top:4px;" onclick="pwa설치실행()">📲 지금 설치하기</button>`;
-    } else {
-      body.innerHTML = `<div class="pwa-steps">
-        <div class="pwa-step"><span class="pwa-step-num">1</span>오른쪽 위 메뉴(⋮) 탭</div>
-        <div class="pwa-step"><span class="pwa-step-num">2</span><b>'홈 화면에 추가'</b> 또는 <b>'앱 설치'</b> 선택</div>
-      </div>`;
-    }
-    bg.classList.add('show');
-  }, 8000);
+  const bg = document.getElementById('pwaInstallBg'); const body = document.getElementById('pwaInstallBody');
+  if(!플랫폼 || !bg || !body) return;
+  if(플랫폼==='ios'){
+    body.innerHTML = `<div class="pwa-plat">아이폰 (Safari)</div><div class="pwa-steps">
+      <div class="pwa-step"><span class="pwa-step-num">1</span>하단(또는 상단) 공유 버튼 <b>􀈂</b> 탭</div>
+      <div class="pwa-step"><span class="pwa-step-num">2</span><b>'홈 화면에 추가'</b> 선택</div>
+      <div class="pwa-step"><span class="pwa-step-num">3</span>오른쪽 위 <b>'추가'</b> 탭</div>
+    </div>`;
+  } else if(pwaDeferredPrompt){
+    body.innerHTML = `<button class="btn btn-save" style="width:100%;margin-top:4px;" onclick="pwa설치실행()">📲 지금 설치하기</button>`;
+  } else {
+    body.innerHTML = `<div class="pwa-plat">안드로이드 (Chrome)</div><div class="pwa-steps">
+      <div class="pwa-step"><span class="pwa-step-num">1</span>오른쪽 위 메뉴(⋮) 탭</div>
+      <div class="pwa-step"><span class="pwa-step-num">2</span><b>'홈 화면에 추가'</b> 또는 <b>'앱 설치'</b> 선택</div>
+    </div>`;
+  }
+  bg.classList.add('show');
 }
 window.pwa설치안내닫기 = function(){
   const m=document.getElementById('pwaInstallBg'); if(m) m.classList.remove('show');
@@ -5139,6 +5150,7 @@ window.pwa설치실행 = async function(){
   try{ await pwaDeferredPrompt.userChoice; }catch(e){}
   pwaDeferredPrompt = null;
   window.pwa설치안내닫기();
+  pwa버튼갱신();
 }
 function 권한UI적용(){
   const guest = 게스트인가();
