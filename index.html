@@ -564,16 +564,6 @@
   .ta-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#69db7c;color:#0a2a12;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
   .ta-name{font-size:10.5px;font-weight:700;color:var(--text-dim);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ta-chip.done .ta-name{color:var(--text);}
-  /* 우수 동아리 선정 목표 (홈 상단 배너) */
-  .club-goal-card{cursor:default;margin:0 0 14px;padding:14px 16px;border-radius:15px;}
-  .club-goal-card .chart-title::before{display:none;}
-  .club-goal-card .chart-title{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-  .club-goal-row{margin-top:14px;}
-  .club-goal-row:first-child{margin-top:0;}
-  .club-goal-label{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px;}
-  .club-goal-bar-wrap{height:8px;border-radius:4px;background:var(--panel-light);overflow:hidden;}
-  .club-goal-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue-bright),#69db7c);transition:width 0.4s;}
-  .club-goal-sub{font-size:11px;color:var(--text-dim);margin-top:5px;}
   /* 목표 그래프 (홈): 목표 미설정 시 유도 카드 */
   .goalarc-cta{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:14px 16px;margin-bottom:14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text-dim);}
   .goalarc-cta-arrow{font-size:18px;color:var(--text-dim);flex-shrink:0;}
@@ -944,7 +934,7 @@
     </div>
     <div id="myStrip" class="my-strip" style="display:none;"></div>
     <div id="todayAttendance" class="today-att" style="display:none;"></div>
-    <div id="clubGoalArea" style="display:none;"></div>
+    <div id="goalArcArea" style="display:none;"></div>
   </div>
 
   <div id="rankingView" style="display:none;">
@@ -1483,7 +1473,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.08.01.252";
+const APP_VERSION = "2026.08.01.253";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -2516,7 +2506,8 @@ const 미니값라벨플러그인 = {
     ctx.restore();
   }
 };
-let 상세목표차트들 = {}; // 목표 미니 그래프(전역 목표 피지컬) Chart.js 인스턴스 — 상세보기 전용
+let 홈목표차트들 = {};   // {total, muscle, fat} Chart.js 인스턴스 (홈 화면, 본인 전용)
+let 상세목표차트들 = {}; // 상세 화면(다른 회원 포함) 전용 인스턴스 — 홈과 분리 저장해 동시 렌더 시 서로 destroy하지 않게 함
 function 목표미니차트그리기(canvasId, key, color, labels, values, customLabels, goalIndex, chartStore){
   const css=getComputedStyle(document.documentElement);
   const textDim=css.getPropertyValue('--text-dim').trim();
@@ -2596,6 +2587,10 @@ function 목표그래프렌더(이름, elId, idPrefix, chartStore, 편집가능,
 function 상세목표그래프그리기(이름){
   const 편집가능 = !!(현재유저 && !게스트인가() && 이름===현재유저.이름);
   목표그래프렌더(이름, 'pGoalArcArea', 'detailGoal', 상세목표차트들, 편집가능, true);
+}
+function 목표그래프그리기(){
+  const 이름 = (현재유저 && !게스트인가()) ? 현재유저.이름 : null;
+  목표그래프렌더(이름, 'goalArcArea', 'homeGoal', 홈목표차트들, true, false);
 }
 // 운동 균형 분석: 프로필 > 운동 분석에서 들어가는 전체 화면 오버레이. 레이더 차트로 부위별 훈련 비중을 보여줌.
 const 추천부위목록 = ['가슴','등','어깨','하체','이두','삼두','코어'];
@@ -2680,65 +2675,11 @@ function 운동균형그리기(){
       scales:{r:{min:0, suggestedMax:Math.max(30, Math.ceil(Math.max(...data)/10)*10), ticks:{display:false}, grid:{color:line}, angleLines:{color:line}, pointLabels:{color:textDim, font:{family:'Noto Sans KR', size:11}}}}
     }});
 }
-// ── 우수 동아리 선정 목표 (홈 상단 배너) ──
-// ① 평균 체중대비 5% 향상(2026년 5월 기록 기준): 각 회원의 5월 체중대비 점수 대비 최신 기록 점수 증감률(%)을 평균
-function 동아리목표_평균체중대비(){
-  const 올해 = new Date().getFullYear();
-  const byName = {};
-  기록목록.forEach(r=>{
-    if(연도of(r)!==올해 || !삼대유효(r)) return;
-    (byName[r.이름]=byName[r.이름]||[]).push(r);
-  });
-  let 합계값=0, 인원=0;
-  Object.keys(byName).forEach(이름=>{
-    if(이름==='test' || 탈퇴자명단.includes(이름) || 실명닉네임맵[이름]) return;
-    const recs=byName[이름];
-    const may=recs.find(r=>r.월==='5월'); if(!may) return;
-    const mayScore=상대점수(may); if(!mayScore) return;
-    const latest=recs.slice().sort((a,b)=>월선택지.indexOf(a.월)-월선택지.indexOf(b.월)).pop();
-    합계값 += (상대점수(latest)/mayScore - 1) * 100;
-    인원++;
-  });
-  return 인원 ? { 평균:Math.round((합계값/인원)*10)/10, 인원 } : null;
-}
-// ② 전원 월 12회 이상 출석(주 3회꼴): 이번 달 기준, 12회 넘긴 회원 수 / 전체 회원 수
-function 동아리목표_출석달성(){
-  const 오늘=new Date();
-  const {list}=월간출석데이터(오늘.getFullYear(), 오늘.getMonth());
-  return { 달성:list.filter(x=>x.출석일수>=12).length, 전체:list.length };
-}
-function 동아리목표그리기(){
-  const el=document.getElementById('clubGoalArea'); if(!el) return;
-  if(!현재유저){ el.style.display='none'; return; }
-  const 체중대비=동아리목표_평균체중대비();
-  const 출석=동아리목표_출석달성();
-
-  const g1pct=체중대비 ? Math.max(0, Math.min(100, (체중대비.평균/5)*100)) : 0;
-  const g1sub=체중대비 ? `${체중대비.평균>=0?'+':''}${체중대비.평균}% / 목표 +5% (${체중대비.인원}명 집계)` : '5월 기록이 있어야 집계돼요';
-
-  const g2pct=출석.전체 ? (출석.달성/출석.전체)*100 : 0;
-  const g2sub=`${출석.달성} / ${출석.전체}명 달성 (이번 달 12회 이상)`;
-
-  el.innerHTML = `<div class="chart-card club-goal-card">
-    <div class="chart-title">🎯 우수 동아리 선정 목표</div>
-    <div class="club-goal-row">
-      <div class="club-goal-label">💪 평균 체중대비 5% 향상 (26년5월기준)</div>
-      <div class="club-goal-bar-wrap"><div class="club-goal-bar" style="width:${g1pct}%"></div></div>
-      <div class="club-goal-sub">${g1sub}</div>
-    </div>
-    <div class="club-goal-row">
-      <div class="club-goal-label">📅 전원 월 12회 이상 출석</div>
-      <div class="club-goal-bar-wrap"><div class="club-goal-bar" style="width:${g2pct}%"></div></div>
-      <div class="club-goal-sub">${g2sub}</div>
-    </div>
-  </div>`;
-  el.style.display='block';
-}
-// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 동아리 목표) 그리기
+// 홈 화면 위젯(내 요약 스트립 + 오늘 운동 현황 + 목표 그래프) 그리기
 function 홈그리기(){
   try{ 내요약스트립그리기(); }catch(e){}
   try{ 오늘출석그리기(); }catch(e){}
-  try{ 동아리목표그리기(); }catch(e){}
+  try{ 목표그래프그리기(); }catch(e){}
 }
 // 실시간 리스너용: 홈이 실제로 보일 때만 위젯 새로고침
 function 홈위젯새로고침(){
