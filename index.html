@@ -1332,7 +1332,7 @@
     <div class="sub">부위 직접 추가·수정 (여러 개 선택 가능)</div>
     <div class="calpart-grid" id="calPartGrid"></div>
     <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="calEditClose()">취소</button>
+      <button class="btn btn-cancel" onclick="뒤로닫기(calEditClose)">취소</button>
       <button class="btn btn-save" onclick="calEditSave()">저장</button>
     </div>
     <button class="modal-delete" style="display:block;" onclick="calEditAuto()">🔄 자동(훈련일지)으로 되돌리기</button>
@@ -1477,7 +1477,7 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "http
    - 기기/브라우저 캐시로 옛 화면이 뜨는 문제 방지
    - 배포할 때마다 이 숫자와 version.json 의 v 를 함께 올린다
 ===================================================== */
-const APP_VERSION = "2026.08.02.255";
+const APP_VERSION = "2026.08.04.256";
 // 서비스 워커 등록: HTML을 항상 네트워크에서 새로 받아(network-first),
 // iOS 홈 화면 앱이 옛 화면을 캐싱하는 문제를 근본 해결. 한 번 받으면 이후 자동 업데이트.
 if('serviceWorker' in navigator){
@@ -3033,6 +3033,7 @@ const 열린화면목록 = [
   { 열림:()=>!!document.getElementById('balanceOverlay'), 닫기:()=>운동균형분석닫기() },
   { 열림:()=>document.getElementById('exManageOverlay')?.style.display==='flex', 닫기:()=>종목관리닫기() },
   { 열림:()=>document.getElementById('acctSettingsOverlay')?.style.display==='flex', 닫기:()=>계정설정닫기() },
+  { 열림:()=>!!document.getElementById('calEditBg')?.classList.contains('show'), 닫기:()=>calEditClose() },
   { 열림:()=>!!document.getElementById('printOverlay'), 닫기:()=>월결산인쇄닫기() },
   { 열림:()=>document.getElementById('moreDetailOverlay')?.style.display==='flex', 닫기:()=>더보기닫기() },
   { 열림:()=>!!document.getElementById('diaryContent')?.classList.contains('detail-mode'), 닫기:()=>운동상세닫기() },
@@ -4066,7 +4067,9 @@ window.calDayClick = function(ds){
   const saveBtn = editBg.querySelector('.btn-save'); if(saveBtn) saveBtn.style.display = 권한 ? '' : 'none';
   const cancelBtn = editBg.querySelector('.btn-cancel'); if(cancelBtn) cancelBtn.textContent = 권한 ? '취소' : '닫기';
   const autoBtn = editBg.querySelector('.modal-delete'); if(autoBtn) autoBtn.style.display = 권한 ? 'block' : 'none';
+  const 이미열림 = editBg.classList.contains('show');
   editBg.classList.add('show');
+  if(!이미열림){ try{ history.pushState({view:'sub'}, ''); }catch(e){} }
 }
 function calEdit버튼그리기(){
   document.getElementById('calPartGrid').innerHTML = 부위목록.map(pp=>
